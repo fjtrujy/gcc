@@ -374,10 +374,6 @@
 ;; nop		no operation
 ;; ghost	an instruction that produces no real code
 ;; multimem	microMIPS multiword load and store
-;; parith	R5900 parallel integer arithmetic instructions
-;; plogical	R5900 parallel integer logical instructions
-;; pshift	R5900 parallel integer shift instructions
-;; pmfhl	R5900 parallel transfer from from lo+hi registers
 (define_attr "type"
   "unknown,branch,jump,call,load,fpload,fpidxload,store,fpstore,fpidxstore,
    prefetch,prefetchx,condmove,mtc,mfc,mthi,mtlo,mfhi,mflo,const,arith,logical,
@@ -389,8 +385,7 @@
    simd_fdiv,simd_bitins,simd_bitmov,simd_insert,simd_sld,simd_mul,simd_fcmp,
    simd_fexp2,simd_int_arith,simd_bit,simd_shift,simd_splat,simd_fill,
    simd_permute,simd_shf,simd_sat,simd_pcnt,simd_copy,simd_branch,simd_cmsa,
-   simd_fminmax,simd_logic,simd_move,simd_load,simd_store,parith,
-   plogical,pshift,pmfhl"
+   simd_fminmax,simd_logic,simd_move,simd_load,simd_store,pmfhl"
   (cond [(eq_attr "jal" "!unset") (const_string "call")
 	 (eq_attr "got" "load") (const_string "load")
 
