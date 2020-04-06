@@ -711,7 +711,7 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "mul<mode>3"
+(define_insn "mul<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f")
 	(mult:IMSA (match_operand:IMSA 1 "register_operand" "f")
 		   (match_operand:IMSA 2 "register_operand" "f")))]

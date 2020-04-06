@@ -15714,10 +15714,10 @@ AVAIL_NON_MIPS16 (msa, TARGET_MSA)
 #define CODE_FOR_msa_mod_u_h CODE_FOR_umodv8hi3
 #define CODE_FOR_msa_mod_u_w CODE_FOR_umodv4si3
 #define CODE_FOR_msa_mod_u_d CODE_FOR_umodv2di3
-#define CODE_FOR_msa_mulv_b CODE_FOR_mulv16qi3
-#define CODE_FOR_msa_mulv_h CODE_FOR_mulv8hi3
-#define CODE_FOR_msa_mulv_w CODE_FOR_mulv4si3
-#define CODE_FOR_msa_mulv_d CODE_FOR_mulv2di3
+#define CODE_FOR_msa_mulv_b CODE_FOR_mulv16qi3_msa
+#define CODE_FOR_msa_mulv_h CODE_FOR_mulv8hi3_msa
+#define CODE_FOR_msa_mulv_w CODE_FOR_mulv4si3_msa
+#define CODE_FOR_msa_mulv_d CODE_FOR_mulv2di3_msa
 #define CODE_FOR_msa_nlzc_b CODE_FOR_clzv16qi2
 #define CODE_FOR_msa_nlzc_h CODE_FOR_clzv8hi2
 #define CODE_FOR_msa_nlzc_w CODE_FOR_clzv4si2
