@@ -22221,7 +22221,7 @@ mips_expand_vector_init (rtx target, rtx vals)
 		case E_V4SImode:
 		  emit_insn (gen_vec_setv4si (target, temp, GEN_INT (i)));
 		  break;
-
+/*
 		case E_V2DImode:
 		  emit_insn (gen_vec_setv2di (target, temp, GEN_INT (i)));
 		  break;
@@ -22233,7 +22233,7 @@ mips_expand_vector_init (rtx target, rtx vals)
 		case E_V2DFmode:
 		  emit_insn (gen_vec_setv2df (target, temp, GEN_INT (i)));
 		  break;
-
+*/
 		default:
 		  gcc_unreachable ();
 		}

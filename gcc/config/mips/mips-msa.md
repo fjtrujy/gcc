@@ -241,7 +241,7 @@
 })
 
 ;; pckev pattern with implicit type conversion.
-(define_insn "vec_pack_trunc_<mode>"
+(define_insn "vec_pack_trunc_<mode>_msa"
    [(set (match_operand:<VHMODE> 0 "register_operand" "=f")
 	 (vec_concat:<VHMODE>
 	   (truncate:<VTRUNCMODE>
@@ -275,7 +275,7 @@
   operands[2] = mips_msa_vec_parallel_const_half (V4SFmode, false/*high_p*/);
 })
 
-(define_expand "vec_unpacks_hi_<mode>"
+(define_expand "vec_unpacks_hi_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -284,7 +284,7 @@
   DONE;
 })
 
-(define_expand "vec_unpacks_lo_<mode>"
+(define_expand "vec_unpacks_lo_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -383,7 +383,7 @@
   [(set_attr "move_type" "fmove")
    (set_attr "mode" "<UNITMODE>")])
 
-(define_expand "vec_set<mode>"
+(define_expand "vec_set<mode>_msa"
   [(match_operand:IMSA 0 "register_operand")
    (match_operand:<UNITMODE> 1 "reg_or_0_operand")
    (match_operand 2 "const_<indeximm>_operand")]
