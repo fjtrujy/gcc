@@ -293,7 +293,7 @@
   DONE;
 })
 
-(define_expand "vec_unpacku_hi_<mode>"
+(define_expand "vec_unpacku_hi_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -302,7 +302,7 @@
   DONE;
 })
 
-(define_expand "vec_unpacku_lo_<mode>"
+(define_expand "vec_unpacku_lo_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
