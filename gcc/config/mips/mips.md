@@ -1532,16 +1532,34 @@
 	(mult:SCALARF (match_operand:SCALARF 1 "register_operand")
 		      (match_operand:SCALARF 2 "register_operand")))]
   ""
-  "")
+{
+  if (TARGET_MIPS5900) {
+    rtx fa = gen_rtx_REG (SFmode, FA_REGNUM);
+    emit_insn (gen_mulsf3_r5900 (fa, operands[1], operands[2]));
+    emit_move_insn (operands[0], fa);
+  }
+  else
+    emit_insn (gen_mul<mode>3 (operands[0], operands[1], operands[2]));
+  DONE;
+})
 
 (define_insn "*mul<mode>3"
   [(set (match_operand:SCALARF 0 "register_operand" "=f")
 	(mult:SCALARF (match_operand:SCALARF 1 "register_operand" "f")
 		      (match_operand:SCALARF 2 "register_operand" "f")))]
-  "!TARGET_4300_MUL_FIX"
+  "!TARGET_4300_MUL_FIX && !TARGET_MIPS5900"
   "mul.<fmt>\t%0,%1,%2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "<MODE>")])
+
+(define_insn "mulsf3_r5900"
+  [(set (match_operand:SF 0 "fa_operand" "=wa")
+	(mult:SF (match_operand:SF 1 "register_operand" "f")
+		      (match_operand:SF 2 "register_operand" "f")))]
+  "TARGET_MIPS5900"
+  "mula.s\t%1,%2 # NOTE: ACC used = %0"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "SF")])
 
 ;; Early VR4300 silicon has a CPU bug where multiplies with certain
 ;; operands may corrupt immediately following multiplies. This is a
@@ -2721,6 +2739,24 @@
 ;; and the add (or subtract) so they are equivalent to the separate
 ;; multiply and add/sub instructions.
 
+(define_expand "madd4<mode>"
+  [(set (match_operand:ANYF 0 "register_operand")
+	(plus:ANYF (mult:ANYF (match_operand:ANYF 1 "register_operand")
+			      (match_operand:ANYF 2 "register_operand"))
+		   (match_operand:ANYF 3 "register_operand")))]
+  "ISA_HAS_UNFUSED_MADD4 || TARGET_MIPS5900"
+{
+  if (TARGET_MIPS5900) {
+    rtx fa = gen_rtx_REG (SFmode, FA_REGNUM);
+    emit_move_insn (fa, operands[3]);
+    emit_insn (gen_madd4sf_r5900 (fa, operands[1], operands[2], fa));
+    emit_move_insn (operands[0], fa);
+  }
+  else
+    emit_insn (gen_madd4<mode> (operands[0], operands[1], operands[2], operands[3]));
+  DONE;
+})
+
 (define_insn "*madd4<mode>"
   [(set (match_operand:ANYF 0 "register_operand" "=f")
 	(plus:ANYF (mult:ANYF (match_operand:ANYF 1 "register_operand" "f")
@@ -2730,6 +2766,16 @@
   "madd.<fmt>\t%0,%3,%1,%2"
   [(set_attr "type" "fmadd")
    (set_attr "mode" "<UNITMODE>")])
+
+(define_insn "madd4sf_r5900"
+  [(set (match_operand:SF 0 "fa_operand" "=wa")
+	(plus:SF (mult:SF (match_operand:SF 1 "register_operand" "f")
+			      (match_operand:SF 2 "register_operand" "f"))
+		   (match_operand:SF 3 "fa_operand" "0")))]
+  "TARGET_MIPS5900"
+  "madda.s\t%1,%2 # NOTE: ACC used = %0"
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "SF")])
 
 (define_insn "*msub4<mode>"
   [(set (match_operand:ANYF 0 "register_operand" "=f")

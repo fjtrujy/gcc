@@ -602,7 +602,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   COP3_REGS,	COP3_REGS,	COP3_REGS,	COP3_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
-  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS
+  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
+  SA_REG, FA_REG
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -5255,6 +5256,12 @@ mips_output_move (rtx dest, rtx src)
 
   if (mips_split_move_p (dest, src, SPLIT_IF_NECESSARY))
     return "#";
+
+  if (REGNO (dest) == FA_REGNUM)
+      return "adda.s\t%1,$f0 # Put value in %0 -> FIXME: $f0 must be 0.0f!";
+
+  if (REGNO (src) == FA_REGNUM)
+      return "madd.s\t%0,$f0,$f0 # Get value from %1 -> FIXME: $f0 must be 0.0f!";
 
   if (msa_p
       && dest_code == REG && FP_REG_P (REGNO (dest))
@@ -11087,6 +11094,12 @@ mips_interrupt_extra_call_saved_reg_p (unsigned int regno)
       && MD_REG_P (regno))
     return true;
 
+  if (TARGET_MIPS5900 && regno == SA_REGNUM)
+    return true;
+
+  if (TARGET_MIPS5900 && regno == FA_REGNUM)
+    return true;
+
   if (TARGET_DSP && DSP_ACC_REG_P (regno))
     return true;
 
@@ -13147,6 +13160,17 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
 
   size = GET_MODE_SIZE (mode);
   mclass = GET_MODE_CLASS (mode);
+
+  if (TARGET_MIPS5900)
+    {
+      if (regno == SA_REGNUM
+	  && size <= UNITS_PER_WORD)
+        return true;
+
+      if (regno == FA_REGNUM
+	  && mclass == MODE_FLOAT)
+        return true;
+    }
 
   if (GP_REG_P (regno) && mode != CCFmode && !MSA_SUPPORTED_MODE_P (mode))
     return ((regno - GP_REG_FIRST) & 1) == 0 || size <= UNITS_PER_WORD;
@@ -20887,6 +20911,23 @@ mips_conditional_register_usage (void)
 
   if (!ISA_HAS_HILO)
     accessible_reg_set &= ~reg_class_contents[MD_REGS];
+
+  if (!TARGET_MIPS5900)
+    {
+      AND_COMPL_HARD_REG_SET (accessible_reg_set,
+		    reg_class_contents[(int) SA_REG]);
+      AND_COMPL_HARD_REG_SET (accessible_reg_set,
+		    reg_class_contents[(int) FA_REG]);
+    }
+  else
+    {
+      /* Do not allow the SA register to be used as an operand.  */
+      AND_COMPL_HARD_REG_SET (operand_reg_set,
+			      reg_class_contents[(int) SA_REG]);
+      /* Do not allow the FA register to be used as an operand.  */
+//      AND_COMPL_HARD_REG_SET (operand_reg_set,
+//			      reg_class_contents[(int) FA_REG]);
+    }
 
   if (!TARGET_HARD_FLOAT)
     accessible_reg_set &= ~(reg_class_contents[FP_REGS]
