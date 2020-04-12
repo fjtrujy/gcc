@@ -13588,7 +13588,7 @@ mips_preferred_simd_mode (scalar_mode mode)
 static void
 mips_autovectorize_vector_sizes (vector_sizes *sizes)
 {
-  if (ISA_HAS_MSA)
+  if (ISA_HAS_MSA || TARGET_MIPS5900)
     sizes->safe_push (16);
 }
 
