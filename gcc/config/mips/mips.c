@@ -13557,9 +13557,8 @@ mips_preferred_simd_mode (scalar_mode mode)
       && mode == SFmode)
     return V2SFmode;
 
-  if (!ISA_HAS_MSA)
-    return word_mode;
-
+  if (ISA_HAS_MSA)
+  {
   switch (mode)
     {
     case E_QImode:
@@ -13580,6 +13579,23 @@ mips_preferred_simd_mode (scalar_mode mode)
     default:
       break;
     }
+  }
+
+  if (TARGET_MIPS5900)
+  {
+  switch (mode)
+    {
+    case E_QImode:
+      return V16QImode;
+    case E_HImode:
+      return V8HImode;
+    case E_SImode:
+      return V4SImode;
+    default:
+      break;
+    }
+  }
+
   return word_mode;
 }
 
