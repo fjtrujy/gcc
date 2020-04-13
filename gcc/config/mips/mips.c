@@ -22227,19 +22227,19 @@ mips_expand_vector_init (rtx target, rtx vals)
 	      switch (vmode)
 		{
 		case E_V16QImode:
-		  emit_insn (gen_vec_setv16qi (target, temp, GEN_INT (i)));
+		  emit_insn (gen_vec_setv16qi_msa (target, temp, GEN_INT (i)));
 		  break;
 
 		case E_V8HImode:
-		  emit_insn (gen_vec_setv8hi (target, temp, GEN_INT (i)));
+		  emit_insn (gen_vec_setv8hi_msa (target, temp, GEN_INT (i)));
 		  break;
 
 		case E_V4SImode:
-		  emit_insn (gen_vec_setv4si (target, temp, GEN_INT (i)));
+		  emit_insn (gen_vec_setv4si_msa (target, temp, GEN_INT (i)));
 		  break;
-/*
+
 		case E_V2DImode:
-		  emit_insn (gen_vec_setv2di (target, temp, GEN_INT (i)));
+		  emit_insn (gen_vec_setv2di_msa (target, temp, GEN_INT (i)));
 		  break;
 
 		case E_V4SFmode:
@@ -22249,7 +22249,7 @@ mips_expand_vector_init (rtx target, rtx vals)
 		case E_V2DFmode:
 		  emit_insn (gen_vec_setv2df (target, temp, GEN_INT (i)));
 		  break;
-*/
+
 		default:
 		  gcc_unreachable ();
 		}
