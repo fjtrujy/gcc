@@ -4776,17 +4776,20 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
+  /* Check for LQ/SQ loads and stores.  */
+  if (size == 16 && TARGET_MIPS5900)
+    {
+      if (GP_REG_P (REGNO (dest)) && MEM_P (src))
+        return false;
+      if (GP_REG_P (REGNO (src)) && MEM_P (dest))
+        return false;
+    }
+
   /* The R5900 has special quad-word loads and stores, and 128-bit GPRs.  */
   if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest)))
     {
       /* GPR-to-GPR moves can be done in a single instruction.  */
       if (GP_REG_P (REGNO (src)) && GP_REG_P (REGNO (dest)))
-        return false;
-
-      /* Check for LQ/SQ loads and stores.  */
-      if (GP_REG_P (REGNO (dest)) && MEM_P (src))
-        return false;
-      if (GP_REG_P (REGNO (src)) && MEM_P (dest))
         return false;
     }
 
@@ -13127,6 +13130,7 @@ mips_can_change_mode_class (machine_mode from,
   if (MSA_SUPPORTED_MODE_P (from) && MSA_SUPPORTED_MODE_P (to))
     return true;
 
+  /* Allow conversions between different MMI vector modes.  */
   if (R5900_MMI_SUPPORTED_MODE_P (from) && R5900_MMI_SUPPORTED_MODE_P(to))
     return true;
 
