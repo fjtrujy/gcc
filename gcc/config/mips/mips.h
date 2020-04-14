@@ -2458,6 +2458,12 @@ enum reg_class
    && (GET_MODE_CLASS (MODE) == MODE_VECTOR_INT		\
        || GET_MODE_CLASS (MODE) == MODE_VECTOR_FLOAT))
 
+/* True if MODE is vector and supported in a MSA vector register.  */
+#define R5900_MMI_SUPPORTED_MODE_P(MODE)		\
+  (TARGET_MIPS5900					\
+   && GET_MODE_SIZE (MODE) == MAX_UNITS_PER_WORD_R5900	\
+   && GET_MODE_CLASS (MODE) == MODE_VECTOR_INT)
+
 /* Temporary register that is used when restoring $gp after a call.  $4 and $5
    are used for returning complex double values in soft-float code, so $6 is the
    first suitable candidate for TARGET_MIPS16.  For !TARGET_MIPS16 we can use

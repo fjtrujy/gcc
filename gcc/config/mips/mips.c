@@ -4777,7 +4777,7 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
     return mips_split_128bit_move_p (dest, src);
 
   /* The R5900 has special quad-word loads and stores, and 128-bit GPRs.  */
-  if (TARGET_MIPS5900)
+  if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest)))
     {
       /* GPR-to-GPR moves can be done in a single instruction.  */
       if (GP_REG_P (REGNO (src)) && GP_REG_P (REGNO (dest)))
@@ -13127,13 +13127,8 @@ mips_can_change_mode_class (machine_mode from,
   if (MSA_SUPPORTED_MODE_P (from) && MSA_SUPPORTED_MODE_P (to))
     return true;
 
-  if (TARGET_MIPS5900)
-    {
-      /* Allow conversions between different 128-bit vector modes for the R5900.  */
-      if ((from == V4SImode || from == V8HImode || from == V16QImode)
-	  && (to == V4SImode || to == V8HImode || to == V16QImode))
-        return false;
-    }
+  if (R5900_MMI_SUPPORTED_MODE_P (from) && R5900_MMI_SUPPORTED_MODE_P(to))
+    return true;
 
   /* Otherwise, there are several problems with changing the modes of
      values in floating-point registers:
@@ -13525,7 +13520,7 @@ mips_vector_mode_supported_p (machine_mode mode)
     case V4DImode:
     case V8SImode:
     case V16HImode:
-      return TARGET_MIPS5900;
+      return TARGET_MIPS5900 || MSA_SUPPORTED_MODE_P (mode);
 
     default:
       return MSA_SUPPORTED_MODE_P (mode);
