@@ -4779,19 +4779,15 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   /* The R5900 has special quad-word loads and stores, and 128-bit GPRs.  */
   if (TARGET_MIPS5900)
     {
-      if (((GET_MODE (dest) == V4SImode)
-	   || (GET_MODE (dest) == V8HImode)
-	   || (GET_MODE (dest) == V16QImode))
-	      && ((REG_P (src) && GP_REG_P (REGNO (src)) && MEM_P (dest))
-		  || (REG_P (dest) && GP_REG_P (REGNO (dest)) && MEM_P (src))))
-      return false;
+      /* GPR-to-GPR moves can be done in a single instruction.  */
+      if (GP_REG_P (REGNO (src)) && GP_REG_P (REGNO (dest)))
+        return false;
 
-      if ((REG_P (src) && REG_P (dest)
-          && (GP_REG_P (REGNO (src)) && GP_REG_P (REGNO (dest))))
-	     && ((GET_MODE (dest) == V4SImode)
-	         || (GET_MODE (dest) == V8HImode)
-	         || (GET_MODE (dest) == V16QImode)))
-      return false;
+      /* Check for LQ/SQ loads and stores.  */
+      if (GP_REG_P (REGNO (dest)) && MEM_P (src))
+        return false;
+      if (GP_REG_P (REGNO (src)) && MEM_P (dest))
+        return false;
     }
 
   /* Otherwise split all multiword moves.  */
