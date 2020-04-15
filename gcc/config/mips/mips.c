@@ -2671,6 +2671,8 @@ mips_lx_address_p (rtx addr, machine_mode mode)
     return true;
   if (MSA_SUPPORTED_MODE_P (mode))
     return true;
+  if (R5900_MMI_SUPPORTED_MODE_P (mode))
+    return true;
   return false;
 }
 
@@ -4776,18 +4778,15 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
-  /* Check for LQ/SQ loads and stores.  */
-  if (size == 16 && TARGET_MIPS5900)
+  /* Check if r5900 MMI moves need splitting.  */
+  if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest)))
     {
+      /* Check for LQ/SQ loads and stores.  */
       if (GP_REG_P (REGNO (dest)) && MEM_P (src))
         return false;
       if (GP_REG_P (REGNO (src)) && MEM_P (dest))
         return false;
-    }
 
-  /* The R5900 has special quad-word loads and stores, and 128-bit GPRs.  */
-  if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest)))
-    {
       /* GPR-to-GPR moves can be done in a single instruction.  */
       if (GP_REG_P (REGNO (src)) && GP_REG_P (REGNO (dest)))
         return false;
@@ -4809,6 +4808,8 @@ mips_split_move (rtx dest, rtx src, enum mips_split_type split_type, rtx insn_)
   gcc_checking_assert (mips_split_move_p (dest, src, split_type));
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     mips_split_128bit_move (dest, src);
+//  else if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest)))
+//    // TODO!
   else if (FP_REG_RTX_P (dest) || FP_REG_RTX_P (src))
     {
       if (!TARGET_64BIT && GET_MODE (dest) == DImode)
@@ -12869,28 +12870,24 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   size = GET_MODE_SIZE (mode);
   mclass = GET_MODE_CLASS (mode);
 
-  if (TARGET_MIPS5900)
-    {
-      if (regno == SA_REGNUM
-	  && size <= UNITS_PER_WORD)
-        return true;
+  /* r5900 supports 128-bit vector modes in GPR's  */
+  if (GP_REG_P (regno)
+      && R5900_MMI_SUPPORTED_MODE_P(mode))
+    return true;
 
-      /* Allow 128-bit vector modes for the R5900.  */
-      if (GP_REG_P (regno)
-	  && (mode == V4SImode
-	      || mode == V8HImode
-	      || mode == V16QImode))
-        return true;
+  /* r5900 accumulator also supports double sized vector modes */
+  if (ACC_REG_P (regno)
+      && (R5900_MMI_SUPPORTED_MODE_P(mode)
+	  || mode == V4DImode
+	  || mode == V8SImode
+	  || mode == V16HImode))
+    return true;
 
-      if (ACC_REG_P (regno)
-	  && (mode == V4SImode
-	      || mode == V8HImode
-	      || mode == V16QImode
-	      || mode == V4DImode
-	      || mode == V8SImode
-	      || mode == V16HImode))
-        return true;
-    }
+  /* r5900 shift amount register */
+  if (TARGET_MIPS5900
+      && regno == SA_REGNUM
+      && size <= UNITS_PER_WORD)
+    return true;
 
   if (GP_REG_P (regno) && mode != CCFmode && !MSA_SUPPORTED_MODE_P (mode))
     return ((regno - GP_REG_FIRST) & 1) == 0 || size <= UNITS_PER_WORD;
@@ -13055,25 +13052,20 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
   if (TARGET_MIPS5900)
     {
       if (GP_REG_P (regno)
-        && (mode == V4SImode
-	    || mode == V8HImode
-	    || mode == V16QImode))
+        && R5900_MMI_SUPPORTED_MODE_P(mode))
       return 1;
 
-      if (ACC_REG_P (regno))
-        {
-          if (mode == V4SImode
-	      || mode == V8HImode
-	      || mode == V16QImode)
+      if (ACC_REG_P (regno)
+        && R5900_MMI_SUPPORTED_MODE_P(mode))
           return 1;
 
-	  /* Double-sized vector modes for the hi/lo pair.  */
-          if (mode == V4DImode
-	      || mode == V8SImode
-	      || mode == V16HImode)
+      /* Double-sized vector modes for the hi/lo pair.  */
+      if (ACC_REG_P (regno)
+        && (mode == V4DImode
+	    || mode == V8SImode
+	    || mode == V16HImode))
           return 2;
-        }
-  }
+    }
 
   /* All other registers are word-sized.  */
   return (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
