@@ -5190,6 +5190,7 @@
 	(match_operand:TI 1 "move_operand" "d,i,m,dJ,*J,*d,*a"))]
   "TARGET_64BIT
    && !TARGET_MIPS16
+   && !TARGET_MIPS5900
    && (register_operand (operands[0], TImode)
        || reg_or_0_operand (operands[1], TImode))"
   { return mips_output_move (operands[0], operands[1]); }

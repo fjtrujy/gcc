@@ -2462,7 +2462,8 @@ enum reg_class
 #define R5900_MMI_SUPPORTED_MODE_P(MODE)		\
   (TARGET_MIPS5900					\
    && GET_MODE_SIZE (MODE) == MAX_UNITS_PER_WORD_R5900	\
-   && GET_MODE_CLASS (MODE) == MODE_VECTOR_INT)
+   && (GET_MODE_CLASS (MODE) == MODE_VECTOR_INT         \
+       || MODE == TImode))
 
 /* Temporary register that is used when restoring $gp after a call.  $4 and $5
    are used for returning complex double values in soft-float code, so $6 is the
