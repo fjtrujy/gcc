@@ -5150,19 +5150,7 @@ mips_output_move (rtx dest, rtx src)
       if (dest_code == REG)
 	{
 	  if (GP_REG_P (REGNO (dest)))
-	    {
-	      if (TARGET_MIPS5900
-	        && (mode == V4SImode
-		    || mode == V8HImode
-		    || mode == V16QImode))
-	        {
-		  return "por\t%0,%.,%1";
-	        }
-	      else
-	        {
 	    return "move\t%0,%z1";
-	        }
-	    }
 
 	  if (mips_mult_move_p (dest, src, SPLIT_IF_NECESSARY))
 	    {
