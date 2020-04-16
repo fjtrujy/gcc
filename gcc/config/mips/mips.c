@@ -4778,17 +4778,39 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
-  /* Check if r5900 MMI moves need splitting.  */
-  if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest)))
+  /* Check r5900 MMI destinations.  */
+  if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (dest))
+      && GP_REG_P (REGNO (dest)))
     {
-      /* Check for LQ/SQ loads and stores.  */
-      if (GP_REG_P (REGNO (dest)) && MEM_P (src))
+      /* Check for LQ loads.  */
+      if (MEM_P (src))
         return false;
-      if (GP_REG_P (REGNO (src)) && MEM_P (dest))
+      /* Check for LO register.  */
+      if (REGNO (src) == LO_REGNUM)
         return false;
-
+      /* Check for HI register.  */
+      if (REGNO (src) == HI_REGNUM)
+        return false;
       /* GPR-to-GPR moves can be done in a single instruction.  */
-      if (GP_REG_P (REGNO (src)) && GP_REG_P (REGNO (dest)))
+      if (GP_REG_P (REGNO (src)))
+        return false;
+    }
+
+  /* Check r5900 MMI sources.  */
+  if (R5900_MMI_SUPPORTED_MODE_P (GET_MODE (src))
+      && GP_REG_P (REGNO (src)))
+    {
+      /* Check for SQ loads.  */
+      if (MEM_P (dest))
+        return false;
+      /* Check for LO register.  */
+      if (REGNO (dest) == LO_REGNUM)
+        return false;
+      /* Check for HI register.  */
+      if (REGNO (dest) == HI_REGNUM)
+        return false;
+      /* GPR-to-GPR moves can be done in a single instruction.  */
+      if (GP_REG_P (REGNO (dest)))
         return false;
     }
 
