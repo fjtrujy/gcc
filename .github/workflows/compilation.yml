@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  repository_dispatch:
+    types: [run_build]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    # strategy:
+      # matrix:
+      #   target: [ee mips64r5900el-ps2-elf, iop mipsel-ps2-elf]
+      # ./build-gcc-stage1.sh  ${{ matrix.target }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: |
+        apk add build-base musl-dev bash texinfo bison flex mpc1-dev gmp-dev mpfr-dev
+
+    - name: Compile project
+      run: |
+        export PS2DEV=$PWD/ps2dev
+        export PATH=$PATH:$PS2DEV/bin:$PS2DEV/ee/bin:$PS2DEV/iop/bin:$PS2DEV/dvp/bin:$PS2SDK/bin
+        ./build-gcc-stage1.sh  ee mips64r5900el-ps2-elf
