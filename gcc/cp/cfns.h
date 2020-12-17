@@ -5,7 +5,7 @@ __inline
 #endif
 static unsigned int hash PARAMS ((const char *, unsigned int));
 #ifdef __GNUC__
-__inline
+static
 #endif
 const char * libc_name_p PARAMS ((const char *, unsigned int));
 /* maximum key range = 1020, duplicates = 1 */
@@ -70,7 +70,7 @@ hash (str, len)
 }
 
 #ifdef __GNUC__
-__inline
+static
 #endif
 const char *
 libc_name_p (str, len)
