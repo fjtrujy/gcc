@@ -2585,7 +2585,7 @@ mips-*-riscos[56789]*)		# Default MIPS RISC-OS 5.0.
 	;;
 mipsel-*-irx)
 	tm_file="mips/elfl.h libgloss.h"
-	tmake_file=mips/t-irx
+	tmake_file=mips/t-elf
 	target_cpu_default="MASK_GAS|MASK_SOFT_FLOAT"
 	fixincludes=Makefile.in
 	;;
