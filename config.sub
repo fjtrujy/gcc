@@ -594,6 +594,10 @@ case $basic_machine in
 		basic_machine=i386-unknown
 		os=-vsta
 		;;
+	iop)
+		basic_machine=mipsel-scei
+		os=-irx
+		;;
 	iris | iris4d)
 		basic_machine=mips-sgi
 		case $os in
@@ -1118,7 +1122,8 @@ case $os in
 	      | -storm-chaos* | -tops10* | -tenex* | -tops20* | -its* \
 	      | -os2* | -vos* | -palmos* | -uclinux* | -nucleus* \
 	      | -morphos* | -superux* | -rtmk* | -rtmk-nova* | -windiss* \
-	      | -powermax* | -dnix* | -microbsd*)
+	      | -powermax* | -dnix* | -microbsd* \
+	      | -irx* )
 	# Remember, each alternative MUST END IN *, to match a version number.
 		;;
 	-qnx*)
