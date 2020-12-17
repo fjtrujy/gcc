@@ -80,6 +80,7 @@ case $machine in
     i?86-*-mingw32* | \
     i?86-*-uwin* | \
     mips-sgi-irix5cross64 | \
+    mipsel-scei-irx | \
     powerpc-*-eabiaix* | \
     powerpc-*-eabisim* | \
     powerpc-*-eabi*    | \

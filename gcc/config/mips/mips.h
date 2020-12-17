@@ -472,6 +472,8 @@ extern void		sbss_section PARAMS ((void));
      N_("Trap on integer divide overflow")},				\
   {"no-check-range-division",-MASK_CHECK_RANGE_DIV,			\
      N_("Don't trap on integer divide overflow")},			\
+  {"iop",                 0,                                            \
+     N_("Output IOP's IRX file")},                                      \
   {"debug",		  MASK_DEBUG,					\
      NULL},								\
   {"debuga",		  MASK_DEBUG_A,					\
@@ -964,7 +966,7 @@ extern int mips_abi;
 #ifndef LINK_SPEC
 #define LINK_SPEC "\
 %(endian_spec) \
-%{G*} %{mips1} %{mips2} %{mips3} %{mips4} %{mips32} %{mips64} \
+%{G*} %{mips1} %{mips2} %{mips3} %{mips4} %{mips32} %{mips64} %{miop:-mmipsirx} \
 %{bestGnum} %{shared} %{non_shared}"
 #endif  /* LINK_SPEC defined */
 
@@ -1003,6 +1005,7 @@ extern int mips_abi;
 %{mfp64:%{msingle-float:%emay not use both -mfp64 and -msingle-float}} \
 %{mfp64:%{m4650:%emay not use both -mfp64 and -m4650}} \
 %{mint64|mlong64|mlong32:-mexplicit-type-size }\
+%{miop:-march=r3000 -mfp32 -mgp32 -fno-builtin} \
 %{mgp32: %{mfp64:%emay not use both -mgp32 and -mfp64} %{!mfp32: -mfp32}} \
 %{G*} %{EB:-meb} %{EL:-mel} %{EB:%{EL:%emay not use both -EB and -EL}} \
 %{pic-none:   -mno-half-pic} \
