@@ -3461,5 +3461,3 @@ struct GTY(())  machine_function {
   (TARGET_LOAD_STORE_PAIRS \
    && (TUNE_P5600 || TUNE_I6400 || TUNE_P6600) \
    && !TARGET_MICROMIPS && !TARGET_FIX_24K)
-
-#define LIB_SPEC "-lps2sdkc -lkernel -lc -lg -lm"
