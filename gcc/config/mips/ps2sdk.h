@@ -1,10 +1,8 @@
 #undef  LIB_SPEC
 #define LIB_SPEC "\
-    --start-group \
     %{g:-lg}\
     %{!g:-lc}\
-    -lps2sdkc -lkernel \
-    --end-group"
+    -lm -lps2sdkc -lkernel" 
 
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
