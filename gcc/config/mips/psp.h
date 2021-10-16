@@ -19,6 +19,18 @@ along with GCC; see the file COPYING.  If not, write to
 the Free Software Foundation, 59 Temple Place - Suite 330,
 Boston, MA 02111-1307, USA.  */
 
+#undef  LIB_SPEC
+#define LIB_SPEC " \
+    -lm \
+    --start-group \
+    -lpspdebug -lpspdisplay -lpspge -lpspctrl -lpspsdk \
+    %{g:-lg} %{!g:-lc} \
+    -lpsplibc \
+    %{g:-lg} %{!g:-lc} \
+    -lpspnet -lpspnet_inet -lpspnet_apctl -lpspnet_resolver \
+    -lpsputility -lpspuser -lpspkernel \
+    --end-group"
+
 /* Override the startfile spec to include crt0.o. */
 #undef STARTFILE_SPEC
 #define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
