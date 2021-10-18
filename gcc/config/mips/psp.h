@@ -23,13 +23,11 @@ Boston, MA 02111-1307, USA.  */
 #define LIB_SPEC " \
     -lm \
     --start-group \
-    -lpspdebug -lpspdisplay -lpspge -lpspctrl -lpspsdk \
-    %{g:-lg} %{!g:-lc} \
     -lpsplibc \
     %{g:-lg} %{!g:-lc} \
-    -lpspnet -lpspnet_inet -lpspnet_apctl -lpspnet_resolver \
-    -lpsputility -lpspuser -lpspkernel \
-    --end-group"
+    --end-group \
+    -lpsputility -lpspnet_inet -lpspnet_resolver \
+    -lpspuser -lpspkernel"
 
 /* Override the startfile spec to include crt0.o. */
 #undef STARTFILE_SPEC
