@@ -24,10 +24,12 @@ Boston, MA 02111-1307, USA.  */
     -lm \
     --start-group \
     -lcglue \
+    -lpthreadglue \
+    -lpthread \
     %{g:-lg} %{!g:-lc} \
     --end-group \
     -lpsputility -lpsprtc -lpspnet_inet -lpspnet_resolver \
-    -lpspuser -lpspkernel"
+    -lpspsdk -lpspuser -lpspkernel"
 
 /* Override the startfile spec to include crt0.o. */
 #undef STARTFILE_SPEC
