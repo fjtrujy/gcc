@@ -245,7 +245,7 @@
 })
 
 ;; pckev pattern with implicit type conversion.
-(define_insn "vec_pack_trunc_<mode>"
+(define_insn "vec_pack_trunc_<mode>_msa"
    [(set (match_operand:<VHMODE> 0 "register_operand" "=f")
 	 (vec_concat:<VHMODE>
 	   (truncate:<VTRUNCMODE>
@@ -279,7 +279,7 @@
   operands[2] = mips_msa_vec_parallel_const_half (V4SFmode, false/*high_p*/);
 })
 
-(define_expand "vec_unpacks_hi_<mode>"
+(define_expand "vec_unpacks_hi_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -288,7 +288,7 @@
   DONE;
 })
 
-(define_expand "vec_unpacks_lo_<mode>"
+(define_expand "vec_unpacks_lo_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -297,7 +297,7 @@
   DONE;
 })
 
-(define_expand "vec_unpacku_hi_<mode>"
+(define_expand "vec_unpacku_hi_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -306,7 +306,7 @@
   DONE;
 })
 
-(define_expand "vec_unpacku_lo_<mode>"
+(define_expand "vec_unpacku_lo_<mode>_msa"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
   "ISA_HAS_MSA"
@@ -387,7 +387,7 @@
   [(set_attr "move_type" "fmove")
    (set_attr "mode" "<UNITMODE>")])
 
-(define_expand "vec_set<mode>"
+(define_expand "vec_set<mode>_msa"
   [(match_operand:IMSA 0 "register_operand")
    (match_operand:<UNITMODE> 1 "reg_or_0_operand")
    (match_operand 2 "const_<indeximm>_operand")]
@@ -643,7 +643,7 @@
   [(set_attr "type" "simd_sld")
    (set_attr "mode" "<MODE>")])
 
-(define_expand "mov<mode>"
+(define_expand "mov<mode>_x"
   [(set (match_operand:MSA 0)
 	(match_operand:MSA 1))]
   "ISA_HAS_MSA"
@@ -709,7 +709,7 @@
 })
 
 ;; Integer operations
-(define_insn "add<mode>3"
+(define_insn "add<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(plus:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,f")
@@ -737,7 +737,7 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "sub<mode>3"
+(define_insn "sub<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(minus:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f")
@@ -750,7 +750,7 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "mul<mode>3"
+(define_insn "mul<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f")
 	(mult:IMSA (match_operand:IMSA 1 "register_operand" "f")
 		   (match_operand:IMSA 2 "register_operand" "f")))]
@@ -815,7 +815,7 @@
   [(set_attr "type" "simd_div")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "xor<mode>3"
+(define_insn "xor<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(xor:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,f")
@@ -828,7 +828,7 @@
   [(set_attr "type" "simd_logic,simd_bit,simd_logic")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "ior<mode>3"
+(define_insn "ior<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(ior:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,f")
@@ -841,7 +841,7 @@
   [(set_attr "type" "simd_logic,simd_bit,simd_logic")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "and<mode>3"
+(define_insn "and<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(and:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,f")
@@ -868,7 +868,7 @@
   [(set_attr "type" "simd_logic,simd_bit,simd_logic")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "one_cmpl<mode>2"
+(define_insn "one_cmpl<mode>2_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f")
 	(not:IMSA (match_operand:IMSA 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
@@ -876,7 +876,7 @@
   [(set_attr "type" "simd_logic")
    (set_attr "mode" "TI")])
 
-(define_insn "vlshr<mode>3"
+(define_insn "vlshr<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(lshiftrt:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f")
@@ -891,7 +891,7 @@
   [(set_attr "type" "simd_shift")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "vashr<mode>3"
+(define_insn "vashr<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(ashiftrt:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f")
@@ -906,7 +906,7 @@
   [(set_attr "type" "simd_shift")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "vashl<mode>3"
+(define_insn "vashl<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(ashift:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f")
@@ -1006,7 +1006,7 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "ssadd<mode>3"
+(define_insn "ssadd<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f")
 	(ss_plus:IMSA (match_operand:IMSA 1 "register_operand" "f")
 		      (match_operand:IMSA 2 "register_operand" "f")))]
@@ -1015,7 +1015,7 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "usadd<mode>3"
+(define_insn "usadd<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f")
 	(us_plus:IMSA (match_operand:IMSA 1 "register_operand" "f")
 		      (match_operand:IMSA 2 "register_operand" "f")))]
@@ -2232,7 +2232,7 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "smax<mode>3"
+(define_insn "smax<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(smax:IMSA (match_operand:IMSA 1 "register_operand" "f,f")
 		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5")))]
@@ -2266,7 +2266,7 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "smin<mode>3"
+(define_insn "smin<mode>3_msa"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(smin:IMSA (match_operand:IMSA 1 "register_operand" "f,f")
 		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5")))]
