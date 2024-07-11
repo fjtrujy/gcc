@@ -371,6 +371,10 @@ case $1 in
 				basic_machine=i386-mach
 				basic_os=mach
 				;;
+			iop)
+				basic_machine=mipsel-scei
+				os=irx
+				;;				
 			isi68 | isi)
 				basic_machine=m68k-isi
 				basic_os=sysv
