@@ -125,6 +125,12 @@
 ;; Only floating-point modes.
 (define_mode_iterator FMSA     [V2DF V4SF])
 
+;; Floating-point modes excluding V4SF (which may be handled by VU0).
+(define_mode_iterator FMSA_NO_V4SF [V2DF])
+
+;; MSA modes excluding V4SF (which is handled in mips-vu0.md for VU0 compatibility).
+(define_mode_iterator MSA_NO_V4SF [V2DF V2DI V4SI V8HI V16QI])
+
 ;; Only used for reduce_plus_scal: V4SI, V8HI, V16QI have HADD.
 (define_mode_iterator MSA_NO_HADD [V2DF V4SF V2DI])
 
@@ -656,9 +662,10 @@
   [(set_attr "type" "simd_sld")
    (set_attr "mode" "<MODE>")])
 
+;; V4SF mov is handled in mips-vu0.md for VU0 compatibility
 (define_expand "mov<mode>"
-  [(set (match_operand:MSA 0)
-	(match_operand:MSA 1))]
+  [(set (match_operand:MSA_NO_V4SF 0)
+	(match_operand:MSA_NO_V4SF 1))]
   "ISA_HAS_MSA"
 {
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
@@ -666,8 +673,8 @@
 })
 
 (define_expand "movmisalign<mode>"
-  [(set (match_operand:MSA 0)
-	(match_operand:MSA 1))]
+  [(set (match_operand:MSA_NO_V4SF 0)
+	(match_operand:MSA_NO_V4SF 1))]
   "ISA_HAS_MSA"
 {
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
@@ -676,17 +683,18 @@
 
 ;; 128-bit MSA modes can only exist in MSA registers or memory.  An exception
 ;; is allowing MSA modes for GP registers for arguments and return values.
+;; V4SF is handled in mips-vu0.md for VU0 compatibility.
 (define_insn "mov<mode>_msa"
-  [(set (match_operand:MSA 0 "nonimmediate_operand" "=f,f,R,*d,*f")
-	(match_operand:MSA 1 "move_operand" "fYGYI,R,f,*f,*d"))]
+  [(set (match_operand:MSA_NO_V4SF 0 "nonimmediate_operand" "=f,f,R,*d,*f")
+	(match_operand:MSA_NO_V4SF 1 "move_operand" "fYGYI,R,f,*f,*d"))]
   "ISA_HAS_MSA"
   { return mips_output_move (operands[0], operands[1]); }
   [(set_attr "type" "simd_move,simd_load,simd_store,simd_copy,simd_insert")
    (set_attr "mode" "<MODE>")])
 
 (define_split
-  [(set (match_operand:MSA 0 "nonimmediate_operand")
-	(match_operand:MSA 1 "move_operand"))]
+  [(set (match_operand:MSA_NO_V4SF 0 "nonimmediate_operand")
+	(match_operand:MSA_NO_V4SF 1 "move_operand"))]
   "reload_completed && ISA_HAS_MSA
    && mips_split_move_insn_p (operands[0], operands[1], insn)"
   [(const_int 0)]
@@ -934,29 +942,29 @@
   [(set_attr "type" "simd_shift")
    (set_attr "mode" "<MODE>")])
 
-;; Floating-point operations
+;; Floating-point operations (V2DF only - V4SF handled separately for VU0 compatibility)
 (define_insn "add<mode>3"
-  [(set (match_operand:FMSA 0 "register_operand" "=f")
-	(plus:FMSA (match_operand:FMSA 1 "register_operand" "f")
-		   (match_operand:FMSA 2 "register_operand" "f")))]
+  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
+	(plus:FMSA_NO_V4SF (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")
+		   (match_operand:FMSA_NO_V4SF 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "fadd.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fadd")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "sub<mode>3"
-  [(set (match_operand:FMSA 0 "register_operand" "=f")
-	(minus:FMSA (match_operand:FMSA 1 "register_operand" "f")
-		    (match_operand:FMSA 2 "register_operand" "f")))]
+  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
+	(minus:FMSA_NO_V4SF (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")
+		    (match_operand:FMSA_NO_V4SF 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "fsub.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fadd")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "mul<mode>3"
-  [(set (match_operand:FMSA 0 "register_operand" "=f")
-	(mult:FMSA (match_operand:FMSA 1 "register_operand" "f")
-		   (match_operand:FMSA 2 "register_operand" "f")))]
+  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
+	(mult:FMSA_NO_V4SF (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")
+		   (match_operand:FMSA_NO_V4SF 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "fmul.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fmul")

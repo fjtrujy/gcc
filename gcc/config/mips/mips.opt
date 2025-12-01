@@ -190,6 +190,10 @@ mfix-r5900
 Target Mask(FIX_R5900)
 Work around the R5900 short loop erratum.
 
+mvu0
+Target Mask(VU0)
+Use VU0 vector unit for SIMD operations (R5900 only).
+
 mfix-rm7000
 Target Var(TARGET_FIX_RM7000)
 Work around certain RM7000 errata.

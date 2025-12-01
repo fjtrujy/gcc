@@ -304,6 +304,8 @@ struct mips_cpu_info {
 #define TARGET_MIPS5400             (mips_arch == PROCESSOR_R5400)
 #define TARGET_MIPS5500             (mips_arch == PROCESSOR_R5500)
 #define TARGET_MIPS5900             (mips_arch == PROCESSOR_R5900)
+#define TARGET_VU0		    ((target_flags & MASK_VU0) != 0)
+#define ISA_HAS_VU0		    (TARGET_MIPS5900 && TARGET_VU0)
 #define TARGET_MIPS7000             (mips_arch == PROCESSOR_R7000)
 #define TARGET_MIPS8000             (mips_arch == PROCESSOR_R8000)
 #define TARGET_MIPS9000             (mips_arch == PROCESSOR_R9000)
