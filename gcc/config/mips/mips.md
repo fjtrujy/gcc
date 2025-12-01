@@ -8107,6 +8107,9 @@
 ; The MIPS MSA Instructions.
 (include "mips-msa.md")
 
+; PS2 VU0 vector unit instructions.
+(include "mips-vu0.md")
+
 (define_c_enum "unspec" [
   UNSPEC_ADDRESS_FIRST
 ])

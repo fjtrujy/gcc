@@ -13354,6 +13354,10 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
 	}
     }
 
+  /* VU0 COP2 registers can hold V4SF (128-bit vectors).  */
+  if (COP2_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
+    return true;
+
   if (ALL_COP_REG_P (regno))
     return mclass == MODE_INT && size <= UNITS_PER_WORD;
 
@@ -13437,6 +13441,10 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
       return (GET_MODE_SIZE (mode) + UNITS_PER_FPREG - 1) / UNITS_PER_FPREG;
     }
 
+  /* VU0 COP2 registers are 128-bit wide and can hold V4SF in one register.  */
+  if (COP2_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
+    return 1;
+
   /* All other registers are word-sized.  */
   return (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 }
@@ -13458,6 +13466,14 @@ mips_class_max_nregs (enum reg_class rclass, machine_mode mode)
 	size = MIN (size, 4);
 
       left &= ~reg_class_contents[ST_REGS];
+    }
+  /* VU0 COP2 registers are 128-bit wide.  */
+  if (hard_reg_set_intersect_p (left, reg_class_contents[(int) COP2_REGS]))
+    {
+      if (ISA_HAS_VU0 && mode == E_V4SFmode)
+	size = MIN (size, 16);
+
+      left &= ~reg_class_contents[COP2_REGS];
     }
   if (hard_reg_set_intersect_p (left, reg_class_contents[(int) FP_REGS]))
     {
@@ -13828,6 +13844,12 @@ mips_secondary_reload_class (enum reg_class rclass,
   if (FP_REG_P (regno))
     return reg_class_subset_p (rclass, GR_REGS) ? NO_REGS : GR_REGS;
 
+  /* VU0 COP2 registers can load/store V4SF directly from/to memory
+     using lqc2/sqc2.  */
+  if (reg_class_subset_p (rclass, COP2_REGS) && ISA_HAS_VU0
+      && mode == E_V4SFmode && MEM_P (x))
+    return NO_REGS;
+
   return NO_REGS;
 }
 
@@ -13876,6 +13898,9 @@ mips_vector_mode_supported_p (machine_mode mode)
     case E_V8QImode:
       return TARGET_LOONGSON_MMI;
 
+    case E_V4SFmode:
+      return ISA_HAS_VU0 || MSA_SUPPORTED_MODE_P (mode);
+
     default:
       return MSA_SUPPORTED_MODE_P (mode);
     }
@@ -13898,6 +13923,10 @@ mips_scalar_mode_supported_p (scalar_mode mode)
 static machine_mode
 mips_preferred_simd_mode (scalar_mode mode)
 {
+  /* VU0 provides 4-wide SIMD for single-precision floats.  */
+  if (ISA_HAS_VU0 && mode == SFmode)
+    return V4SFmode;
+
   if (TARGET_PAIRED_SINGLE_FLOAT
       && mode == SFmode)
     return V2SFmode;
@@ -13933,7 +13962,9 @@ mips_preferred_simd_mode (scalar_mode mode)
 static unsigned int
 mips_autovectorize_vector_modes (vector_modes *modes, bool)
 {
-  if (ISA_HAS_MSA)
+  if (ISA_HAS_VU0)
+    modes->safe_push (V4SFmode);
+  else if (ISA_HAS_MSA)
     modes->safe_push (V16QImode);
   return 0;
 }
@@ -20567,6 +20598,10 @@ mips_option_override (void)
 	  error("unsupported combination: %s",
 		  "-march=r5900 -mips16");
 
+  /* VU0 is only available on the R5900.  */
+  if (TARGET_VU0 && !TARGET_MIPS5900)
+    error ("%<-mvu0%> requires %<-march=r5900%>");
+
   /* If a -mlong* option was given, check that it matches the ABI,
      otherwise infer the -mlong* setting from the other options.  */
   if ((target_flags_explicit & MASK_LONG64) != 0)
@@ -21027,6 +21062,19 @@ mips_swap_registers (unsigned int i)
 static void
 mips_conditional_register_usage (void)
 {
+  /* Enable VU0 COP2 registers ($vf1-$vf31) for allocation when VU0 is enabled.
+     $vf0 is kept fixed since it always reads as zero in VU0.  */
+  if (ISA_HAS_VU0)
+    {
+      int regno;
+      /* Enable $vf1-$vf31 (COP2_REG_FIRST+1 to COP2_REG_LAST) for allocation.
+	 Keep $vf0 fixed since it always reads as zero.  */
+      for (regno = COP2_REG_FIRST + 1; regno <= COP2_REG_LAST; regno++)
+	{
+	  fixed_regs[regno] = 0;
+	  call_used_regs[regno] = 1;
+	}
+    }
 
   if (ISA_HAS_DSP)
     {
