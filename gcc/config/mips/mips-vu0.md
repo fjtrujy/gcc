@@ -214,6 +214,24 @@
    (set_attr "mode" "V4SF")])
 
 ;; -------------------------------------------------------------------------
+;; VU0 Fused Multiply-Add (for autovectorization)
+;; Standard FMA pattern using VU0 accumulator: dest = (a * b) + c
+;; Uses vmulaw to load c into ACC (c * $vf0.w = c * 1.0), then vmadd.
+;; Note: $vf0.w is always 1.0 on VU0.
+;; -------------------------------------------------------------------------
+
+(define_insn "*fmav4sf4_vu0"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (fma:V4SF (match_operand:V4SF 1 "register_operand" "C")
+                  (match_operand:V4SF 2 "register_operand" "C")
+                  (match_operand:V4SF 3 "register_operand" "C")))]
+  "ISA_HAS_VU0"
+  "vmulaw.xyzw\tACC,%3,$vf0\;vmadd.xyzw\t%0,%1,%2"
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "8")])
+
+;; -------------------------------------------------------------------------
 ;; VU0 Broadcast Operations (scalar * vector)
 ;; These multiply a vector by a broadcast of one component from another vector.
 ;; Essential for matrix multiplication: row * column[i]
