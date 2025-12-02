@@ -265,7 +265,14 @@ enum mips_builtin_type {
   MIPS_BUILTIN_MSA_TEST_BRANCH,
 
   /* For generating bposge32 branch instructions in MIPS32 DSP ASE.  */
-  MIPS_BUILTIN_BPOSGE32
+  MIPS_BUILTIN_BPOSGE32,
+
+  /* VU0 accumulator operations.  ACC_SET sets the accumulator (operand 0
+     is ACC, arguments map to operands 1+).  ACC_READ reads from ACC and
+     returns a result (operand 0 is result, operand 1 is ACC, arguments
+     map to operands 2+).  */
+  MIPS_BUILTIN_VU0_ACC_SET,
+  MIPS_BUILTIN_VU0_ACC_READ
 };
 
 /* Invoke MACRO (COND) for each C.cond.fmt condition.  */
@@ -602,7 +609,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   COP3_REGS,	COP3_REGS,	COP3_REGS,	COP3_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
-  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS
+  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
+  VU0_ACC_REGS
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -13412,6 +13420,10 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   if (regno == GOT_VERSION_REGNUM)
     return mode == SImode;
 
+  /* VU0 accumulator can hold V4SF (128-bit vectors).  */
+  if (VU0_ACC_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
+    return true;
+
   return false;
 }
 
@@ -13493,6 +13505,10 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
   if (COP2_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
     return 1;
 
+  /* VU0 accumulator is 128-bit wide and can hold V4SF in one register.  */
+  if (VU0_ACC_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
+    return 1;
+
   /* R5900 GP registers are 128-bit wide and can hold TImode in one register.  */
   if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
     return 1;
@@ -13526,6 +13542,14 @@ mips_class_max_nregs (enum reg_class rclass, machine_mode mode)
 	size = MIN (size, 16);
 
       left &= ~reg_class_contents[COP2_REGS];
+    }
+  /* VU0 accumulator is 128-bit wide.  */
+  if (hard_reg_set_intersect_p (left, reg_class_contents[(int) VU0_ACC_REGS]))
+    {
+      if (ISA_HAS_VU0 && mode == E_V4SFmode)
+	size = MIN (size, 16);
+
+      left &= ~reg_class_contents[VU0_ACC_REGS];
     }
   if (hard_reg_set_intersect_p (left, reg_class_contents[(int) FP_REGS]))
     {
