@@ -262,8 +262,19 @@
 	(const_string "no")))
 
 ;; True if the main data type is four times of the size of a word.
+;; R5900 GP registers are 128-bit wide, so TImode doesn't need splitting on R5900.
+;; For TImode: qword_mode is YES only for non-64bit, non-R5900 targets.
+;; For TFmode: qword_mode is YES only for non-64bit targets (FP is separate).
 (define_attr "qword_mode" "no,yes"
-  (cond [(and (eq_attr "mode" "TI,TF")
+  (cond [(and (eq_attr "mode" "TI")
+	      (not (match_test "TARGET_64BIT"))
+	      (not (match_test "TARGET_MIPS5900")))
+	 (const_string "yes")
+	 ;; R5900 TI mode never needs splitting regardless of TARGET_64BIT
+	 (and (eq_attr "mode" "TI")
+	      (match_test "TARGET_MIPS5900"))
+	 (const_string "no")
+	 (and (eq_attr "mode" "TF")
 	      (not (match_test "TARGET_64BIT")))
 	 (const_string "yes")]
 	(const_string "no")))
@@ -5341,7 +5352,7 @@
 (define_expand "movti"
   [(set (match_operand:TI 0)
 	(match_operand:TI 1))]
-  "TARGET_64BIT"
+  "TARGET_64BIT || TARGET_MIPS5900"
 {
   if (mips_legitimize_move (TImode, operands[0], operands[1]))
     DONE;
@@ -5352,6 +5363,7 @@
 	(match_operand:TI 1 "move_operand" "d,i,m,dJ,*J,*d,*a"))]
   "TARGET_64BIT
    && !TARGET_MIPS16
+   && !TARGET_MIPS5900
    && (register_operand (operands[0], TImode)
        || reg_or_0_operand (operands[1], TImode))"
   { return mips_output_move (operands[0], operands[1]); }
@@ -5370,6 +5382,22 @@
        || register_operand (operands[1], TImode))"
   "#"
   [(set_attr "move_type" "move,move,move,const,constN,load,store,mflo")
+   (set_attr "mode" "TI")])
+
+;; R5900 TImode (128-bit integer) move using lq/sq
+;; R5900 GP registers are 128-bit wide, so no splitting is needed.
+;; Alternatives:
+;;   0: d,d  -> por (128-bit register copy via MMI)
+;;   1: d,m  -> lq (128-bit load from memory)
+;;   2: m,d  -> sq (128-bit store to memory)
+(define_insn "*movti_r5900"
+  [(set (match_operand:TI 0 "nonimmediate_operand" "=d,d,m")
+	(match_operand:TI 1 "move_operand" "d,m,d"))]
+  "TARGET_MIPS5900
+   && (register_operand (operands[0], TImode)
+       || register_operand (operands[1], TImode))"
+  { return mips_output_move (operands[0], operands[1]); }
+  [(set_attr "type" "move,load,store")
    (set_attr "mode" "TI")])
 
 ;; 128-bit floating point moves
