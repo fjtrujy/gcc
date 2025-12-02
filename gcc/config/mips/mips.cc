@@ -15806,6 +15806,7 @@ AVAIL_NON_MIPS16 (dspr2_32, !TARGET_64BIT && TARGET_DSPR2)
 AVAIL_NON_MIPS16 (loongson, TARGET_LOONGSON_MMI)
 AVAIL_MIPS16E2_OR_NON_MIPS16 (cache, TARGET_CACHE_BUILTIN)
 AVAIL_NON_MIPS16 (msa, TARGET_MSA)
+AVAIL_NON_MIPS16 (vu0, ISA_HAS_VU0)
 AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 
 /* Construct a mips_builtin_description from the given arguments.
@@ -15979,6 +15980,22 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     { CODE_FOR_mipsr6_ ## INSN, MIPS_FP_COND_f,				\
     "__builtin_mipsr6_" #INSN,  MIPS_BUILTIN_DIRECT,			\
     FUNCTION_TYPE, mips_builtin_avail_r6, true }
+
+/* Define a VU0 MIPS_BUILTIN_DIRECT pure function __builtin_vu0_<INSN>
+   for instruction CODE_FOR_vu0_<INSN>.  FUNCTION_TYPE is a builtin_description
+   field.  */
+#define VU0_BUILTIN_PURE(INSN, FUNCTION_TYPE)				\
+    { CODE_FOR_vu0_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_vu0_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_vu0, true }
+
+/* Define a VU0 MIPS_BUILTIN_DIRECT_NO_TARGET function __builtin_vu0_<INSN>
+   for instruction CODE_FOR_vu0_<INSN>.  FUNCTION_TYPE is a builtin_description
+   field.  These are for accumulator operations with no return value.  */
+#define VU0_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_vu0_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_vu0_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_vu0, false }
 
 #define CODE_FOR_mips_sqrt_ps CODE_FOR_sqrtv2sf2
 #define CODE_FOR_mips_addq_ph CODE_FOR_addv2hi3
@@ -17053,6 +17070,36 @@ static const struct mips_builtin_description mips_builtins[] = {
   MIPSR6_BUILTIN_PURE (max_a_d, MIPS_DF_FTYPE_DF_DF),
   MIPSR6_BUILTIN_PURE (class_s, MIPS_SF_FTYPE_SF),
   MIPSR6_BUILTIN_PURE (class_d, MIPS_DF_FTYPE_DF),
+
+  /* Built-in functions for VU0 (PS2 R5900).  */
+  /* Broadcast multiply operations: dest = src1 * src2.x/y/z/w  */
+  VU0_BUILTIN_PURE (vmulx, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmuly, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmulz, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmulw, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Accumulator multiply: ACC = src1 * src2  */
+  VU0_NO_TARGET_BUILTIN (vmula, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmadda, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Accumulator read: dest = ACC + src1 * src2  */
+  VU0_BUILTIN_PURE (vmadd, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Broadcast multiply to accumulator: ACC = src1 * src2.x/y/z/w  */
+  VU0_NO_TARGET_BUILTIN (vmulax, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmulay, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmulaz, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmulaw, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Broadcast multiply-add to accumulator: ACC = ACC + src1 * src2.x/y/z/w  */
+  VU0_NO_TARGET_BUILTIN (vmaddax, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmadday, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmaddaz, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmaddaw, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Broadcast multiply-add with result: dest = ACC + src1 * src2.x/y/z/w  */
+  VU0_BUILTIN_PURE (vmaddx, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmaddy, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmaddz, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmaddw, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Outer product (cross product): ACC = src1 x src2  */
+  VU0_NO_TARGET_BUILTIN (vopmula, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vopmsub, MIPS_V4SF_FTYPE_V4SF_V4SF),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
