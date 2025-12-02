@@ -5005,6 +5005,10 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
+  /* R5900 TImode moves don't need splitting - GP registers are 128-bit.  */
+  if (TARGET_MIPS5900 && GET_MODE (dest) == E_TImode)
+    return false;
+
   /* Otherwise split all multiword moves.  */
   return size > UNITS_PER_WORD;
 }
@@ -5353,6 +5357,20 @@ mips_output_move (rtx dest, rtx src)
     {
       gcc_assert (mips_const_vector_same_int_p (src, mode, -512, 511));
       return "ldi.%v0\t%w0,%E1";
+    }
+
+  /* R5900 TImode (128-bit integer) moves using lq/sq/por.  */
+  if (TARGET_MIPS5900 && mode == E_TImode)
+    {
+      if (dest_code == REG && GP_REG_P (REGNO (dest)))
+	{
+	  if (src_code == REG && GP_REG_P (REGNO (src)))
+	    return "por\t%0,$0,%1";
+	  if (src_code == MEM)
+	    return "lq\t%0,%1";
+	}
+      if (dest_code == MEM && src_code == REG && GP_REG_P (REGNO (src)))
+	return "sq\t%1,%0";
     }
 
   if ((src_code == REG && GP_REG_P (REGNO (src)))
@@ -6120,6 +6138,10 @@ mips_get_arg_info (struct mips_arg_info *info, const CUMULATIVE_ARGS *cum,
   /* Work out the size of the argument.  */
   num_bytes = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode);
   num_words = (num_bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+
+  /* R5900 with n32 ABI: TImode fits in a single 128-bit GP register.  */
+  if (TARGET_MIPS5900 && TARGET_NEWABI && mode == E_TImode)
+    num_words = 1;
 
   /* Decide whether it should go in a floating-point register, assuming
      one is free.  Later code checks for availability.
@@ -6950,6 +6972,10 @@ mips_function_value_regno_p (const unsigned int regno)
 static bool
 mips_return_in_memory (const_tree type, const_tree fndecl ATTRIBUTE_UNUSED)
 {
+  /* R5900 with n32 ABI: TImode fits in a single 128-bit GP register.  */
+  if (TARGET_MIPS5900 && TARGET_NEWABI && TYPE_MODE (type) == E_TImode)
+    return false;
+
   if (TARGET_OLDABI)
     /* Ensure that any floating point vector types are returned via memory
        even if they are supported through a vector mode with some ASEs.  */
@@ -13285,6 +13311,10 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   if (FP_REG_P (regno) && MSA_SUPPORTED_MODE_P (mode))
     return true;
 
+  /* R5900 GP registers are 128-bit wide and can hold TImode natively.  */
+  if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
+    return true;
+
   if (FP_REG_P (regno)
       && (((regno - FP_REG_FIRST) % MAX_FPRS_PER_FMT) == 0
 	  || (MIN_FPRS_PER_FMT == 1 && size <= UNITS_PER_FPREG)))
@@ -13443,6 +13473,10 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
 
   /* VU0 COP2 registers are 128-bit wide and can hold V4SF in one register.  */
   if (COP2_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
+    return 1;
+
+  /* R5900 GP registers are 128-bit wide and can hold TImode in one register.  */
+  if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
     return 1;
 
   /* All other registers are word-sized.  */
