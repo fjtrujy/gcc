@@ -303,6 +303,7 @@ foreach option {
     loongson-ext
     loongson-ext2
     mips16e2
+    vu0
 } {
     lappend mips_option_groups $option "-m(no-|)$option"
 }
