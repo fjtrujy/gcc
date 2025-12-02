@@ -258,6 +258,10 @@
 	    (and (not (match_operand 0 "stack_operand"))
 		 (not (match_test "CONSTANT_P (XEXP (op, 0))"))))))
 
+(define_register_constraint "Ya" "ISA_HAS_VU0 ? VU0_ACC_REGS : NO_REGS"
+  "@internal
+   VU0 accumulator register (ACC).")
+
 (define_constraint "YG"
   "@internal
    A vector zero."

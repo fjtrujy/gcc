@@ -1824,7 +1824,7 @@ FP_ASM_SPEC "\
    - 6 DSP accumulator registers (3 hi-lo pairs) for MIPS DSP ASE
    - 6 DSP control registers  */
 
-#define FIRST_PSEUDO_REGISTER 188
+#define FIRST_PSEUDO_REGISTER 189
 
 /* By default, fix the kernel registers ($26 and $27), the global
    pointer ($28) and the stack pointer ($29).  This can change
@@ -1853,7 +1853,9 @@ FP_ASM_SPEC "\
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,			\
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,			\
   /* 6 DSP accumulator registers & 6 control registers */		\
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1					\
+  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,					\
+  /* VU0 accumulator register */					\
+  1									\
 }
 
 
@@ -1887,7 +1889,9 @@ FP_ASM_SPEC "\
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			\
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			\
   /* 6 DSP accumulator registers & 6 control registers */		\
-  1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0					\
+  1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,					\
+  /* VU0 accumulator register */					\
+  1									\
 }
 
 /* Internal macros to classify a register number as to whether it's a
@@ -1950,6 +1954,11 @@ FP_ASM_SPEC "\
 #define DSP_ACC_REG_LAST 181
 #define DSP_ACC_REG_NUM (DSP_ACC_REG_LAST - DSP_ACC_REG_FIRST + 1)
 
+/* VU0 Accumulator register for R5900.  */
+#define VU0_ACC_REG_FIRST 188
+#define VU0_ACC_REG_LAST 188
+#define VU0_ACC_REG_NUM 1
+
 #define AT_REGNUM	(GP_REG_FIRST + 1)
 #define HI_REGNUM	(TARGET_BIG_ENDIAN ? MD_REG_FIRST : MD_REG_FIRST + 1)
 #define LO_REGNUM	(TARGET_BIG_ENDIAN ? MD_REG_FIRST + 1 : MD_REG_FIRST)
@@ -2001,6 +2010,9 @@ FP_ASM_SPEC "\
 /* Test if REGNO is hi, lo, or one of the 6 new DSP accumulators.  */
 #define ACC_REG_P(REGNO) \
   (MD_REG_P (REGNO) || DSP_ACC_REG_P (REGNO))
+/* Test if REGNO is the VU0 accumulator register.  */
+#define VU0_ACC_REG_P(REGNO) \
+  ((unsigned int) ((int) (REGNO) - VU0_ACC_REG_FIRST) < VU0_ACC_REG_NUM)
 #define MSA_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - MSA_REG_FIRST) < MSA_REG_NUM)
 
@@ -2147,6 +2159,7 @@ enum reg_class
   ST_REGS,			/* status registers (fp status) */
   DSP_ACC_REGS,			/* DSP accumulator registers */
   ACC_REGS,			/* Hi/Lo and DSP accumulator registers */
+  VU0_ACC_REGS,			/* VU0 accumulator register */
   FRAME_REGS,			/* $arg and $frame */
   GR_AND_MD0_REGS,		/* union classes */
   GR_AND_MD1_REGS,
@@ -2188,6 +2201,7 @@ enum reg_class
   "ST_REGS",								\
   "DSP_ACC_REGS",							\
   "ACC_REGS",								\
+  "VU0_ACC_REGS",							\
   "FRAME_REGS",								\
   "GR_AND_MD0_REGS",							\
   "GR_AND_MD1_REGS",							\
@@ -2230,12 +2244,13 @@ enum reg_class
   { 0x00000000, 0x00000000, 0x000007f8, 0x00000000, 0x00000000, 0x00000000 },	/* ST_REGS */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x003f0000 },	/* DSP_ACC_REGS */	\
   { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x003f0000 },	/* ACC_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000 },	/* VU0_ACC_REGS */	\
   { 0x00000000, 0x00000000, 0x00006000, 0x00000000, 0x00000000, 0x00000000 },	/* FRAME_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD0_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD1_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x003f0000 },	/* GR_AND_ACC_REGS */	\
-  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0x0fffffff }	/* ALL_REGS */		\
+  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0x1fffffff }	/* ALL_REGS */		\
 }
 
 
@@ -2809,7 +2824,8 @@ typedef struct mips_args {
   "$c3r16","$c3r17","$c3r18","$c3r19","$c3r20","$c3r21","$c3r22","$c3r23", \
   "$c3r24","$c3r25","$c3r26","$c3r27","$c3r28","$c3r29","$c3r30","$c3r31", \
   "$ac1hi","$ac1lo","$ac2hi","$ac2lo","$ac3hi","$ac3lo","$dsp_po","$dsp_sc", \
-  "$dsp_ca","$dsp_ou","$dsp_cc","$dsp_ef" }
+  "$dsp_ca","$dsp_ou","$dsp_cc","$dsp_ef",				   \
+  "$vu0acc" }
 
 /* List the "software" names for each register.  Also list the numerical
    names for $fp and $sp.  */
