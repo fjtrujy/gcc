@@ -74,11 +74,12 @@
 ;;   2: m,C  -> sqc2 (COP2 to memory)
 ;;   3: C,d  -> qmtc2 (GP to COP2)
 ;;   4: d,C  -> qmfc2 (COP2 to GP)
-;;   5: d,m  -> lq (memory to GP)
-;;   6: m,d  -> sq (GP to memory)
+;;   5: d,d  -> por (GP to GP, 128-bit register copy)
+;;   6: d,m  -> lq (memory to GP)
+;;   7: m,d  -> sq (GP to memory)
 (define_insn "*movv4sf_vu0"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,m,C,d,d,m")
-        (match_operand:V4SF 1 "move_operand"          "C,m,C,d,C,m,d"))]
+  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,m,C,d,d,d,m")
+        (match_operand:V4SF 1 "move_operand"          "C,m,C,d,C,d,m,d"))]
   "ISA_HAS_VU0"
   "@
    vmove.xyzw\t%0,%1
@@ -86,9 +87,10 @@
    sqc2\t%1,%0
    qmtc2\t%1,%0
    qmfc2\t%0,%1
+   por\t%0,$0,%1
    lq\t%0,%1
    sq\t%1,%0"
-  [(set_attr "type" "fmove,fpload,fpstore,mtc,mfc,load,store")
+  [(set_attr "type" "fmove,fpload,fpstore,mtc,mfc,move,load,store")
    (set_attr "mode" "V4SF")])
 
 ;; MSA: V4SF move using FP registers
