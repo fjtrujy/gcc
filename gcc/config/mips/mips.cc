@@ -3905,6 +3905,24 @@ mips_legitimize_move (machine_mode mode, rtx dest, rtx src)
       return true;
     }
 
+  /* R5900 TImode: force constants to memory since there are no instructions
+     to load 128-bit immediates directly.  The *movti_r5900 pattern only
+     supports register and memory operands.  For zero, we can skip this since
+     the movti pattern handles it (qmtc2 $0).  Also skip for MD registers since
+     they don't use TImode on R5900.  */
+  if (TARGET_MIPS5900 && mode == E_TImode && CONSTANT_P (src)
+      && !const_0_operand (src, mode)
+      && !(REG_P (dest) && MD_REG_P (REGNO (dest))))
+    {
+      src = force_const_mem (mode, src);
+      if (src)
+	{
+	  mips_split_symbol (dest, XEXP (src, 0), mode, &XEXP (src, 0));
+	  mips_emit_move (dest, src);
+	  return true;
+	}
+    }
+
   /* We need to deal with constants that would be legitimate
      immediate_operands but aren't legitimate move_operands.  */
   if (CONSTANT_P (src) && !move_operand (src, mode))

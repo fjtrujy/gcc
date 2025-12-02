@@ -979,15 +979,35 @@
   [(set_attr "type" "simd_fdiv")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "fma<mode>4"
-  [(set (match_operand:FMSA 0 "register_operand" "=f")
-	(fma:FMSA (match_operand:FMSA 1 "register_operand" "f")
-		  (match_operand:FMSA 2 "register_operand" "f")
-		  (match_operand:FMSA 3 "register_operand" "0")))]
+;; FMA for V2DF (always MSA)
+(define_insn "fmav2df4"
+  [(set (match_operand:V2DF 0 "register_operand" "=f")
+	(fma:V2DF (match_operand:V2DF 1 "register_operand" "f")
+		  (match_operand:V2DF 2 "register_operand" "f")
+		  (match_operand:V2DF 3 "register_operand" "0")))]
   "ISA_HAS_MSA"
-  "fmadd.<msafmt>\t%w0,%w1,%w2"
+  "fmadd.d\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fmadd")
-   (set_attr "mode" "<MODE>")])
+   (set_attr "mode" "V2DF")])
+
+;; FMA for V4SF - expand to handle VU0 vs MSA
+(define_expand "fmav4sf4"
+  [(set (match_operand:V4SF 0 "register_operand")
+	(fma:V4SF (match_operand:V4SF 1 "register_operand")
+		  (match_operand:V4SF 2 "register_operand")
+		  (match_operand:V4SF 3 "register_operand")))]
+  "ISA_HAS_MSA || ISA_HAS_VU0")
+
+;; MSA fmav4sf4 insn (only used when VU0 not available)
+(define_insn "*fmav4sf4_msa"
+  [(set (match_operand:V4SF 0 "register_operand" "=f")
+	(fma:V4SF (match_operand:V4SF 1 "register_operand" "f")
+		  (match_operand:V4SF 2 "register_operand" "f")
+		  (match_operand:V4SF 3 "register_operand" "0")))]
+  "ISA_HAS_MSA && !ISA_HAS_VU0"
+  "fmadd.w\t%w0,%w1,%w2"
+  [(set_attr "type" "simd_fmadd")
+   (set_attr "mode" "V4SF")])
 
 (define_insn "fnma<mode>4"
   [(set (match_operand:FMSA 0 "register_operand" "=f")
