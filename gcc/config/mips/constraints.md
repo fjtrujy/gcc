@@ -262,6 +262,10 @@
   "@internal
    VU0 accumulator register (ACC).")
 
+(define_register_constraint "YF" "TARGET_MIPS5900 ? FPU_ACC_REGS : NO_REGS"
+  "@internal
+   FPU (COP1) accumulator register (ACC).")
+
 (define_constraint "YG"
   "@internal
    A vector zero."
