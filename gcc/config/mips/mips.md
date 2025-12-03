@@ -5389,15 +5389,17 @@
 ;; Alternatives:
 ;;   0: d,d  -> por (128-bit register copy via MMI)
 ;;   1: d,m  -> lq (128-bit load from memory)
-;;   2: m,d  -> sq (128-bit store to memory)
+;;   2: d,J  -> por $d,$0,$0 (128-bit zero to register)
+;;   3: m,d  -> sq (128-bit store to memory)
+;;   4: m,J  -> sq $0,mem (128-bit zero store to memory)
 (define_insn "*movti_r5900"
-  [(set (match_operand:TI 0 "nonimmediate_operand" "=d,d,m")
-	(match_operand:TI 1 "move_operand" "d,m,d"))]
+  [(set (match_operand:TI 0 "nonimmediate_operand" "=d,d,d,m,m")
+	(match_operand:TI 1 "move_operand" "d,m,J,d,J"))]
   "TARGET_MIPS5900
    && (register_operand (operands[0], TImode)
-       || register_operand (operands[1], TImode))"
+       || reg_or_0_operand (operands[1], TImode))"
   { return mips_output_move (operands[0], operands[1]); }
-  [(set_attr "type" "move,load,store")
+  [(set_attr "type" "move,load,move,store,store")
    (set_attr "mode" "TI")])
 
 ;; 128-bit floating point moves

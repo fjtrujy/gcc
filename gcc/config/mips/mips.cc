@@ -2558,6 +2558,12 @@ mips_cannot_force_const_mem (machine_mode mode, rtx x)
   if (GET_CODE (x) == HIGH)
     return true;
 
+  /* R5900 TImode: always allow forcing non-zero constants to memory
+     since there's no way to synthesize 128-bit immediates.  Zero is
+     handled directly by the pattern using $0.  */
+  if (TARGET_MIPS5900 && mode == E_TImode && !const_0_operand (x, mode))
+    return false;
+
   /* As an optimization, reject constants that mips_legitimize_move
      can expand inline.
 
@@ -5385,7 +5391,8 @@ mips_output_move (rtx dest, rtx src)
       return "ldi.%v0\t%w0,%E1";
     }
 
-  /* R5900 TImode (128-bit integer) moves using lq/sq/por.  */
+  /* R5900 TImode (128-bit integer) moves using lq/sq/por.
+     R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.  */
   if (TARGET_MIPS5900 && mode == E_TImode)
     {
       if (dest_code == REG && GP_REG_P (REGNO (dest)))
@@ -5394,9 +5401,16 @@ mips_output_move (rtx dest, rtx src)
 	    return "por\t%0,$0,%1";
 	  if (src_code == MEM)
 	    return "lq\t%0,%1";
+	  if (src == CONST0_RTX (mode))
+	    return "por\t%0,$0,$0";
 	}
-      if (dest_code == MEM && src_code == REG && GP_REG_P (REGNO (src)))
-	return "sq\t%1,%0";
+      if (dest_code == MEM)
+	{
+	  if (src_code == REG && GP_REG_P (REGNO (src)))
+	    return "sq\t%1,%0";
+	  if (src == CONST0_RTX (mode))
+	    return "sq\t$0,%0";
+	}
     }
 
   if ((src_code == REG && GP_REG_P (REGNO (src)))
