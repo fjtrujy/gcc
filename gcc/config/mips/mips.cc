@@ -610,7 +610,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
   ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
-  VU0_ACC_REGS
+  VU0_ACC_REGS,
+  FPU_ACC_REGS
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -4575,6 +4576,15 @@ mips_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	      return true;
 	    }
 	}
+      /* R5900: (MINUS (MULT a b) (MULT c d)) uses ACC-based mula+msub
+	 for 2 insns vs 3 (mul+mul+sub).  */
+      if (float_mode_p && TARGET_MIPS5900
+	  && GET_CODE (XEXP (x, 0)) == MULT
+	  && GET_CODE (XEXP (x, 1)) == MULT)
+	{
+	  *total = 0;
+	  return false;
+	}
       /* Fall through.  */
 
     case PLUS:
@@ -4583,6 +4593,12 @@ mips_rtx_costs (rtx x, machine_mode mode, int outer_code,
 	  /* If this is part of a MADD or MSUB, treat the PLUS as
 	     being free.  */
 	  if (ISA_HAS_UNFUSED_MADD4 && GET_CODE (XEXP (x, 0)) == MULT)
+	    *total = 0;
+	  /* R5900: (PLUS (MULT a b) (MULT c d)) uses ACC-based mula+madd
+	     for 2 insns vs 3 (mul+mul+add).  Make it cheaper.  */
+	  else if (TARGET_MIPS5900
+		   && GET_CODE (XEXP (x, 0)) == MULT
+		   && GET_CODE (XEXP (x, 1)) == MULT)
 	    *total = 0;
 	  else
 	    *total = mips_cost->fp_add;
@@ -13438,6 +13454,10 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   if (VU0_ACC_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
     return true;
 
+  /* FPU (COP1) accumulator can hold SF (32-bit single-precision float).  */
+  if (FPU_ACC_REG_P (regno) && TARGET_MIPS5900 && mode == E_SFmode)
+    return true;
+
   return false;
 }
 
@@ -13523,6 +13543,10 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
   if (VU0_ACC_REG_P (regno) && ISA_HAS_VU0 && mode == E_V4SFmode)
     return 1;
 
+  /* FPU (COP1) accumulator is 32-bit wide and can hold SF in one register.  */
+  if (FPU_ACC_REG_P (regno) && TARGET_MIPS5900 && mode == E_SFmode)
+    return 1;
+
   /* R5900 GP registers are 128-bit wide and can hold TImode in one register.  */
   if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
     return 1;
@@ -13564,6 +13588,14 @@ mips_class_max_nregs (enum reg_class rclass, machine_mode mode)
 	size = MIN (size, 16);
 
       left &= ~reg_class_contents[VU0_ACC_REGS];
+    }
+  /* FPU (COP1) accumulator is 32-bit wide (SF mode).  */
+  if (hard_reg_set_intersect_p (left, reg_class_contents[(int) FPU_ACC_REGS]))
+    {
+      if (TARGET_MIPS5900 && mode == E_SFmode)
+	size = MIN (size, 4);
+
+      left &= ~reg_class_contents[FPU_ACC_REGS];
     }
   if (hard_reg_set_intersect_p (left, reg_class_contents[(int) FP_REGS]))
     {
@@ -13699,6 +13731,10 @@ mips_canonicalize_move_class (reg_class_t rclass)
   if (reg_class_subset_p (rclass, ACC_REGS))
     rclass = ACC_REGS;
 
+  /* FPU (COP1) accumulator has its own class - not part of ACC_REGS.  */
+  if (rclass == FPU_ACC_REGS)
+    return FPU_ACC_REGS;
+
   /* Likewise promote subclasses of general registers to the most
      interesting containing class.  */
   if (TARGET_MIPS16 && reg_class_subset_p (rclass, M16_REGS))
@@ -13737,6 +13773,10 @@ mips_move_to_gpr_cost (reg_class_t from)
       /* This choice of value is historical.  */
       return 5;
 
+    case FPU_ACC_REGS:
+      /* FPU_ACC -> GPR requires FPU_ACC -> FP_REGS -> GPR (high cost).  */
+      return 12;
+
     default:
       return 0;
     }
@@ -13770,6 +13810,10 @@ mips_move_from_gpr_cost (reg_class_t to)
       /* This choice of value is historical.  */
       return 5;
 
+    case FPU_ACC_REGS:
+      /* GPR -> FPU_ACC requires GPR -> FP_REGS -> FPU_ACC (high cost).  */
+      return 12;
+
     default:
       return 0;
     }
@@ -13795,6 +13839,20 @@ mips_register_move_cost (machine_mode mode,
       if (to == FP_REGS && mips_mode_ok_for_mov_fmt_p (mode))
 	/* MOV.FMT.  */
 	return 4;
+      if (to == FPU_ACC_REGS && TARGET_MIPS5900 && mode == E_SFmode)
+	/* FP -> FPU_ACC: mtc1 $0,tmp; adda.s src,tmp (2 instructions).  */
+	return 8;
+    }
+
+  /* Handle FPU_ACC -> FP_REGS moves (R5900 only).  */
+  if (from == FPU_ACC_REGS && TARGET_MIPS5900)
+    {
+      if (to == FP_REGS && mode == E_SFmode)
+	/* FPU_ACC -> FP: mtc1 $0,tmp; madd.s dst,tmp,tmp (2 instructions).  */
+	return 8;
+      if (to == FPU_ACC_REGS)
+	/* FPU_ACC -> FPU_ACC: no-op or identity (shouldn't happen).  */
+	return 2;
     }
 
   /* Handle cases in which only one class deviates from the ideal.  */
@@ -15897,6 +15955,7 @@ AVAIL_NON_MIPS16 (loongson, TARGET_LOONGSON_MMI)
 AVAIL_MIPS16E2_OR_NON_MIPS16 (cache, TARGET_CACHE_BUILTIN)
 AVAIL_NON_MIPS16 (msa, TARGET_MSA)
 AVAIL_NON_MIPS16 (vu0, ISA_HAS_VU0)
+AVAIL_NON_MIPS16 (r5900_fpu, TARGET_MIPS5900)
 AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 
 /* Construct a mips_builtin_description from the given arguments.
@@ -16086,6 +16145,21 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     { CODE_FOR_vu0_ ## INSN, MIPS_FP_COND_f,				\
     "__builtin_vu0_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
     FUNCTION_TYPE, mips_builtin_avail_vu0, false }
+
+/* Define an R5900 FPU MIPS_BUILTIN_DIRECT pure function __builtin_mips_<INSN>_s
+   for instruction CODE_FOR_fpu_<INSN>.  FUNCTION_TYPE is a builtin_description
+   field.  */
+#define R5900_FPU_BUILTIN_PURE(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_fpu_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN "_s",  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, true }
+
+/* Define an R5900 FPU MIPS_BUILTIN_DIRECT_NO_TARGET function for ACC writes.
+   These are for accumulator operations with no return value.  */
+#define R5900_FPU_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)		\
+    { CODE_FOR_fpu_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN "_s",  MIPS_BUILTIN_DIRECT_NO_TARGET,	\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
 
 #define CODE_FOR_mips_sqrt_ps CODE_FOR_sqrtv2sf2
 #define CODE_FOR_mips_addq_ph CODE_FOR_addv2hi3
@@ -17190,6 +17264,17 @@ static const struct mips_builtin_description mips_builtins[] = {
   /* Outer product (cross product): ACC = src1 x src2  */
   VU0_NO_TARGET_BUILTIN (vopmula, MIPS_VOID_FTYPE_V4SF_V4SF),
   VU0_BUILTIN_PURE (vopmsub, MIPS_V4SF_FTYPE_V4SF_V4SF),
+
+  /* R5900 FPU (COP1) ACC builtins */
+  /* ACC-writing instructions: ACC = result (no FP register output) */
+  R5900_FPU_NO_TARGET_BUILTIN (adda, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (suba, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (mula, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (madda, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (msuba, MIPS_VOID_FTYPE_SF_SF),
+  /* ACC-reading instructions: fd = ACC op (fs * ft) */
+  R5900_FPU_BUILTIN_PURE (madd, MIPS_SF_FTYPE_SF_SF),
+  R5900_FPU_BUILTIN_PURE (msub, MIPS_SF_FTYPE_SF_SF),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
@@ -17710,6 +17795,39 @@ mips_expand_builtin_insn (enum insn_code icode, unsigned int nops,
       create_output_operand (&ops[0], ops[1].value, ops[1].mode);
       break;
 
+    /* R5900 FPU ACC builtins: add explicit ACC register operands.  */
+    case CODE_FOR_fpu_adda:
+    case CODE_FOR_fpu_suba:
+    case CODE_FOR_fpu_mula:
+      /* ACC-writing: add ACC as output operand (operand 2).  */
+      gcc_assert (!has_target_p && nops == 2);
+      {
+	rtx acc = gen_rtx_REG (SFmode, FPU_ACC_REG_FIRST);
+	create_output_operand (&ops[nops++], acc, SFmode);
+      }
+      break;
+
+    case CODE_FOR_fpu_madda:
+    case CODE_FOR_fpu_msuba:
+      /* ACC-accumulating: add ACC as output (op 2) and input (op 3).  */
+      gcc_assert (!has_target_p && nops == 2);
+      {
+	rtx acc = gen_rtx_REG (SFmode, FPU_ACC_REG_FIRST);
+	create_output_operand (&ops[nops++], acc, SFmode);
+	create_input_operand (&ops[nops++], acc, SFmode);
+      }
+      break;
+
+    case CODE_FOR_fpu_madd:
+    case CODE_FOR_fpu_msub:
+      /* ACC-reading: add ACC as input operand (operand 3).  */
+      gcc_assert (has_target_p && nops == 3);
+      {
+	rtx acc = gen_rtx_REG (SFmode, FPU_ACC_REG_FIRST);
+	create_input_operand (&ops[nops++], acc, SFmode);
+      }
+      break;
+
     default:
       break;
   }
@@ -17766,6 +17884,32 @@ mips_expand_builtin_direct (enum insn_code icode, rtx target, tree exp,
 {
   struct expand_operand ops[MAX_RECOG_OPERANDS];
   int opno, argno;
+  int extra_acc_ops = 0;
+
+  /* R5900 FPU ACC builtins have extra operands for the ACC register
+     that are not passed by the user.  Calculate how many extra operands
+     are needed so we can adjust the assertion below.  */
+  switch (icode)
+    {
+    case CODE_FOR_fpu_adda:
+    case CODE_FOR_fpu_suba:
+    case CODE_FOR_fpu_mula:
+      /* ACC-writing: 1 extra output operand.  */
+      extra_acc_ops = 1;
+      break;
+    case CODE_FOR_fpu_madda:
+    case CODE_FOR_fpu_msuba:
+      /* ACC-accumulating: 1 output + 1 input operand.  */
+      extra_acc_ops = 2;
+      break;
+    case CODE_FOR_fpu_madd:
+    case CODE_FOR_fpu_msub:
+      /* ACC-reading: 1 extra input operand.  */
+      extra_acc_ops = 1;
+      break;
+    default:
+      break;
+    }
 
   /* Map any target to operand 0.  */
   opno = 0;
@@ -17773,7 +17917,7 @@ mips_expand_builtin_direct (enum insn_code icode, rtx target, tree exp,
     create_output_operand (&ops[opno++], target, TYPE_MODE (TREE_TYPE (exp)));
 
   /* Map the arguments to the other operands.  */
-  gcc_assert (opno + call_expr_nargs (exp)
+  gcc_assert (opno + call_expr_nargs (exp) + extra_acc_ops
 	      == insn_data[icode].n_generator_args);
   for (argno = 0; argno < call_expr_nargs (exp); argno++)
     mips_prepare_builtin_arg (&ops[opno++], exp, argno);

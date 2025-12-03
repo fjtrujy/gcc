@@ -2631,7 +2631,7 @@
 	(fma:ANYF (match_operand:ANYF 1 "register_operand")
 		  (match_operand:ANYF 2 "register_operand")
 		  (neg:ANYF (match_operand:ANYF 3 "register_operand"))))]
-  "(ISA_HAS_FUSED_MADD3 || ISA_HAS_FUSED_MADD4)")
+  "ISA_HAS_FUSED_MADD3 || ISA_HAS_FUSED_MADD4")
 
 (define_insn "*fms<mode>4_msub3"
   [(set (match_operand:ANYF 0 "register_operand" "=f")

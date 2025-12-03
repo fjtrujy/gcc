@@ -1824,7 +1824,7 @@ FP_ASM_SPEC "\
    - 6 DSP accumulator registers (3 hi-lo pairs) for MIPS DSP ASE
    - 6 DSP control registers  */
 
-#define FIRST_PSEUDO_REGISTER 189
+#define FIRST_PSEUDO_REGISTER 190
 
 /* By default, fix the kernel registers ($26 and $27), the global
    pointer ($28) and the stack pointer ($29).  This can change
@@ -1855,6 +1855,8 @@ FP_ASM_SPEC "\
   /* 6 DSP accumulator registers & 6 control registers */		\
   0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,					\
   /* VU0 accumulator register */					\
+  1,									\
+  /* FPU (COP1) accumulator register - fixed, use intrinsics only */	\
   1									\
 }
 
@@ -1891,6 +1893,8 @@ FP_ASM_SPEC "\
   /* 6 DSP accumulator registers & 6 control registers */		\
   1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,					\
   /* VU0 accumulator register */					\
+  1,									\
+  /* FPU (COP1) accumulator register */					\
   1									\
 }
 
@@ -1959,6 +1963,11 @@ FP_ASM_SPEC "\
 #define VU0_ACC_REG_LAST 188
 #define VU0_ACC_REG_NUM 1
 
+/* FPU (COP1) Accumulator register for R5900.  */
+#define FPU_ACC_REG_FIRST 189
+#define FPU_ACC_REG_LAST 189
+#define FPU_ACC_REG_NUM 1
+
 #define AT_REGNUM	(GP_REG_FIRST + 1)
 #define HI_REGNUM	(TARGET_BIG_ENDIAN ? MD_REG_FIRST : MD_REG_FIRST + 1)
 #define LO_REGNUM	(TARGET_BIG_ENDIAN ? MD_REG_FIRST + 1 : MD_REG_FIRST)
@@ -2013,6 +2022,9 @@ FP_ASM_SPEC "\
 /* Test if REGNO is the VU0 accumulator register.  */
 #define VU0_ACC_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - VU0_ACC_REG_FIRST) < VU0_ACC_REG_NUM)
+/* Test if REGNO is the FPU (COP1) accumulator register.  */
+#define FPU_ACC_REG_P(REGNO) \
+  ((unsigned int) ((int) (REGNO) - FPU_ACC_REG_FIRST) < FPU_ACC_REG_NUM)
 #define MSA_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - MSA_REG_FIRST) < MSA_REG_NUM)
 
@@ -2160,6 +2172,7 @@ enum reg_class
   DSP_ACC_REGS,			/* DSP accumulator registers */
   ACC_REGS,			/* Hi/Lo and DSP accumulator registers */
   VU0_ACC_REGS,			/* VU0 accumulator register */
+  FPU_ACC_REGS,			/* FPU (COP1) accumulator register */
   FRAME_REGS,			/* $arg and $frame */
   GR_AND_MD0_REGS,		/* union classes */
   GR_AND_MD1_REGS,
@@ -2202,6 +2215,7 @@ enum reg_class
   "DSP_ACC_REGS",							\
   "ACC_REGS",								\
   "VU0_ACC_REGS",							\
+  "FPU_ACC_REGS",							\
   "FRAME_REGS",								\
   "GR_AND_MD0_REGS",							\
   "GR_AND_MD1_REGS",							\
@@ -2245,12 +2259,13 @@ enum reg_class
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x003f0000 },	/* DSP_ACC_REGS */	\
   { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x003f0000 },	/* ACC_REGS */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000 },	/* VU0_ACC_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x20000000 },	/* FPU_ACC_REGS */	\
   { 0x00000000, 0x00000000, 0x00006000, 0x00000000, 0x00000000, 0x00000000 },	/* FRAME_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD0_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD1_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x003f0000 },	/* GR_AND_ACC_REGS */	\
-  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0x1fffffff }	/* ALL_REGS */		\
+  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0x3fffffff }	/* ALL_REGS */		\
 }
 
 
@@ -2287,6 +2302,8 @@ enum reg_class
      of the extra accumulators available with -mdspr2.  In some cases,	\
      it can also help to reduce register pressure.  */			\
   64, 65,176,177,178,179,180,181,					\
+  /* FPU (COP1) accumulator register - for FMA reductions.  */		\
+  189,									\
   /* Call-clobbered GPRs.  */						\
   1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,		\
   24, 25, 31,								\
@@ -2825,7 +2842,8 @@ typedef struct mips_args {
   "$c3r24","$c3r25","$c3r26","$c3r27","$c3r28","$c3r29","$c3r30","$c3r31", \
   "$ac1hi","$ac1lo","$ac2hi","$ac2lo","$ac3hi","$ac3lo","$dsp_po","$dsp_sc", \
   "$dsp_ca","$dsp_ou","$dsp_cc","$dsp_ef",				   \
-  "$vu0acc" }
+  "$vu0acc",								   \
+  "$fpuacc" }
 
 /* List the "software" names for each register.  Also list the numerical
    names for $fp and $sp.  */

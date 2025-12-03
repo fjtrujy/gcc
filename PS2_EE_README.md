@@ -62,7 +62,7 @@ Used by MTSAB, MTSAH, and QFSRV instructions for 128-bit funnel shifts.
 | `$f0-$f31` | 32-bit | FP data registers (single-precision only) | **Implemented** | 32-63 |
 | `FCR0` | 32-bit | FP Implementation/Revision (read-only) | **Implemented** | - |
 | `FCR31` | 32-bit | FP Control/Status | **Implemented** | - |
-| `ACC` | 32-bit | FP Accumulator (for ADDA.S, MULA.S, etc.) | Not implemented | - |
+| `ACC` | 32-bit | FP Accumulator (for ADDA.S, MULA.S, etc.) | **Implemented** | 189 |
 
 Note: R5900 FPU is single-precision only. Double-precision is NOT supported.
 
@@ -112,7 +112,7 @@ Standard MIPS COP0 registers are available, plus R5900-specific extensions:
 | HI/LO (dual pipeline) | 4 | 2 | 50% |
 | SA | 1 | 0 | 0% |
 | FPU Data | 32 | 32 | 100% |
-| FPU ACC | 1 | 0 | 0% |
+| FPU ACC | 1 | 1 | 100% |
 | VU0 VF | 32 | 32 | 100% |
 | VU0 VI | 16 | 0 | 0% |
 | VU0 ACC | 1 | 1 | 100% |
@@ -399,17 +399,17 @@ R5900 FPU is single-precision only with additional operations. Note: Double prec
 
 ### 5.1 Accumulator Operations
 
-The FPU has a dedicated accumulator register for efficient FMA chains.
+The FPU has a dedicated accumulator register for efficient FMA chains. ACC is a fixed register - use intrinsics only (no automatic optimization).
 
 | Instruction | Description | GCC Status | Intrinsic |
 |-------------|-------------|------------|-----------|
-| `ADDA.S` | Add to Accumulator | Not implemented | - |
-| `SUBA.S` | Subtract to Accumulator | Not implemented | - |
-| `MULA.S` | Multiply to Accumulator | Not implemented | - |
-| `MADD.S` | Multiply-Add (ACC + fs * ft) | Implemented | Automatic (FMA) |
-| `MADDA.S` | Multiply-Add to Accumulator | Not implemented | - |
-| `MSUB.S` | Multiply-Subtract (ACC - fs * ft) | Implemented | Automatic |
-| `MSUBA.S` | Multiply-Subtract to Accumulator | Not implemented | - |
+| `ADDA.S` | Add to Accumulator | **Implemented** | `__builtin_mips_adda_s` |
+| `SUBA.S` | Subtract to Accumulator | **Implemented** | `__builtin_mips_suba_s` |
+| `MULA.S` | Multiply to Accumulator | **Implemented** | `__builtin_mips_mula_s` |
+| `MADD.S` | Multiply-Add (ACC + fs * ft) | **Implemented** | `__builtin_mips_madd_s` |
+| `MADDA.S` | Multiply-Add to Accumulator | **Implemented** | `__builtin_mips_madda_s` |
+| `MSUB.S` | Multiply-Subtract (ACC - fs * ft) | **Implemented** | `__builtin_mips_msub_s` |
+| `MSUBA.S` | Multiply-Subtract to Accumulator | **Implemented** | `__builtin_mips_msuba_s` |
 
 ### 5.2 Min/Max/Reciprocal
 
@@ -579,7 +579,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | MMI HI/LO | 10 | 0 | 0% |
 | Dual Pipeline | 12 | 2 | 17% |
 | SA Register | 4 | 0 | 0% |
-| FPU Extensions | 11 | 5 | 45% |
+| FPU Extensions | 11 | 11 | 100% |
 | VU0 Data Transfer | 6 | 4 | 67% |
 | VU0 Basic Arithmetic | 7 | 7 | 100% |
 | VU0 Accumulator | 3 | 3 | 100% |
