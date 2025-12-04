@@ -179,12 +179,10 @@ vec_c = vec_a * vec_b + vec_c;  // Generates: vmulaw.xyzw + vmadd.xyzw
 
 These instructions operate on the full 128-bit width of GP registers.
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `LQ` | Load Quadword (128-bit) | Implemented | Automatic via `__int128` |
-| `SQ` | Store Quadword (128-bit) | Implemented | Automatic via `__int128` |
-
-**Usage**: Use `__int128` type or `typedef __int128 int128_t;`
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `LQ` | Load Quadword (128-bit) | - | Automatic (`__int128`) |
+| `SQ` | Store Quadword (128-bit) | - | Automatic (`__int128`) |
 
 ---
 
@@ -192,148 +190,148 @@ These instructions operate on the full 128-bit width of GP registers.
 
 ### 2.1 Parallel Arithmetic
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
 | **Addition** ||||
-| `PADDB` | Parallel Add Byte (16x8-bit) | Not implemented | - |
-| `PADDH` | Parallel Add Halfword (8x16-bit) | Not implemented | - |
-| `PADDW` | Parallel Add Word (4x32-bit) | Not implemented | - |
-| `PADDSB` | Parallel Add Signed Saturation Byte | Not implemented | - |
-| `PADDSH` | Parallel Add Signed Saturation Halfword | Not implemented | - |
-| `PADDSW` | Parallel Add Signed Saturation Word | Not implemented | - |
-| `PADDUB` | Parallel Add Unsigned Saturation Byte | Not implemented | - |
-| `PADDUH` | Parallel Add Unsigned Saturation Halfword | Not implemented | - |
-| `PADDUW` | Parallel Add Unsigned Saturation Word | Not implemented | - |
+| `PADDB` | Parallel Add Byte (16x8-bit) | - | - |
+| `PADDH` | Parallel Add Halfword (8x16-bit) | - | - |
+| `PADDW` | Parallel Add Word (4x32-bit) | - | - |
+| `PADDSB` | Parallel Add Signed Saturation Byte | - | - |
+| `PADDSH` | Parallel Add Signed Saturation Halfword | - | - |
+| `PADDSW` | Parallel Add Signed Saturation Word | - | - |
+| `PADDUB` | Parallel Add Unsigned Saturation Byte | - | - |
+| `PADDUH` | Parallel Add Unsigned Saturation Halfword | - | - |
+| `PADDUW` | Parallel Add Unsigned Saturation Word | - | - |
 | **Subtraction** ||||
-| `PSUBB` | Parallel Subtract Byte | Not implemented | - |
-| `PSUBH` | Parallel Subtract Halfword | Not implemented | - |
-| `PSUBW` | Parallel Subtract Word | Not implemented | - |
-| `PSUBSB` | Parallel Subtract Signed Saturation Byte | Not implemented | - |
-| `PSUBSH` | Parallel Subtract Signed Saturation Halfword | Not implemented | - |
-| `PSUBSW` | Parallel Subtract Signed Saturation Word | Not implemented | - |
-| `PSUBUB` | Parallel Subtract Unsigned Saturation Byte | Not implemented | - |
-| `PSUBUH` | Parallel Subtract Unsigned Saturation Halfword | Not implemented | - |
-| `PSUBUW` | Parallel Subtract Unsigned Saturation Word | Not implemented | - |
+| `PSUBB` | Parallel Subtract Byte | - | - |
+| `PSUBH` | Parallel Subtract Halfword | - | - |
+| `PSUBW` | Parallel Subtract Word | - | - |
+| `PSUBSB` | Parallel Subtract Signed Saturation Byte | - | - |
+| `PSUBSH` | Parallel Subtract Signed Saturation Halfword | - | - |
+| `PSUBSW` | Parallel Subtract Signed Saturation Word | - | - |
+| `PSUBUB` | Parallel Subtract Unsigned Saturation Byte | - | - |
+| `PSUBUH` | Parallel Subtract Unsigned Saturation Halfword | - | - |
+| `PSUBUW` | Parallel Subtract Unsigned Saturation Word | - | - |
 | **Absolute Value** ||||
-| `PABSH` | Parallel Absolute Halfword | Not implemented | - |
-| `PABSW` | Parallel Absolute Word | Not implemented | - |
+| `PABSH` | Parallel Absolute Halfword | - | - |
+| `PABSW` | Parallel Absolute Word | - | - |
 | **Add/Subtract Combined** ||||
-| `PADSBH` | Parallel Add/Subtract Halfword | Not implemented | - |
+| `PADSBH` | Parallel Add/Subtract Halfword | - | - |
 
 ### 2.2 Parallel Comparison
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PCEQB` | Parallel Compare Equal Byte | Not implemented | - |
-| `PCEQH` | Parallel Compare Equal Halfword | Not implemented | - |
-| `PCEQW` | Parallel Compare Equal Word | Not implemented | - |
-| `PCGTB` | Parallel Compare Greater Than Byte | Not implemented | - |
-| `PCGTH` | Parallel Compare Greater Than Halfword | Not implemented | - |
-| `PCGTW` | Parallel Compare Greater Than Word | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PCEQB` | Parallel Compare Equal Byte | - | - |
+| `PCEQH` | Parallel Compare Equal Halfword | - | - |
+| `PCEQW` | Parallel Compare Equal Word | - | - |
+| `PCGTB` | Parallel Compare Greater Than Byte | - | - |
+| `PCGTH` | Parallel Compare Greater Than Halfword | - | - |
+| `PCGTW` | Parallel Compare Greater Than Word | - | - |
 
 ### 2.3 Parallel Min/Max
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PMAXH` | Parallel Maximum Halfword | Not implemented | - |
-| `PMAXW` | Parallel Maximum Word | Not implemented | - |
-| `PMINH` | Parallel Minimum Halfword | Not implemented | - |
-| `PMINW` | Parallel Minimum Word | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PMAXH` | Parallel Maximum Halfword | - | - |
+| `PMAXW` | Parallel Maximum Word | - | - |
+| `PMINH` | Parallel Minimum Halfword | - | - |
+| `PMINW` | Parallel Minimum Word | - | - |
 
 ### 2.4 Parallel Logical Operations
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PAND` | Parallel AND (128-bit) | Not implemented | - |
-| `POR` | Parallel OR (128-bit) | Implemented (move) | Automatic |
-| `PXOR` | Parallel XOR (128-bit) | Not implemented | - |
-| `PNOR` | Parallel NOR (128-bit) | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PAND` | Parallel AND (128-bit) | - | - |
+| `POR` | Parallel OR (128-bit) | - | Automatic (move) |
+| `PXOR` | Parallel XOR (128-bit) | - | - |
+| `PNOR` | Parallel NOR (128-bit) | - | - |
 
 ### 2.5 Parallel Shift Operations
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PSLLH` | Parallel Shift Left Logical Halfword | Not implemented | - |
-| `PSLLW` | Parallel Shift Left Logical Word | Not implemented | - |
-| `PSLLVW` | Parallel Shift Left Logical Variable Word | Not implemented | - |
-| `PSRAH` | Parallel Shift Right Arithmetic Halfword | Not implemented | - |
-| `PSRAW` | Parallel Shift Right Arithmetic Word | Not implemented | - |
-| `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | Not implemented | - |
-| `PSRLH` | Parallel Shift Right Logical Halfword | Not implemented | - |
-| `PSRLW` | Parallel Shift Right Logical Word | Not implemented | - |
-| `PSRLVW` | Parallel Shift Right Logical Variable Word | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PSLLH` | Parallel Shift Left Logical Halfword | - | - |
+| `PSLLW` | Parallel Shift Left Logical Word | - | - |
+| `PSLLVW` | Parallel Shift Left Logical Variable Word | - | - |
+| `PSRAH` | Parallel Shift Right Arithmetic Halfword | - | - |
+| `PSRAW` | Parallel Shift Right Arithmetic Word | - | - |
+| `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | - | - |
+| `PSRLH` | Parallel Shift Right Logical Halfword | - | - |
+| `PSRLW` | Parallel Shift Right Logical Word | - | - |
+| `PSRLVW` | Parallel Shift Right Logical Variable Word | - | - |
 
 ### 2.6 Parallel Multiply/Divide
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PMULTH` | Parallel Multiply Halfword | Not implemented | - |
-| `PMULTW` | Parallel Multiply Word | Not implemented | - |
-| `PMULTUW` | Parallel Multiply Unsigned Word | Not implemented | - |
-| `PMADDH` | Parallel Multiply-Add Halfword | Not implemented | - |
-| `PMADDW` | Parallel Multiply-Add Word | Not implemented | - |
-| `PMADDUW` | Parallel Multiply-Add Unsigned Word | Not implemented | - |
-| `PMSUBH` | Parallel Multiply-Subtract Halfword | Not implemented | - |
-| `PMSUBW` | Parallel Multiply-Subtract Word | Not implemented | - |
-| `PHMADH` | Parallel Horizontal Multiply-Add Halfword | Not implemented | - |
-| `PHMSBH` | Parallel Horizontal Multiply-Subtract Halfword | Not implemented | - |
-| `PDIVBW` | Parallel Divide Broadcast Word | Not implemented | - |
-| `PDIVW` | Parallel Divide Word | Not implemented | - |
-| `PDIVUW` | Parallel Divide Unsigned Word | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PMULTH` | Parallel Multiply Halfword | - | - |
+| `PMULTW` | Parallel Multiply Word | - | - |
+| `PMULTUW` | Parallel Multiply Unsigned Word | - | - |
+| `PMADDH` | Parallel Multiply-Add Halfword | - | - |
+| `PMADDW` | Parallel Multiply-Add Word | - | - |
+| `PMADDUW` | Parallel Multiply-Add Unsigned Word | - | - |
+| `PMSUBH` | Parallel Multiply-Subtract Halfword | - | - |
+| `PMSUBW` | Parallel Multiply-Subtract Word | - | - |
+| `PHMADH` | Parallel Horizontal Multiply-Add Halfword | - | - |
+| `PHMSBH` | Parallel Horizontal Multiply-Subtract Halfword | - | - |
+| `PDIVBW` | Parallel Divide Broadcast Word | - | - |
+| `PDIVW` | Parallel Divide Word | - | - |
+| `PDIVUW` | Parallel Divide Unsigned Word | - | - |
 
 ### 2.7 Parallel Data Movement/Rearrangement
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PCPYH` | Parallel Copy Halfword | Not implemented | - |
-| `PCPYLD` | Parallel Copy Lower Doubleword | Not implemented | - |
-| `PCPYUD` | Parallel Copy Upper Doubleword | Not implemented | - |
-| `PEXCH` | Parallel Exchange Center Halfword | Not implemented | - |
-| `PEXCW` | Parallel Exchange Center Word | Not implemented | - |
-| `PEXEH` | Parallel Exchange Even Halfword | Not implemented | - |
-| `PEXEW` | Parallel Exchange Even Word | Not implemented | - |
-| `PEXTLB` | Parallel Extend Lower from Byte | Not implemented | - |
-| `PEXTLH` | Parallel Extend Lower from Halfword | Not implemented | - |
-| `PEXTLW` | Parallel Extend Lower from Word | Not implemented | - |
-| `PEXTUB` | Parallel Extend Upper from Byte | Not implemented | - |
-| `PEXTUH` | Parallel Extend Upper from Halfword | Not implemented | - |
-| `PEXTUW` | Parallel Extend Upper from Word | Not implemented | - |
-| `PINTH` | Parallel Interleave Halfword | Not implemented | - |
-| `PINTEH` | Parallel Interleave Even Halfword | Not implemented | - |
-| `PPACB` | Parallel Pack to Byte | Not implemented | - |
-| `PPACH` | Parallel Pack to Halfword | Not implemented | - |
-| `PPACW` | Parallel Pack to Word | Not implemented | - |
-| `PREVH` | Parallel Reverse Halfword | Not implemented | - |
-| `PROT3W` | Parallel Rotate 3 Words Left | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PCPYH` | Parallel Copy Halfword | - | - |
+| `PCPYLD` | Parallel Copy Lower Doubleword | - | - |
+| `PCPYUD` | Parallel Copy Upper Doubleword | - | - |
+| `PEXCH` | Parallel Exchange Center Halfword | - | - |
+| `PEXCW` | Parallel Exchange Center Word | - | - |
+| `PEXEH` | Parallel Exchange Even Halfword | - | - |
+| `PEXEW` | Parallel Exchange Even Word | - | - |
+| `PEXTLB` | Parallel Extend Lower from Byte | - | - |
+| `PEXTLH` | Parallel Extend Lower from Halfword | - | - |
+| `PEXTLW` | Parallel Extend Lower from Word | - | - |
+| `PEXTUB` | Parallel Extend Upper from Byte | - | - |
+| `PEXTUH` | Parallel Extend Upper from Halfword | - | - |
+| `PEXTUW` | Parallel Extend Upper from Word | - | - |
+| `PINTH` | Parallel Interleave Halfword | - | - |
+| `PINTEH` | Parallel Interleave Even Halfword | - | - |
+| `PPACB` | Parallel Pack to Byte | - | - |
+| `PPACH` | Parallel Pack to Halfword | - | - |
+| `PPACW` | Parallel Pack to Word | - | - |
+| `PREVH` | Parallel Reverse Halfword | - | - |
+| `PROT3W` | Parallel Rotate 3 Words Left | - | - |
 
 ### 2.8 Parallel Format Conversion
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PEXT5` | Parallel Extend from 5 bits (RGB555 expand) | Not implemented | - |
-| `PPAC5` | Parallel Pack to 5 bits (RGB555 pack) | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PEXT5` | Parallel Extend from 5 bits (RGB555 expand) | - | - |
+| `PPAC5` | Parallel Pack to 5 bits (RGB555 pack) | - | - |
 
 ### 2.9 Other MMI Instructions
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PLZCW` | Parallel Leading Zero/One Count Word | Not implemented | - |
-| `QFSRV` | Quadword Funnel Shift Right Variable | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PLZCW` | Parallel Leading Zero/One Count Word | - | - |
+| `QFSRV` | Quadword Funnel Shift Right Variable | - | - |
 
 ### 2.10 HI/LO Register Operations
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `PMFHI` | Parallel Move From HI Register | Not implemented | - |
-| `PMFLO` | Parallel Move From LO Register | Not implemented | - |
-| `PMTHI` | Parallel Move To HI Register | Not implemented | - |
-| `PMTLO` | Parallel Move To LO Register | Not implemented | - |
-| `PMFHL.LW` | Parallel Move From HI/LO (Low Word) | Not implemented | - |
-| `PMFHL.UW` | Parallel Move From HI/LO (Upper Word) | Not implemented | - |
-| `PMFHL.SLW` | Parallel Move From HI/LO (Signed Low Word) | Not implemented | - |
-| `PMFHL.LH` | Parallel Move From HI/LO (Low Halfword) | Not implemented | - |
-| `PMFHL.SH` | Parallel Move From HI/LO (Signed Halfword) | Not implemented | - |
-| `PMTHL.LW` | Parallel Move To HI/LO (Low Word) | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `PMFHI` | Parallel Move From HI Register | - | - |
+| `PMFLO` | Parallel Move From LO Register | - | - |
+| `PMTHI` | Parallel Move To HI Register | - | - |
+| `PMTLO` | Parallel Move To LO Register | - | - |
+| `PMFHL.LW` | Parallel Move From HI/LO (Low Word) | - | - |
+| `PMFHL.UW` | Parallel Move From HI/LO (Upper Word) | - | - |
+| `PMFHL.SLW` | Parallel Move From HI/LO (Signed Low Word) | - | - |
+| `PMFHL.LH` | Parallel Move From HI/LO (Low Halfword) | - | - |
+| `PMFHL.SH` | Parallel Move From HI/LO (Signed Halfword) | - | - |
+| `PMTHL.LW` | Parallel Move To HI/LO (Low Word) | - | - |
 
 ---
 
@@ -341,31 +339,31 @@ These instructions operate on the full 128-bit width of GP registers.
 
 R5900 has a second multiply/divide unit (Pipeline 1) with dedicated HI1/LO1 registers.
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `MULT1` | Multiply Word Pipeline 1 | Not implemented | - |
-| `MULTU1` | Multiply Unsigned Word Pipeline 1 | Not implemented | - |
-| `DIV1` | Divide Word Pipeline 1 | Not implemented | - |
-| `DIVU1` | Divide Unsigned Word Pipeline 1 | Not implemented | - |
-| `MADD` | Multiply-Add Word | Implemented | Automatic |
-| `MADD1` | Multiply-Add Word Pipeline 1 | Not implemented | - |
-| `MADDU` | Multiply-Add Unsigned Word | Implemented | Automatic |
-| `MADDU1` | Multiply-Add Unsigned Word Pipeline 1 | Not implemented | - |
-| `MFHI1` | Move From HI1 Register | Not implemented | - |
-| `MFLO1` | Move From LO1 Register | Not implemented | - |
-| `MTHI1` | Move To HI1 Register | Not implemented | - |
-| `MTLO1` | Move To LO1 Register | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `MULT1` | Multiply Word Pipeline 1 | - | - |
+| `MULTU1` | Multiply Unsigned Word Pipeline 1 | - | - |
+| `DIV1` | Divide Word Pipeline 1 | - | - |
+| `DIVU1` | Divide Unsigned Word Pipeline 1 | - | - |
+| `MADD` | Multiply-Add Word | - | Automatic |
+| `MADD1` | Multiply-Add Word Pipeline 1 | - | - |
+| `MADDU` | Multiply-Add Unsigned Word | - | Automatic |
+| `MADDU1` | Multiply-Add Unsigned Word Pipeline 1 | - | - |
+| `MFHI1` | Move From HI1 Register | - | - |
+| `MFLO1` | Move From LO1 Register | - | - |
+| `MTHI1` | Move To HI1 Register | - | - |
+| `MTLO1` | Move To LO1 Register | - | - |
 
 ---
 
 ## 4. Shift Amount Register (SA)
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `MFSA` | Move from Shift Amount Register | Not implemented | - |
-| `MTSA` | Move to Shift Amount Register | Not implemented | - |
-| `MTSAB` | Move Byte Count to SA Register | Not implemented | - |
-| `MTSAH` | Move Halfword Count to SA Register | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `MFSA` | Move from Shift Amount Register | - | - |
+| `MTSA` | Move to Shift Amount Register | - | - |
+| `MTSAB` | Move Byte Count to SA Register | - | - |
+| `MTSAH` | Move Halfword Count to SA Register | - | - |
 
 ---
 
@@ -377,24 +375,24 @@ R5900 FPU is single-precision only with additional operations. Note: Double prec
 
 The FPU has a dedicated accumulator register for efficient FMA chains. ACC is a fixed register - use intrinsics only (no automatic optimization).
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `ADDA.S` | Add to Accumulator | **Implemented** | `__builtin_mips_adda_s` |
-| `SUBA.S` | Subtract to Accumulator | **Implemented** | `__builtin_mips_suba_s` |
-| `MULA.S` | Multiply to Accumulator | **Implemented** | `__builtin_mips_mula_s` |
-| `MADD.S` | Multiply-Add (ACC + fs * ft) | **Implemented** | `__builtin_mips_madd_s` |
-| `MADDA.S` | Multiply-Add to Accumulator | **Implemented** | `__builtin_mips_madda_s` |
-| `MSUB.S` | Multiply-Subtract (ACC - fs * ft) | **Implemented** | `__builtin_mips_msub_s` |
-| `MSUBA.S` | Multiply-Subtract to Accumulator | **Implemented** | `__builtin_mips_msuba_s` |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `ADDA.S` | Add to Accumulator | `__builtin_mips_adda_s` | Builtin |
+| `SUBA.S` | Subtract to Accumulator | `__builtin_mips_suba_s` | Builtin |
+| `MULA.S` | Multiply to Accumulator | `__builtin_mips_mula_s` | Builtin |
+| `MADD.S` | Multiply-Add (ACC + fs * ft) | `__builtin_mips_madd_s` | Builtin |
+| `MADDA.S` | Multiply-Add to Accumulator | `__builtin_mips_madda_s` | Builtin |
+| `MSUB.S` | Multiply-Subtract (ACC - fs * ft) | `__builtin_mips_msub_s` | Builtin |
+| `MSUBA.S` | Multiply-Subtract to Accumulator | `__builtin_mips_msuba_s` | Builtin |
 
 ### 5.2 Min/Max/Reciprocal
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `MIN.S` | Floating-Point Minimum | Implemented | Automatic (fminf) |
-| `MAX.S` | Floating-Point Maximum | Implemented | Automatic (fmaxf) |
-| `RSQRT.S` | Reciprocal Square Root (fd = fs / sqrt(ft)) | Implemented | Automatic |
-| `SQRT.S` | Square Root | Standard MIPS | Automatic |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `MIN.S` | Floating-Point Minimum | `__builtin_mips_min_s` | Builtin, Automatic (fminf) |
+| `MAX.S` | Floating-Point Maximum | `__builtin_mips_max_s` | Builtin, Automatic (fmaxf) |
+| `RSQRT.S` | Reciprocal Square Root (fd = fs / sqrt(ft)) | - | Automatic |
+| `SQRT.S` | Square Root | - | Automatic (std MIPS) |
 
 ---
 
@@ -407,104 +405,98 @@ Use `-mvu0` flag to enable. Registers: `$vf0`-`$vf31` (32 x 128-bit).
 
 ### 6.1 Data Transfer
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `LQC2` | Load Quadword to COP2 | Implemented | Automatic |
-| `SQC2` | Store Quadword from COP2 | Implemented | Automatic |
-| `QMFC2` | Quadword Move From COP2 to GP | Implemented | Automatic |
-| `QMTC2` | Quadword Move To COP2 from GP | Implemented | Automatic |
-| `CFC2` | Control Transfer from VU to EE Core | Not implemented | - |
-| `CTC2` | Control Transfer from EE Core to VU | Not implemented | - |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `LQC2` | Load Quadword to COP2 | - | Automatic |
+| `SQC2` | Store Quadword from COP2 | - | Automatic |
+| `QMFC2` | Quadword Move From COP2 to GP | - | Automatic |
+| `QMTC2` | Quadword Move To COP2 from GP | - | Automatic |
+| `CFC2` | Control Transfer from VU to EE Core | - | - |
+| `CTC2` | Control Transfer from EE Core to VU | - | - |
 
-### 6.2 Vector Arithmetic (Autovectorized)
+### 6.2 Vector Arithmetic
 
-These are automatically generated by GCC when autovectorization is enabled.
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VADD.xyzw` | dest = a + b | `__builtin_vu0_vadd` | Builtin, Automatic |
+| `VSUB.xyzw` | dest = a - b | `__builtin_vu0_vsub` | Builtin, Automatic |
+| `VMUL.xyzw` | dest = a * b | `__builtin_vu0_vmul` | Builtin, Automatic |
+| `VABS.xyzw` | dest = \|a\| | `__builtin_vu0_vabs` | Builtin, Automatic |
+| `VMAX.xyzw` | dest = max(a, b) | `__builtin_vu0_vmax` | Builtin, Automatic |
+| `VMINI.xyzw` | dest = min(a, b) | `__builtin_vu0_vmini` | Builtin, Automatic |
+| `VMOVE.xyzw` | dest = src | `__builtin_vu0_vmove` | Builtin, Automatic |
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VADD.xyzw` | Vector Add | Implemented | Automatic |
-| `VSUB.xyzw` | Vector Subtract | Implemented | Automatic |
-| `VMUL.xyzw` | Vector Multiply | Implemented | Automatic |
-| `VABS.xyzw` | Vector Absolute Value | Implemented | Automatic |
-| `VMAX.xyzw` | Vector Maximum | Implemented | Automatic |
-| `VMINI.xyzw` | Vector Minimum | Implemented | Automatic |
-| `VMOVE.xyzw` | Vector Move | Implemented | Automatic |
+### 6.3 Broadcast Arithmetic (bc = x/y/z/w)
 
-### 6.3 Broadcast Arithmetic Operations
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VADDbc.xyzw` | dest = a + b.bc | `__builtin_vu0_vaddbc` | Builtin |
+| `VSUBbc.xyzw` | dest = a - b.bc | `__builtin_vu0_vsubbc` | Builtin |
+| `VMULbc.xyzw` | dest = a * b.bc | `__builtin_vu0_vmulbc` | Builtin |
 
-Operations with a single component broadcast to all lanes (bc = x/y/z/w suffix).
+### 6.4 Multiply-Accumulate (bc variants: x/y/z/w)
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VADDbc.xyzw` | dest = a + b.bc | Implemented | `__builtin_vu0_vaddx/y/z/w` |
-| `VSUBbc.xyzw` | dest = a - b.bc | Implemented | `__builtin_vu0_vsubx/y/z/w` |
-| `VMULbc.xyzw` | dest = a * b.bc | Implemented | `__builtin_vu0_vmulx/y/z/w` |
+VU0 has an implicit ACC register for efficient FMA chains.
 
-### 6.4 Multiply-Accumulate Operations
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VMULA.xyzw` | ACC = a * b | `__builtin_vu0_vmula` | Builtin |
+| `VMULAbc.xyzw` | ACC = a * b.bc | `__builtin_vu0_mulabc` | Builtin |
+| `VMADDA.xyzw` | ACC += a * b | `__builtin_vu0_vmadda` | Builtin |
+| `VMADDAbc.xyzw` | ACC += a * b.bc | `__builtin_vu0_vmaddabc` | Builtin |
+| `VMADD.xyzw` | dest = ACC + a * b | `__builtin_vu0_vmadd` | Builtin |
+| `VMADDbc.xyzw` | dest = ACC + a * b.bc | `__builtin_vu0_vmaddbc` | Builtin |
+| `VMSUBA.xyzw` | ACC -= a * b | `__builtin_vu0_vmsuba` | Builtin |
+| `VMSUBAbc.xyzw` | ACC -= a * b.bc | `__builtin_vu0_vmsubabc` | Builtin |
+| `VMSUB.xyzw` | dest = ACC - a * b | `__builtin_vu0_vmsub` | Builtin |
+| `VMSUBbc.xyzw` | dest = ACC - a * b.bc | `__builtin_vu0_vmsubbc` | Builtin |
 
-VU0 has an implicit ACC register for efficient FMA chains. All operations have broadcast variants (bc suffix = x/y/z/w).
+### 6.5 Add/Subtract to Accumulator (bc variants: x/y/z/w)
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VMULA.xyzw` | ACC = a * b | Implemented | `__builtin_vu0_vmula` |
-| `VMULAbc.xyzw` | ACC = a * b.bc | Implemented | `__builtin_vu0_vmulax/y/z/w` |
-| `VMADDA.xyzw` | ACC += a * b | Implemented | `__builtin_vu0_vmadda` |
-| `VMADDAbc.xyzw` | ACC += a * b.bc | Implemented | `__builtin_vu0_vmaddax/y/z/w` |
-| `VMADD.xyzw` | dest = ACC + a * b | Implemented | `__builtin_vu0_vmadd` |
-| `VMADDbc.xyzw` | dest = ACC + a * b.bc | Implemented | `__builtin_vu0_vmaddx/y/z/w` |
-| `VMSUBA.xyzw` | ACC -= a * b | Implemented | `__builtin_vu0_vmsuba` |
-| `VMSUBAbc.xyzw` | ACC -= a * b.bc | Implemented | `__builtin_vu0_vmsubax/y/z/w` |
-| `VMSUB.xyzw` | dest = ACC - a * b | Implemented | `__builtin_vu0_vmsub` |
-| `VMSUBbc.xyzw` | dest = ACC - a * b.bc | Implemented | `__builtin_vu0_vmsubx/y/z/w` |
-
-### 6.5 Add/Subtract Accumulator Operations
-
-Store add/subtract results to ACC. Broadcast variants available (bc = x/y/z/w).
-
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VADDA.xyzw` | ACC = a + b | Implemented | `__builtin_vu0_vadda` |
-| `VADDAbc.xyzw` | ACC = a + b.bc | Implemented | `__builtin_vu0_vaddax/y/z/w` |
-| `VSUBA.xyzw` | ACC = a - b | Implemented | `__builtin_vu0_vsuba` |
-| `VSUBAbc.xyzw` | ACC = a - b.bc | Implemented | `__builtin_vu0_vsubax/y/z/w` |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VADDA.xyzw` | ACC = a + b | `__builtin_vu0_vadda` | Builtin |
+| `VADDAbc.xyzw` | ACC = a + b.bc | `__builtin_vu0_vaddabc` | Builtin |
+| `VSUBA.xyzw` | ACC = a - b | `__builtin_vu0_vsuba` | Builtin |
+| `VSUBAbc.xyzw` | ACC = a - b.bc | `__builtin_vu0_vsubabc` | Builtin |
 
 ### 6.6 Outer Product (Cross Product)
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VOPMULA.xyz` | ACC.xyz = a.yzx * b.zxy | Implemented | `__builtin_vu0_vopmula` |
-| `VOPMSUB.xyz` | dest.xyz = ACC - a.zxy * b.yzx | Implemented | `__builtin_vu0_vopmsub` |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VOPMULA.xyz` | ACC.xyz = a.yzx * b.zxy | `__builtin_vu0_vopmula` | Builtin |
+| `VOPMSUB.xyz` | dest.xyz = ACC - a.zxy * b.yzx | `__builtin_vu0_vopmsub` | Builtin |
 
 ### 6.7 Conversion Operations
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VFTOI0.xyzw` | Float to 32-bit integer | Implemented | `__builtin_vu0_vftoi0` |
-| `VFTOI4.xyzw` | Float to 28.4 fixed-point | Implemented | `__builtin_vu0_vftoi4` |
-| `VFTOI12.xyzw` | Float to 20.12 fixed-point | Implemented | `__builtin_vu0_vftoi12` |
-| `VFTOI15.xyzw` | Float to 17.15 fixed-point | Implemented | `__builtin_vu0_vftoi15` |
-| `VITOF0.xyzw` | 32-bit integer to float | Implemented | `__builtin_vu0_vitof0` |
-| `VITOF4.xyzw` | 28.4 fixed-point to float | Implemented | `__builtin_vu0_vitof4` |
-| `VITOF12.xyzw` | 20.12 fixed-point to float | Implemented | `__builtin_vu0_vitof12` |
-| `VITOF15.xyzw` | 17.15 fixed-point to float | Implemented | `__builtin_vu0_vitof15` |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VFTOI0.xyzw` | Float to 32-bit integer | `__builtin_vu0_vftoi0` | Builtin |
+| `VFTOI4.xyzw` | Float to 28.4 fixed-point | `__builtin_vu0_vftoi4` | Builtin |
+| `VFTOI12.xyzw` | Float to 20.12 fixed-point | `__builtin_vu0_vftoi12` | Builtin |
+| `VFTOI15.xyzw` | Float to 17.15 fixed-point | `__builtin_vu0_vftoi15` | Builtin |
+| `VITOF0.xyzw` | 32-bit integer to float | `__builtin_vu0_vitof0` | Builtin |
+| `VITOF4.xyzw` | 28.4 fixed-point to float | `__builtin_vu0_vitof4` | Builtin |
+| `VITOF12.xyzw` | 20.12 fixed-point to float | `__builtin_vu0_vitof12` | Builtin |
+| `VITOF15.xyzw` | 17.15 fixed-point to float | `__builtin_vu0_vitof15` | Builtin |
 
 ### 6.8 Data Movement
 
-| Instruction | Description | GCC Status | Intrinsic |
-|-------------|-------------|------------|-----------|
-| `VMR32.xyzw` | Rotate: dest.xyzw = src.yzwx | Implemented | `__builtin_vu0_vmr32` |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VMR32.xyzw` | dest.xyzw = src.yzwx | `__builtin_vu0_vmr32` | Builtin |
 
-### 6.9 VU0 Instructions Not Yet Implemented
+### 6.9 Not Yet Implemented
 
-| Instruction | Description |
-|-------------|-------------|
-| `VADDi/q`, `VSUBi/q`, `VMULi/q` | Arithmetic with I/Q register |
-| `VMADDi/q`, `VMSUBi/q` | Multiply-accumulate with I/Q register |
-| `VDIV`, `VSQRT`, `VRSQRT` | Division and square root |
-| `VCLIP` | Clipping judgment |
-| `VIADD/ISUB/IAND/IOR` | Integer operations (require VI registers) |
-| `VLQI/VSQI`, `VLQD/VSQD` | Load/Store with increment/decrement |
-| `BC2F/T/FL/TL` | COP2 branch instructions |
+| Instruction | Description | Intrinsic | Usage |
+|-------------|-------------|-----------|-------|
+| `VADDi/q`, `VSUBi/q`, `VMULi/q` | Arithmetic with I/Q register | - | - |
+| `VMADDi/q`, `VMSUBi/q` | Multiply-accumulate with I/Q | - | - |
+| `VDIV`, `VSQRT`, `VRSQRT` | Division and square root | - | - |
+| `VCLIP` | Clipping judgment | - | - |
+| `VIADD/ISUB/IAND/IOR` | Integer operations (VI regs) | - | - |
+| `VLQI/VSQI`, `VLQD/VSQD` | Load/Store with inc/dec | - | - |
+| `BC2F/T/FL/TL` | COP2 branch instructions | - | - |
 
 ---
 

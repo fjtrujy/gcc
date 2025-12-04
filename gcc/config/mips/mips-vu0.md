@@ -102,6 +102,10 @@
   UNSPEC_VU0_VITOF15
   ;; Vector rotate
   UNSPEC_VU0_VMR32
+  ;; Explicit intrinsic operations
+  UNSPEC_VU0_VMAX
+  UNSPEC_VU0_VMINI
+  UNSPEC_VU0_VMOVE
 ])
 
 ;; -------------------------------------------------------------------------
@@ -936,5 +940,42 @@
                      UNSPEC_VU0_VMR32))]
   "ISA_HAS_VU0"
   "vmr32.xyzw\t%0,%1"
+  [(set_attr "type" "fmove")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Explicit Intrinsic Patterns
+;; Named patterns for builtins that expose automatic operations explicitly.
+;; -------------------------------------------------------------------------
+
+;; vu0_vmax: Explicit max intrinsic
+(define_insn "vu0_vmax"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")]
+                     UNSPEC_VU0_VMAX))]
+  "ISA_HAS_VU0"
+  "vmax.xyzw\t%0,%1,%2"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vu0_vmini: Explicit min intrinsic
+(define_insn "vu0_vmini"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")]
+                     UNSPEC_VU0_VMINI))]
+  "ISA_HAS_VU0"
+  "vmini.xyzw\t%0,%1,%2"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vu0_vmove: Explicit move intrinsic
+(define_insn "vu0_vmove"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+                     UNSPEC_VU0_VMOVE))]
+  "ISA_HAS_VU0"
+  "vmove.xyzw\t%0,%1"
   [(set_attr "type" "fmove")
    (set_attr "mode" "V4SF")])
