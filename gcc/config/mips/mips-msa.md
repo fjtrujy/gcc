@@ -865,38 +865,43 @@
   [(set_attr "type" "simd_div")
    (set_attr "mode" "<MODE>")])
 
+;; Logical XOR - supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "xor<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
 	(xor:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
   "@
    xor.v\t%w0,%w1,%w2
    bnegi.%v0\t%w0,%w1,%V2
-   xori.b\t%w0,%w1,%B2"
-  [(set_attr "type" "simd_logic,simd_bit,simd_logic")
+   xori.b\t%w0,%w1,%B2
+   pxor\t%0,%1,%2"
+  [(set_attr "type" "simd_logic,simd_bit,simd_logic,arith")
    (set_attr "mode" "<MODE>")])
 
+;; Logical OR - supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "ior<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
 	(ior:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
   "@
    or.v\t%w0,%w1,%w2
    bseti.%v0\t%w0,%w1,%V2
-   ori.b\t%w0,%w1,%B2"
-  [(set_attr "type" "simd_logic,simd_bit,simd_logic")
+   ori.b\t%w0,%w1,%B2
+   por\t%0,%1,%2"
+  [(set_attr "type" "simd_logic,simd_bit,simd_logic,arith")
    (set_attr "mode" "<MODE>")])
 
+;; Logical AND - supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "and<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
 	(and:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YZ,Urv8")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YZ,Urv8,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   switch (which_alternative)
     {
@@ -911,19 +916,26 @@
       }
     case 2:
       return "andi.b\t%w0,%w1,%B2";
+    case 3:
+      /* R5900 MMI parallel AND (128-bit in GP registers).  */
+      return "pand\t%0,%1,%2";
     default:
       gcc_unreachable ();
     }
 }
-  [(set_attr "type" "simd_logic,simd_bit,simd_logic")
+  [(set_attr "type" "simd_logic,simd_bit,simd_logic,arith")
    (set_attr "mode" "<MODE>")])
 
+;; Logical NOT - supports both MSA (FPU registers) and R5900 MMI (GP registers)
+;; MSA uses NOR.V with same operand, MMI uses PNOR with same operand
 (define_insn "one_cmpl<mode>2"
-  [(set (match_operand:IMSA 0 "register_operand" "=f")
-	(not:IMSA (match_operand:IMSA 1 "register_operand" "f")))]
-  "ISA_HAS_MSA"
-  "nor.v\t%w0,%w1,%w1"
-  [(set_attr "type" "simd_logic")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,d")
+	(not:IMSA (match_operand:IMSA 1 "register_operand" "f,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "@
+   nor.v\t%w0,%w1,%w1
+   pnor\t%0,%1,%1"
+  [(set_attr "type" "simd_logic,arith")
    (set_attr "mode" "TI")])
 
 (define_insn "vlshr<mode>3"

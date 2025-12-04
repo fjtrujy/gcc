@@ -78,3 +78,39 @@ test_vec_min_short (short *__restrict a, short *__restrict b, short *__restrict 
     c[i] = a[i] < b[i] ? a[i] : b[i];
 }
 /* { dg-final { scan-assembler "\\tpminh\\t" } } */
+
+/* Test integer AND loop */
+NOMIPS16 void
+test_vec_and_int (int *__restrict a, int *__restrict b, int *__restrict c, int n)
+{
+  for (int i = 0; i < n; i++)
+    c[i] = a[i] & b[i];
+}
+/* { dg-final { scan-assembler "\\tpand\\t" } } */
+
+/* Test integer OR loop */
+NOMIPS16 void
+test_vec_or_int (int *__restrict a, int *__restrict b, int *__restrict c, int n)
+{
+  for (int i = 0; i < n; i++)
+    c[i] = a[i] | b[i];
+}
+/* { dg-final { scan-assembler "\\tpor\\t" } } */
+
+/* Test integer XOR loop */
+NOMIPS16 void
+test_vec_xor_int (int *__restrict a, int *__restrict b, int *__restrict c, int n)
+{
+  for (int i = 0; i < n; i++)
+    c[i] = a[i] ^ b[i];
+}
+/* { dg-final { scan-assembler "\\tpxor\\t" } } */
+
+/* Test integer NOT loop */
+NOMIPS16 void
+test_vec_not_int (int *__restrict a, int *__restrict c, int n)
+{
+  for (int i = 0; i < n; i++)
+    c[i] = ~a[i];
+}
+/* { dg-final { scan-assembler "\\tpnor\\t" } } */

@@ -146,7 +146,7 @@ These use the 128-bit GP registers for integer SIMD:
 | `V4SI` | 128-bit | 4 × 32-bit int | Parallel word operations | **Implemented** (builtins + autovec) |
 | `V2DI` | 128-bit | 2 × 64-bit int | Parallel doubleword operations | **Implemented** (builtins) |
 
-These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub operations at `-O3 -ftree-vectorize`.
+These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub, min/max, and logical operations at `-O3 -ftree-vectorize`.
 
 ### Type Usage Examples
 
@@ -172,6 +172,8 @@ vec_c = vec_a * vec_b + vec_c;  // Generates: vmulaw.xyzw + vmadd.xyzw
 | Double Scalar | DF | 0/1 (0% - not supported by HW) |
 | VU0 Vector (float) | V4SF | 1/1 (100%) |
 | MMI Vector (int) | V16QI, V8HI, V4SI, V2DI | 4/4 (100%, builtins) |
+
+**TImode (128-bit scalar) optimizations:** Logical operations (`&`, `|`, `^`, `~`) on `__int128` use single MMI instructions (pand, por, pxor, pnor).
 
 ---
 
@@ -242,10 +244,10 @@ These instructions operate on the full 128-bit width of GP registers.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PAND` | Parallel AND (128-bit) | `__builtin_mmi_pand` | Builtin |
-| `POR` | Parallel OR (128-bit) | `__builtin_mmi_por` | Builtin, Automatic (move) |
-| `PXOR` | Parallel XOR (128-bit) | `__builtin_mmi_pxor` | Builtin |
-| `PNOR` | Parallel NOR (128-bit) | `__builtin_mmi_pnor` | Builtin |
+| `PAND` | Parallel AND (128-bit) | `__builtin_mmi_pand` | Builtin, Automatic |
+| `POR` | Parallel OR (128-bit) | `__builtin_mmi_por` | Builtin, Automatic |
+| `PXOR` | Parallel XOR (128-bit) | `__builtin_mmi_pxor` | Builtin, Automatic |
+| `PNOR` | Parallel NOR (128-bit) | `__builtin_mmi_pnor` | Builtin, Automatic (NOT) |
 
 ### 2.5 Parallel Shift Operations
 
@@ -555,6 +557,23 @@ typedef __int128 int128_t;
 int128_t add128(int128_t a, int128_t b) {
     return a + b;  // Uses lq/sq for load/store
 }
+
+// Logical operations use MMI instructions
+int128_t and128(int128_t a, int128_t b) {
+    return a & b;  // Generates: pand
+}
+
+int128_t or128(int128_t a, int128_t b) {
+    return a | b;  // Generates: por
+}
+
+int128_t xor128(int128_t a, int128_t b) {
+    return a ^ b;  // Generates: pxor
+}
+
+int128_t not128(int128_t a) {
+    return ~a;     // Generates: pnor
+}
 ```
 
 ### MMI Vector Operations (Integer SIMD)
@@ -581,14 +600,28 @@ With `-O3 -ftree-vectorize`, GCC auto-vectorizes integer loops:
 
 ```c
 // Compile with: -march=r5900 -O3 -ftree-vectorize
+
+// Arithmetic operations
 void add_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
     for (int i = 0; i < n; i++)
         c[i] = a[i] + b[i];  // Auto-vectorized to: paddw
 }
 
-void add_shorts(short *__restrict a, short *__restrict b, short *__restrict c, int n) {
+// Min/max operations
+void max_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
     for (int i = 0; i < n; i++)
-        c[i] = a[i] + b[i];  // Auto-vectorized to: paddh
+        c[i] = a[i] > b[i] ? a[i] : b[i];  // Auto-vectorized to: pmaxw
+}
+
+// Logical operations
+void and_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = a[i] & b[i];  // Auto-vectorized to: pand
+}
+
+void not_arrays(int *__restrict a, int *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = ~a[i];  // Auto-vectorized to: pnor
 }
 ```
 

@@ -171,6 +171,46 @@
    (set_attr "mode" "TI")])
 
 ;; -------------------------------------------------------------------------
+;; TImode (128-bit scalar) Logical Operations
+;; -------------------------------------------------------------------------
+;; These enable efficient __int128 logical operations using MMI instructions.
+
+(define_insn "andti3"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(and:TI (match_operand:TI 1 "register_operand" "d")
+		(match_operand:TI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pand\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "iorti3"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(ior:TI (match_operand:TI 1 "register_operand" "d")
+		(match_operand:TI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "por\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "xorti3"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(xor:TI (match_operand:TI 1 "register_operand" "d")
+		(match_operand:TI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pxor\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "one_cmplti2"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(not:TI (match_operand:TI 1 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pnor\t%0,%1,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
 ;; Parallel Comparison Operations - Explicit Builtins
 ;; -------------------------------------------------------------------------
 ;; Comparisons produce all-1s (true) or all-0s (false) per element.
