@@ -5053,9 +5053,14 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
-  /* R5900 TImode moves don't need splitting - GP registers are 128-bit.  */
-  if (TARGET_MIPS5900 && GET_MODE (dest) == E_TImode)
-    return false;
+  /* R5900 TImode and 128-bit vector moves don't need splitting - GP registers are 128-bit.  */
+  if (TARGET_MIPS5900)
+    {
+      machine_mode mode = GET_MODE (dest);
+      if (mode == E_TImode || mode == E_V4SImode || mode == E_V8HImode
+	  || mode == E_V16QImode || mode == E_V2DImode)
+	return false;
+    }
 
   /* Otherwise split all multiword moves.  */
   return size > UNITS_PER_WORD;
@@ -5407,9 +5412,11 @@ mips_output_move (rtx dest, rtx src)
       return "ldi.%v0\t%w0,%E1";
     }
 
-  /* R5900 TImode (128-bit integer) moves using lq/sq/por.
+  /* R5900 TImode (128-bit integer) and 128-bit vector modes using lq/sq/por.
      R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.  */
-  if (TARGET_MIPS5900 && mode == E_TImode)
+  if (TARGET_MIPS5900
+      && (mode == E_TImode || mode == E_V4SImode || mode == E_V8HImode
+	  || mode == E_V16QImode || mode == E_V2DImode))
     {
       if (dest_code == REG && GP_REG_P (REGNO (dest)))
 	{
@@ -13371,6 +13378,12 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
     return true;
 
+  /* R5900 MMI uses 128-bit vector modes in GPRs.  */
+  if (GP_REG_P (regno) && ISA_HAS_MMI
+      && (mode == E_V16QImode || mode == E_V8HImode
+	  || mode == E_V4SImode || mode == E_V2DImode))
+    return true;
+
   if (FP_REG_P (regno)
       && (((regno - FP_REG_FIRST) % MAX_FPRS_PER_FMT) == 0
 	  || (MIN_FPRS_PER_FMT == 1 && size <= UNITS_PER_FPREG)))
@@ -14046,6 +14059,13 @@ mips_vector_mode_supported_p (machine_mode mode)
     case E_V8QImode:
       return TARGET_LOONGSON_MMI;
 
+    /* R5900 MMI uses 128-bit vectors in GPRs.  */
+    case E_V16QImode:
+    case E_V8HImode:
+    case E_V4SImode:
+    case E_V2DImode:
+      return ISA_HAS_MMI || MSA_SUPPORTED_MODE_P (mode);
+
     case E_V4SFmode:
       return ISA_HAS_VU0 || MSA_SUPPORTED_MODE_P (mode);
 
@@ -14078,6 +14098,24 @@ mips_preferred_simd_mode (scalar_mode mode)
   if (TARGET_PAIRED_SINGLE_FLOAT
       && mode == SFmode)
     return V2SFmode;
+
+  /* R5900 MMI provides 128-bit SIMD for integers in GPRs.  */
+  if (ISA_HAS_MMI)
+    {
+      switch (mode)
+	{
+	case E_QImode:
+	  return V16QImode;
+	case E_HImode:
+	  return V8HImode;
+	case E_SImode:
+	  return V4SImode;
+	case E_DImode:
+	  return V2DImode;
+	default:
+	  break;
+	}
+    }
 
   if (!ISA_HAS_MSA)
     return word_mode;
@@ -14112,6 +14150,14 @@ mips_autovectorize_vector_modes (vector_modes *modes, bool)
 {
   if (ISA_HAS_VU0)
     modes->safe_push (V4SFmode);
+
+  /* R5900 MMI provides 128-bit integer SIMD in GPRs.  */
+  if (ISA_HAS_MMI)
+    {
+      modes->safe_push (V4SImode);
+      modes->safe_push (V8HImode);
+      modes->safe_push (V16QImode);
+    }
   else if (ISA_HAS_MSA)
     modes->safe_push (V16QImode);
   return 0;
@@ -15955,6 +16001,7 @@ AVAIL_NON_MIPS16 (loongson, TARGET_LOONGSON_MMI)
 AVAIL_MIPS16E2_OR_NON_MIPS16 (cache, TARGET_CACHE_BUILTIN)
 AVAIL_NON_MIPS16 (msa, TARGET_MSA)
 AVAIL_NON_MIPS16 (vu0, ISA_HAS_VU0)
+AVAIL_NON_MIPS16 (mmi, ISA_HAS_MMI)
 AVAIL_NON_MIPS16 (r5900_fpu, TARGET_MIPS5900)
 AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 
@@ -16145,6 +16192,21 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     { CODE_FOR_vu0_ ## INSN, MIPS_FP_COND_f,				\
     "__builtin_vu0_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
     FUNCTION_TYPE, mips_builtin_avail_vu0, false }
+
+/* Define an R5900 MMI MIPS_BUILTIN_DIRECT pure function __builtin_mmi_<INSN>
+   for instruction CODE_FOR_mmi_<INSN>.  FUNCTION_TYPE is a builtin_description
+   field.  */
+#define MMI_BUILTIN_PURE(INSN, FUNCTION_TYPE)				\
+    { CODE_FOR_mmi_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mmi_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_mmi, true }
+
+/* Define an R5900 MMI MIPS_BUILTIN_DIRECT_NO_TARGET function for __builtin_mmi_<INSN>.
+   These are for operations with no return value.  */
+#define MMI_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_mmi_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mmi_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_mmi, false }
 
 /* Define an R5900 FPU MIPS_BUILTIN_DIRECT pure function __builtin_mips_<INSN>_s
    for instruction CODE_FOR_fpu_<INSN>.  FUNCTION_TYPE is a builtin_description
@@ -17345,6 +17407,21 @@ static const struct mips_builtin_description mips_builtins[] = {
   /* R5900 FPU min/max explicit intrinsics */
   R5900_FPU_BUILTIN_PURE (min, MIPS_SF_FTYPE_SF_SF),
   R5900_FPU_BUILTIN_PURE (max, MIPS_SF_FTYPE_SF_SF),
+
+  /* Built-in functions for R5900 MMI (Multimedia Instructions).  */
+  /* Parallel add: PADDB, PADDH, PADDW */
+  MMI_BUILTIN_PURE (paddb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (paddh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (paddw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel subtract: PSUBB, PSUBH, PSUBW */
+  MMI_BUILTIN_PURE (psubb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (psubh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (psubw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel logical: PAND, POR, PXOR, PNOR */
+  MMI_BUILTIN_PURE (pand, MIPS_V2DI_FTYPE_V2DI_V2DI),
+  MMI_BUILTIN_PURE (por, MIPS_V2DI_FTYPE_V2DI_V2DI),
+  MMI_BUILTIN_PURE (pxor, MIPS_V2DI_FTYPE_V2DI_V2DI),
+  MMI_BUILTIN_PURE (pnor, MIPS_V2DI_FTYPE_V2DI_V2DI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the

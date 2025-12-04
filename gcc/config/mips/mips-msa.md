@@ -663,10 +663,11 @@
    (set_attr "mode" "<MODE>")])
 
 ;; V4SF mov is handled in mips-vu0.md for VU0 compatibility
+;; Supports both MSA and R5900 MMI
 (define_expand "mov<mode>"
   [(set (match_operand:MSA_NO_V4SF 0)
 	(match_operand:MSA_NO_V4SF 1))]
-  "ISA_HAS_MSA"
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
     DONE;
@@ -730,12 +731,13 @@
 })
 
 ;; Integer operations
+;; Supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "add<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
 	(plus:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   switch (which_alternative)
     {
@@ -750,6 +752,15 @@
       }
     case 2:
       return "addvi.<msafmt>\t%w0,%w1,%E2";
+    case 3:
+      /* R5900 MMI parallel add.  */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V16QImode: return "paddb\t%0,%1,%2";
+	case E_V8HImode:  return "paddh\t%0,%1,%2";
+	case E_V4SImode:  return "paddw\t%0,%1,%2";
+	default: gcc_unreachable ();
+	}
     default:
       gcc_unreachable ();
     }
@@ -758,15 +769,33 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
+;; Supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "sub<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d")
 	(minus:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5")))]
-  "ISA_HAS_MSA"
-  "@
-   subv.<msafmt>\t%w0,%w1,%w2
-   subvi.<msafmt>\t%w0,%w1,%E2"
+	  (match_operand:IMSA 1 "register_operand" "f,f,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "subv.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      return "subvi.<msafmt>\t%w0,%w1,%E2";
+    case 2:
+      /* R5900 MMI parallel subtract.  */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V16QImode: return "psubb\t%0,%1,%2";
+	case E_V8HImode:  return "psubh\t%0,%1,%2";
+	case E_V4SImode:  return "psubw\t%0,%1,%2";
+	default: gcc_unreachable ();
+	}
+    default:
+      gcc_unreachable ();
+    }
+}
   [(set_attr "alu_type" "simd_add")
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])

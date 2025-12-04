@@ -8140,6 +8140,9 @@
 ; PS2 VU0 vector unit instructions.
 (include "mips-vu0.md")
 
+; PS2 R5900 MMI (Multimedia Instructions).
+(include "mips-mmi.md")
+
 (define_c_enum "unspec" [
   UNSPEC_ADDRESS_FIRST
 ])
