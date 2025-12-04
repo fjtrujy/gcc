@@ -39,4 +39,4 @@ test_return_nonzero (void)
 {
   return 0x12345678;
 }
-/* { dg-final { scan-assembler-times "\tlq\t\\\$2," 1 } } */
+/* { dg-final { scan-assembler-times "\tlq\t\\\$2," 2 } } */
