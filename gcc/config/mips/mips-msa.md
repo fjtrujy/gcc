@@ -2302,14 +2302,33 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
+;; Signed maximum - supports both MSA (FPU registers) and R5900 MMI (GP registers)
+;; Note: MMI only supports V4SI (word) and V8HI (halfword), not V16QI or V2DI
 (define_insn "smax<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
-	(smax:IMSA (match_operand:IMSA 1 "register_operand" "f,f")
-		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5")))]
-  "ISA_HAS_MSA"
-  "@
-   max_s.<msafmt>\t%w0,%w1,%w2
-   maxi_s.<msafmt>\t%w0,%w1,%E2"
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d")
+	(smax:IMSA (match_operand:IMSA 1 "register_operand" "f,f,d")
+		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5,d")))]
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "max_s.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      return "maxi_s.<msafmt>\t%w0,%w1,%E2";
+    case 2:
+      /* R5900 MMI parallel max.  */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V8HImode:  return "pmaxh\t%0,%1,%2";
+	case E_V4SImode:  return "pmaxw\t%0,%1,%2";
+	default: gcc_unreachable ();
+	}
+    default:
+      gcc_unreachable ();
+    }
+}
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
@@ -2336,14 +2355,33 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
+;; Signed minimum - supports both MSA (FPU registers) and R5900 MMI (GP registers)
+;; Note: MMI only supports V4SI (word) and V8HI (halfword), not V16QI or V2DI
 (define_insn "smin<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
-	(smin:IMSA (match_operand:IMSA 1 "register_operand" "f,f")
-		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5")))]
-  "ISA_HAS_MSA"
-  "@
-   min_s.<msafmt>\t%w0,%w1,%w2
-   mini_s.<msafmt>\t%w0,%w1,%E2"
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d")
+	(smin:IMSA (match_operand:IMSA 1 "register_operand" "f,f,d")
+		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5,d")))]
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "min_s.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      return "mini_s.<msafmt>\t%w0,%w1,%E2";
+    case 2:
+      /* R5900 MMI parallel min.  */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V8HImode:  return "pminh\t%0,%1,%2";
+	case E_V4SImode:  return "pminw\t%0,%1,%2";
+	default: gcc_unreachable ();
+	}
+    default:
+      gcc_unreachable ();
+    }
+}
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 

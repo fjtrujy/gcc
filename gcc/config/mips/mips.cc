@@ -17422,6 +17422,19 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_BUILTIN_PURE (por, MIPS_V2DI_FTYPE_V2DI_V2DI),
   MMI_BUILTIN_PURE (pxor, MIPS_V2DI_FTYPE_V2DI_V2DI),
   MMI_BUILTIN_PURE (pnor, MIPS_V2DI_FTYPE_V2DI_V2DI),
+  /* Parallel compare equal: PCEQB, PCEQH, PCEQW */
+  MMI_BUILTIN_PURE (pceqb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (pceqh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pceqw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel compare greater than (signed): PCGTB, PCGTH, PCGTW */
+  MMI_BUILTIN_PURE (pcgtb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (pcgth, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pcgtw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel min/max (signed): PMAXH, PMAXW, PMINH, PMINW */
+  MMI_BUILTIN_PURE (pmaxh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pmaxw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pminh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pminw, MIPS_V4SI_FTYPE_V4SI_V4SI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the

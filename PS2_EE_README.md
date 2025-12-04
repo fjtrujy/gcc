@@ -222,21 +222,21 @@ These instructions operate on the full 128-bit width of GP registers.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PCEQB` | Parallel Compare Equal Byte | - | - |
-| `PCEQH` | Parallel Compare Equal Halfword | - | - |
-| `PCEQW` | Parallel Compare Equal Word | - | - |
-| `PCGTB` | Parallel Compare Greater Than Byte | - | - |
-| `PCGTH` | Parallel Compare Greater Than Halfword | - | - |
-| `PCGTW` | Parallel Compare Greater Than Word | - | - |
+| `PCEQB` | Parallel Compare Equal Byte | `__builtin_mmi_pceqb` | Builtin |
+| `PCEQH` | Parallel Compare Equal Halfword | `__builtin_mmi_pceqh` | Builtin |
+| `PCEQW` | Parallel Compare Equal Word | `__builtin_mmi_pceqw` | Builtin |
+| `PCGTB` | Parallel Compare Greater Than Byte | `__builtin_mmi_pcgtb` | Builtin |
+| `PCGTH` | Parallel Compare Greater Than Halfword | `__builtin_mmi_pcgth` | Builtin |
+| `PCGTW` | Parallel Compare Greater Than Word | `__builtin_mmi_pcgtw` | Builtin |
 
 ### 2.3 Parallel Min/Max
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PMAXH` | Parallel Maximum Halfword | - | - |
-| `PMAXW` | Parallel Maximum Word | - | - |
-| `PMINH` | Parallel Minimum Halfword | - | - |
-| `PMINW` | Parallel Minimum Word | - | - |
+| `PMAXH` | Parallel Maximum Halfword | `__builtin_mmi_pmaxh` | Builtin, Automatic |
+| `PMAXW` | Parallel Maximum Word | `__builtin_mmi_pmaxw` | Builtin, Automatic |
+| `PMINH` | Parallel Minimum Halfword | `__builtin_mmi_pminh` | Builtin, Automatic |
+| `PMINW` | Parallel Minimum Word | `__builtin_mmi_pminw` | Builtin, Automatic |
 
 ### 2.4 Parallel Logical Operations
 
@@ -521,8 +521,8 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 |-----------------|-------------------|-------------|----------|
 | 128-bit Load/Store | 2 | 2 | 100% |
 | MMI Arithmetic | 27 | 6 | 22% |
-| MMI Comparison | 6 | 0 | 0% |
-| MMI Min/Max | 4 | 0 | 0% |
+| MMI Comparison | 6 | 6 | 100% |
+| MMI Min/Max | 4 | 4 | 100% |
 | MMI Logical | 4 | 4 | 100% |
 | MMI Shift | 9 | 0 | 0% |
 | MMI Multiply/Divide | 13 | 0 | 0% |

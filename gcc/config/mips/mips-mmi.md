@@ -32,6 +32,18 @@
 
 (define_mode_iterator VMMI [V16QI V8HI V4SI V2DI])
 
+;; Byte/Half/Word modes (for comparisons - all sizes except doubleword)
+(define_mode_iterator VMMIBHW [V16QI V8HI V4SI])
+
+;; Half/Word modes only (for min/max - R5900 has no byte min/max)
+(define_mode_iterator VMMIHW [V8HI V4SI])
+
+;; Mode attribute for instruction suffix (byte/half/word)
+(define_mode_attr mmi_bhw [(V16QI "b") (V8HI "h") (V4SI "w")])
+
+;; Mode attribute for half/word suffix only
+(define_mode_attr mmi_hw [(V8HI "h") (V4SI "w")])
+
 ;; -------------------------------------------------------------------------
 ;; Vector Move Patterns for Autovectorization
 ;; -------------------------------------------------------------------------
@@ -155,5 +167,55 @@
 	  (not:V2DI (match_operand:V2DI 2 "register_operand" "d"))))]
   "ISA_HAS_MMI"
   "pnor\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Parallel Comparison Operations - Explicit Builtins
+;; -------------------------------------------------------------------------
+;; Comparisons produce all-1s (true) or all-0s (false) per element.
+
+;; PCEQB/H/W - Parallel Compare for Equal
+(define_insn "mmi_pceq<mmi_bhw>"
+  [(set (match_operand:VMMIBHW 0 "register_operand" "=d")
+	(eq:VMMIBHW (match_operand:VMMIBHW 1 "register_operand" "d")
+		    (match_operand:VMMIBHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pceq<mmi_bhw>\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PCGTB/H/W - Parallel Compare for Greater Than (signed)
+(define_insn "mmi_pcgt<mmi_bhw>"
+  [(set (match_operand:VMMIBHW 0 "register_operand" "=d")
+	(gt:VMMIBHW (match_operand:VMMIBHW 1 "register_operand" "d")
+		    (match_operand:VMMIBHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pcgt<mmi_bhw>\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Parallel Min/Max Operations
+;; -------------------------------------------------------------------------
+;; Note: R5900 only has halfword and word min/max (no byte variants).
+
+;; PMAXH/W - Parallel Maximum (signed)
+(define_insn "mmi_pmax<mmi_hw>"
+  [(set (match_operand:VMMIHW 0 "register_operand" "=d")
+	(smax:VMMIHW (match_operand:VMMIHW 1 "register_operand" "d")
+		     (match_operand:VMMIHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pmax<mmi_hw>\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PMINH/W - Parallel Minimum (signed)
+(define_insn "mmi_pmin<mmi_hw>"
+  [(set (match_operand:VMMIHW 0 "register_operand" "=d")
+	(smin:VMMIHW (match_operand:VMMIHW 1 "register_operand" "d")
+		     (match_operand:VMMIHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pmin<mmi_hw>\t%0,%1,%2"
   [(set_attr "type" "arith")
    (set_attr "mode" "TI")])
