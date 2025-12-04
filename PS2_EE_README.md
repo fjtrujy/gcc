@@ -195,9 +195,9 @@ These instructions operate on the full 128-bit width of GP registers.
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
 | **Addition** ||||
-| `PADDB` | Parallel Add Byte (16x8-bit) | `__builtin_mmi_paddb` | Builtin, Automatic |
-| `PADDH` | Parallel Add Halfword (8x16-bit) | `__builtin_mmi_paddh` | Builtin, Automatic |
-| `PADDW` | Parallel Add Word (4x32-bit) | `__builtin_mmi_paddw` | Builtin, Automatic |
+| `PADDB` | Parallel Add Byte (16x8-bit) | `__builtin_mmi_paddb` | Intrinsic, Autovectorize |
+| `PADDH` | Parallel Add Halfword (8x16-bit) | `__builtin_mmi_paddh` | Intrinsic, Autovectorize |
+| `PADDW` | Parallel Add Word (4x32-bit) | `__builtin_mmi_paddw` | Intrinsic, Autovectorize |
 | `PADDSB` | Parallel Add Signed Saturation Byte | - | - |
 | `PADDSH` | Parallel Add Signed Saturation Halfword | - | - |
 | `PADDSW` | Parallel Add Signed Saturation Word | - | - |
@@ -205,9 +205,9 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PADDUH` | Parallel Add Unsigned Saturation Halfword | - | - |
 | `PADDUW` | Parallel Add Unsigned Saturation Word | - | - |
 | **Subtraction** ||||
-| `PSUBB` | Parallel Subtract Byte | `__builtin_mmi_psubb` | Builtin, Automatic |
-| `PSUBH` | Parallel Subtract Halfword | `__builtin_mmi_psubh` | Builtin, Automatic |
-| `PSUBW` | Parallel Subtract Word | `__builtin_mmi_psubw` | Builtin, Automatic |
+| `PSUBB` | Parallel Subtract Byte | `__builtin_mmi_psubb` | Intrinsic, Autovectorize |
+| `PSUBH` | Parallel Subtract Halfword | `__builtin_mmi_psubh` | Intrinsic, Autovectorize |
+| `PSUBW` | Parallel Subtract Word | `__builtin_mmi_psubw` | Intrinsic, Autovectorize |
 | `PSUBSB` | Parallel Subtract Signed Saturation Byte | - | - |
 | `PSUBSH` | Parallel Subtract Signed Saturation Halfword | - | - |
 | `PSUBSW` | Parallel Subtract Signed Saturation Word | - | - |
@@ -224,30 +224,30 @@ These instructions operate on the full 128-bit width of GP registers.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PCEQB` | Parallel Compare Equal Byte | `__builtin_mmi_pceqb` | Builtin |
-| `PCEQH` | Parallel Compare Equal Halfword | `__builtin_mmi_pceqh` | Builtin |
-| `PCEQW` | Parallel Compare Equal Word | `__builtin_mmi_pceqw` | Builtin |
-| `PCGTB` | Parallel Compare Greater Than Byte | `__builtin_mmi_pcgtb` | Builtin |
-| `PCGTH` | Parallel Compare Greater Than Halfword | `__builtin_mmi_pcgth` | Builtin |
-| `PCGTW` | Parallel Compare Greater Than Word | `__builtin_mmi_pcgtw` | Builtin |
+| `PCEQB` | Parallel Compare Equal Byte | `__builtin_mmi_pceqb` | Intrinsic |
+| `PCEQH` | Parallel Compare Equal Halfword | `__builtin_mmi_pceqh` | Intrinsic |
+| `PCEQW` | Parallel Compare Equal Word | `__builtin_mmi_pceqw` | Intrinsic |
+| `PCGTB` | Parallel Compare Greater Than Byte | `__builtin_mmi_pcgtb` | Intrinsic |
+| `PCGTH` | Parallel Compare Greater Than Halfword | `__builtin_mmi_pcgth` | Intrinsic |
+| `PCGTW` | Parallel Compare Greater Than Word | `__builtin_mmi_pcgtw` | Intrinsic |
 
 ### 2.3 Parallel Min/Max
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PMAXH` | Parallel Maximum Halfword | `__builtin_mmi_pmaxh` | Builtin, Automatic |
-| `PMAXW` | Parallel Maximum Word | `__builtin_mmi_pmaxw` | Builtin, Automatic |
-| `PMINH` | Parallel Minimum Halfword | `__builtin_mmi_pminh` | Builtin, Automatic |
-| `PMINW` | Parallel Minimum Word | `__builtin_mmi_pminw` | Builtin, Automatic |
+| `PMAXH` | Parallel Maximum Halfword | `__builtin_mmi_pmaxh` | Intrinsic, Autovectorize |
+| `PMAXW` | Parallel Maximum Word | `__builtin_mmi_pmaxw` | Intrinsic, Autovectorize |
+| `PMINH` | Parallel Minimum Halfword | `__builtin_mmi_pminh` | Intrinsic, Autovectorize |
+| `PMINW` | Parallel Minimum Word | `__builtin_mmi_pminw` | Intrinsic, Autovectorize |
 
 ### 2.4 Parallel Logical Operations
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PAND` | Parallel AND (128-bit) | `__builtin_mmi_pand` | Builtin, Automatic |
-| `POR` | Parallel OR (128-bit) | `__builtin_mmi_por` | Builtin, Automatic |
-| `PXOR` | Parallel XOR (128-bit) | `__builtin_mmi_pxor` | Builtin, Automatic |
-| `PNOR` | Parallel NOR (128-bit) | `__builtin_mmi_pnor` | Builtin, Automatic (NOT) |
+| `PAND` | Parallel AND (128-bit) | `__builtin_mmi_pand` | Intrinsic, Autovectorize |
+| `POR` | Parallel OR (128-bit) | `__builtin_mmi_por` | Intrinsic, Autovectorize |
+| `PXOR` | Parallel XOR (128-bit) | `__builtin_mmi_pxor` | Intrinsic, Autovectorize |
+| `PNOR` | Parallel NOR (128-bit) | `__builtin_mmi_pnor` | Intrinsic, Autovectorize (NOT) |
 
 ### 2.5 Parallel Shift Operations
 
@@ -379,20 +379,20 @@ The FPU has a dedicated accumulator register for efficient FMA chains. ACC is a 
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `ADDA.S` | Add to Accumulator | `__builtin_mips_adda_s` | Builtin |
-| `SUBA.S` | Subtract to Accumulator | `__builtin_mips_suba_s` | Builtin |
-| `MULA.S` | Multiply to Accumulator | `__builtin_mips_mula_s` | Builtin |
-| `MADD.S` | Multiply-Add (ACC + fs * ft) | `__builtin_mips_madd_s` | Builtin |
-| `MADDA.S` | Multiply-Add to Accumulator | `__builtin_mips_madda_s` | Builtin |
-| `MSUB.S` | Multiply-Subtract (ACC - fs * ft) | `__builtin_mips_msub_s` | Builtin |
-| `MSUBA.S` | Multiply-Subtract to Accumulator | `__builtin_mips_msuba_s` | Builtin |
+| `ADDA.S` | Add to Accumulator | `__builtin_mips_adda_s` | Intrinsic |
+| `SUBA.S` | Subtract to Accumulator | `__builtin_mips_suba_s` | Intrinsic |
+| `MULA.S` | Multiply to Accumulator | `__builtin_mips_mula_s` | Intrinsic |
+| `MADD.S` | Multiply-Add (ACC + fs * ft) | `__builtin_mips_madd_s` | Intrinsic |
+| `MADDA.S` | Multiply-Add to Accumulator | `__builtin_mips_madda_s` | Intrinsic |
+| `MSUB.S` | Multiply-Subtract (ACC - fs * ft) | `__builtin_mips_msub_s` | Intrinsic |
+| `MSUBA.S` | Multiply-Subtract to Accumulator | `__builtin_mips_msuba_s` | Intrinsic |
 
 ### 5.2 Min/Max/Reciprocal
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `MIN.S` | Floating-Point Minimum | `__builtin_mips_min_s` | Builtin, Automatic (fminf) |
-| `MAX.S` | Floating-Point Maximum | `__builtin_mips_max_s` | Builtin, Automatic (fmaxf) |
+| `MIN.S` | Floating-Point Minimum | `__builtin_mips_min_s` | Intrinsic, Automatic (fminf) |
+| `MAX.S` | Floating-Point Maximum | `__builtin_mips_max_s` | Intrinsic, Automatic (fmaxf) |
 | `RSQRT.S` | Reciprocal Square Root (fd = fs / sqrt(ft)) | - | Automatic |
 | `SQRT.S` | Square Root | - | Automatic (std MIPS) |
 
@@ -409,10 +409,10 @@ Use `-mvu0` flag to enable. Registers: `$vf0`-`$vf31` (32 x 128-bit).
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `LQC2` | Load Quadword to COP2 | - | Automatic |
-| `SQC2` | Store Quadword from COP2 | - | Automatic |
-| `QMFC2` | Quadword Move From COP2 to GP | - | Automatic |
-| `QMTC2` | Quadword Move To COP2 from GP | - | Automatic |
+| `LQC2` | Load Quadword to COP2 | - | Autovectorize |
+| `SQC2` | Store Quadword from COP2 | - | Autovectorize |
+| `QMFC2` | Quadword Move From COP2 to GP | - | Autovectorize |
+| `QMTC2` | Quadword Move To COP2 from GP | - | Autovectorize |
 | `CFC2` | Control Transfer from VU to EE Core | - | - |
 | `CTC2` | Control Transfer from EE Core to VU | - | - |
 
@@ -420,21 +420,21 @@ Use `-mvu0` flag to enable. Registers: `$vf0`-`$vf31` (32 x 128-bit).
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VADD.xyzw` | dest = a + b | `__builtin_vu0_vadd` | Builtin, Automatic |
-| `VSUB.xyzw` | dest = a - b | `__builtin_vu0_vsub` | Builtin, Automatic |
-| `VMUL.xyzw` | dest = a * b | `__builtin_vu0_vmul` | Builtin, Automatic |
-| `VABS.xyzw` | dest = \|a\| | `__builtin_vu0_vabs` | Builtin, Automatic |
-| `VMAX.xyzw` | dest = max(a, b) | `__builtin_vu0_vmax` | Builtin, Automatic |
-| `VMINI.xyzw` | dest = min(a, b) | `__builtin_vu0_vmini` | Builtin, Automatic |
-| `VMOVE.xyzw` | dest = src | `__builtin_vu0_vmove` | Builtin, Automatic |
+| `VADD.xyzw` | dest = a + b | `__builtin_vu0_vadd` | Intrinsic, Autovectorize |
+| `VSUB.xyzw` | dest = a - b | `__builtin_vu0_vsub` | Intrinsic, Autovectorize |
+| `VMUL.xyzw` | dest = a * b | `__builtin_vu0_vmul` | Intrinsic, Autovectorize |
+| `VABS.xyzw` | dest = \|a\| | `__builtin_vu0_vabs` | Intrinsic, Autovectorize |
+| `VMAX.xyzw` | dest = max(a, b) | `__builtin_vu0_vmax` | Intrinsic, Autovectorize |
+| `VMINI.xyzw` | dest = min(a, b) | `__builtin_vu0_vmini` | Intrinsic, Autovectorize |
+| `VMOVE.xyzw` | dest = src | `__builtin_vu0_vmove` | Intrinsic, Autovectorize |
 
 ### 6.3 Broadcast Arithmetic (bc = x/y/z/w)
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VADDbc.xyzw` | dest = a + b.bc | `__builtin_vu0_vaddbc` | Builtin |
-| `VSUBbc.xyzw` | dest = a - b.bc | `__builtin_vu0_vsubbc` | Builtin |
-| `VMULbc.xyzw` | dest = a * b.bc | `__builtin_vu0_vmulbc` | Builtin |
+| `VADDbc.xyzw` | dest = a + b.bc | `__builtin_vu0_vaddbc` | Intrinsic |
+| `VSUBbc.xyzw` | dest = a - b.bc | `__builtin_vu0_vsubbc` | Intrinsic |
+| `VMULbc.xyzw` | dest = a * b.bc | `__builtin_vu0_vmulbc` | Intrinsic |
 
 ### 6.4 Multiply-Accumulate (bc variants: x/y/z/w)
 
@@ -442,51 +442,51 @@ VU0 has an implicit ACC register for efficient FMA chains.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VMULA.xyzw` | ACC = a * b | `__builtin_vu0_vmula` | Builtin |
-| `VMULAbc.xyzw` | ACC = a * b.bc | `__builtin_vu0_mulabc` | Builtin |
-| `VMADDA.xyzw` | ACC += a * b | `__builtin_vu0_vmadda` | Builtin |
-| `VMADDAbc.xyzw` | ACC += a * b.bc | `__builtin_vu0_vmaddabc` | Builtin |
-| `VMADD.xyzw` | dest = ACC + a * b | `__builtin_vu0_vmadd` | Builtin |
-| `VMADDbc.xyzw` | dest = ACC + a * b.bc | `__builtin_vu0_vmaddbc` | Builtin |
-| `VMSUBA.xyzw` | ACC -= a * b | `__builtin_vu0_vmsuba` | Builtin |
-| `VMSUBAbc.xyzw` | ACC -= a * b.bc | `__builtin_vu0_vmsubabc` | Builtin |
-| `VMSUB.xyzw` | dest = ACC - a * b | `__builtin_vu0_vmsub` | Builtin |
-| `VMSUBbc.xyzw` | dest = ACC - a * b.bc | `__builtin_vu0_vmsubbc` | Builtin |
+| `VMULA.xyzw` | ACC = a * b | `__builtin_vu0_vmula` | Intrinsic |
+| `VMULAbc.xyzw` | ACC = a * b.bc | `__builtin_vu0_mulabc` | Intrinsic |
+| `VMADDA.xyzw` | ACC += a * b | `__builtin_vu0_vmadda` | Intrinsic |
+| `VMADDAbc.xyzw` | ACC += a * b.bc | `__builtin_vu0_vmaddabc` | Intrinsic |
+| `VMADD.xyzw` | dest = ACC + a * b | `__builtin_vu0_vmadd` | Intrinsic |
+| `VMADDbc.xyzw` | dest = ACC + a * b.bc | `__builtin_vu0_vmaddbc` | Intrinsic |
+| `VMSUBA.xyzw` | ACC -= a * b | `__builtin_vu0_vmsuba` | Intrinsic |
+| `VMSUBAbc.xyzw` | ACC -= a * b.bc | `__builtin_vu0_vmsubabc` | Intrinsic |
+| `VMSUB.xyzw` | dest = ACC - a * b | `__builtin_vu0_vmsub` | Intrinsic |
+| `VMSUBbc.xyzw` | dest = ACC - a * b.bc | `__builtin_vu0_vmsubbc` | Intrinsic |
 
 ### 6.5 Add/Subtract to Accumulator (bc variants: x/y/z/w)
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VADDA.xyzw` | ACC = a + b | `__builtin_vu0_vadda` | Builtin |
-| `VADDAbc.xyzw` | ACC = a + b.bc | `__builtin_vu0_vaddabc` | Builtin |
-| `VSUBA.xyzw` | ACC = a - b | `__builtin_vu0_vsuba` | Builtin |
-| `VSUBAbc.xyzw` | ACC = a - b.bc | `__builtin_vu0_vsubabc` | Builtin |
+| `VADDA.xyzw` | ACC = a + b | `__builtin_vu0_vadda` | Intrinsic |
+| `VADDAbc.xyzw` | ACC = a + b.bc | `__builtin_vu0_vaddabc` | Intrinsic |
+| `VSUBA.xyzw` | ACC = a - b | `__builtin_vu0_vsuba` | Intrinsic |
+| `VSUBAbc.xyzw` | ACC = a - b.bc | `__builtin_vu0_vsubabc` | Intrinsic |
 
 ### 6.6 Outer Product (Cross Product)
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VOPMULA.xyz` | ACC.xyz = a.yzx * b.zxy | `__builtin_vu0_vopmula` | Builtin |
-| `VOPMSUB.xyz` | dest.xyz = ACC - a.zxy * b.yzx | `__builtin_vu0_vopmsub` | Builtin |
+| `VOPMULA.xyz` | ACC.xyz = a.yzx * b.zxy | `__builtin_vu0_vopmula` | Intrinsic |
+| `VOPMSUB.xyz` | dest.xyz = ACC - a.zxy * b.yzx | `__builtin_vu0_vopmsub` | Intrinsic |
 
 ### 6.7 Conversion Operations
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VFTOI0.xyzw` | Float to 32-bit integer | `__builtin_vu0_vftoi0` | Builtin |
-| `VFTOI4.xyzw` | Float to 28.4 fixed-point | `__builtin_vu0_vftoi4` | Builtin |
-| `VFTOI12.xyzw` | Float to 20.12 fixed-point | `__builtin_vu0_vftoi12` | Builtin |
-| `VFTOI15.xyzw` | Float to 17.15 fixed-point | `__builtin_vu0_vftoi15` | Builtin |
-| `VITOF0.xyzw` | 32-bit integer to float | `__builtin_vu0_vitof0` | Builtin |
-| `VITOF4.xyzw` | 28.4 fixed-point to float | `__builtin_vu0_vitof4` | Builtin |
-| `VITOF12.xyzw` | 20.12 fixed-point to float | `__builtin_vu0_vitof12` | Builtin |
-| `VITOF15.xyzw` | 17.15 fixed-point to float | `__builtin_vu0_vitof15` | Builtin |
+| `VFTOI0.xyzw` | Float to 32-bit integer | `__builtin_vu0_vftoi0` | Intrinsic |
+| `VFTOI4.xyzw` | Float to 28.4 fixed-point | `__builtin_vu0_vftoi4` | Intrinsic |
+| `VFTOI12.xyzw` | Float to 20.12 fixed-point | `__builtin_vu0_vftoi12` | Intrinsic |
+| `VFTOI15.xyzw` | Float to 17.15 fixed-point | `__builtin_vu0_vftoi15` | Intrinsic |
+| `VITOF0.xyzw` | 32-bit integer to float | `__builtin_vu0_vitof0` | Intrinsic |
+| `VITOF4.xyzw` | 28.4 fixed-point to float | `__builtin_vu0_vitof4` | Intrinsic |
+| `VITOF12.xyzw` | 20.12 fixed-point to float | `__builtin_vu0_vitof12` | Intrinsic |
+| `VITOF15.xyzw` | 17.15 fixed-point to float | `__builtin_vu0_vitof15` | Intrinsic |
 
 ### 6.8 Data Movement
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `VMR32.xyzw` | dest.xyzw = src.yzwx | `__builtin_vu0_vmr32` | Builtin |
+| `VMR32.xyzw` | dest.xyzw = src.yzwx | `__builtin_vu0_vmr32` | Intrinsic |
 
 ### 6.9 Not Yet Implemented
 
