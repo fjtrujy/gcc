@@ -135,18 +135,18 @@ These require `-march=r5900 -mvu0`:
 - Unary: `absv4sf2`
 - Compare: `smaxv4sf3`, `sminv4sf3`
 
-### Vector Types (MMI - Not Yet Implemented)
+### Vector Types (MMI - Implemented)
 
-These would use the 128-bit GP registers for integer SIMD:
+These use the 128-bit GP registers for integer SIMD:
 
 | Mode | Size | Elements | Description | GCC Status |
 |------|------|----------|-------------|------------|
-| `V16QI` | 128-bit | 16 × 8-bit int | Parallel byte operations | Not implemented |
-| `V8HI` | 128-bit | 8 × 16-bit int | Parallel halfword operations | Not implemented |
-| `V4SI` | 128-bit | 4 × 32-bit int | Parallel word operations | Not implemented |
-| `V2DI` | 128-bit | 2 × 64-bit int | Parallel doubleword operations | Not implemented |
+| `V16QI` | 128-bit | 16 × 8-bit int | Parallel byte operations | **Implemented** (builtins + autovec) |
+| `V8HI` | 128-bit | 8 × 16-bit int | Parallel halfword operations | **Implemented** (builtins + autovec) |
+| `V4SI` | 128-bit | 4 × 32-bit int | Parallel word operations | **Implemented** (builtins + autovec) |
+| `V2DI` | 128-bit | 2 × 64-bit int | Parallel doubleword operations | **Implemented** (builtins) |
 
-These modes would map to MMI instructions (PADDB, PADDH, PADDW, etc.) but are not currently implemented in GCC.
+These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub operations at `-O3 -ftree-vectorize`.
 
 ### Type Usage Examples
 
@@ -171,7 +171,7 @@ vec_c = vec_a * vec_b + vec_c;  // Generates: vmulaw.xyzw + vmadd.xyzw
 | Float Scalar | SF | 1/1 (100%) |
 | Double Scalar | DF | 0/1 (0% - not supported by HW) |
 | VU0 Vector (float) | V4SF | 1/1 (100%) |
-| MMI Vector (int) | V16QI, V8HI, V4SI, V2DI | 0/4 (0%) |
+| MMI Vector (int) | V16QI, V8HI, V4SI, V2DI | 4/4 (100%, builtins) |
 
 ---
 
@@ -193,9 +193,9 @@ These instructions operate on the full 128-bit width of GP registers.
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
 | **Addition** ||||
-| `PADDB` | Parallel Add Byte (16x8-bit) | - | - |
-| `PADDH` | Parallel Add Halfword (8x16-bit) | - | - |
-| `PADDW` | Parallel Add Word (4x32-bit) | - | - |
+| `PADDB` | Parallel Add Byte (16x8-bit) | `__builtin_mmi_paddb` | Builtin, Automatic |
+| `PADDH` | Parallel Add Halfword (8x16-bit) | `__builtin_mmi_paddh` | Builtin, Automatic |
+| `PADDW` | Parallel Add Word (4x32-bit) | `__builtin_mmi_paddw` | Builtin, Automatic |
 | `PADDSB` | Parallel Add Signed Saturation Byte | - | - |
 | `PADDSH` | Parallel Add Signed Saturation Halfword | - | - |
 | `PADDSW` | Parallel Add Signed Saturation Word | - | - |
@@ -203,9 +203,9 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PADDUH` | Parallel Add Unsigned Saturation Halfword | - | - |
 | `PADDUW` | Parallel Add Unsigned Saturation Word | - | - |
 | **Subtraction** ||||
-| `PSUBB` | Parallel Subtract Byte | - | - |
-| `PSUBH` | Parallel Subtract Halfword | - | - |
-| `PSUBW` | Parallel Subtract Word | - | - |
+| `PSUBB` | Parallel Subtract Byte | `__builtin_mmi_psubb` | Builtin, Automatic |
+| `PSUBH` | Parallel Subtract Halfword | `__builtin_mmi_psubh` | Builtin, Automatic |
+| `PSUBW` | Parallel Subtract Word | `__builtin_mmi_psubw` | Builtin, Automatic |
 | `PSUBSB` | Parallel Subtract Signed Saturation Byte | - | - |
 | `PSUBSH` | Parallel Subtract Signed Saturation Halfword | - | - |
 | `PSUBSW` | Parallel Subtract Signed Saturation Word | - | - |
@@ -242,10 +242,10 @@ These instructions operate on the full 128-bit width of GP registers.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PAND` | Parallel AND (128-bit) | - | - |
-| `POR` | Parallel OR (128-bit) | - | Automatic (move) |
-| `PXOR` | Parallel XOR (128-bit) | - | - |
-| `PNOR` | Parallel NOR (128-bit) | - | - |
+| `PAND` | Parallel AND (128-bit) | `__builtin_mmi_pand` | Builtin |
+| `POR` | Parallel OR (128-bit) | `__builtin_mmi_por` | Builtin, Automatic (move) |
+| `PXOR` | Parallel XOR (128-bit) | `__builtin_mmi_pxor` | Builtin |
+| `PNOR` | Parallel NOR (128-bit) | `__builtin_mmi_pnor` | Builtin |
 
 ### 2.5 Parallel Shift Operations
 
@@ -520,10 +520,10 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | Feature Category | Total Instructions | Implemented | Coverage |
 |-----------------|-------------------|-------------|----------|
 | 128-bit Load/Store | 2 | 2 | 100% |
-| MMI Arithmetic | 27 | 0 | 0% |
+| MMI Arithmetic | 27 | 6 | 22% |
 | MMI Comparison | 6 | 0 | 0% |
 | MMI Min/Max | 4 | 0 | 0% |
-| MMI Logical | 4 | 1 | 25% |
+| MMI Logical | 4 | 4 | 100% |
 | MMI Shift | 9 | 0 | 0% |
 | MMI Multiply/Divide | 13 | 0 | 0% |
 | MMI Data Movement | 23 | 0 | 0% |
@@ -554,6 +554,41 @@ typedef __int128 int128_t;
 
 int128_t add128(int128_t a, int128_t b) {
     return a + b;  // Uses lq/sq for load/store
+}
+```
+
+### MMI Vector Operations (Integer SIMD)
+
+```c
+typedef signed char v16qi __attribute__((vector_size(16)));
+typedef short v8hi __attribute__((vector_size(16)));
+typedef int v4si __attribute__((vector_size(16)));
+typedef long long v2di __attribute__((vector_size(16)));
+
+// Explicit builtins
+v4si add_words(v4si a, v4si b) {
+    return __builtin_mmi_paddw(a, b);  // Generates: paddw
+}
+
+v2di and_128bit(v2di a, v2di b) {
+    return __builtin_mmi_pand(a, b);   // Generates: pand
+}
+```
+
+### MMI Autovectorization
+
+With `-O3 -ftree-vectorize`, GCC auto-vectorizes integer loops:
+
+```c
+// Compile with: -march=r5900 -O3 -ftree-vectorize
+void add_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = a[i] + b[i];  // Auto-vectorized to: paddw
+}
+
+void add_shorts(short *__restrict a, short *__restrict b, short *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = a[i] + b[i];  // Auto-vectorized to: paddh
 }
 ```
 
@@ -617,4 +652,5 @@ v4sf cross_product(v4sf a, v4sf b) {
 - EE Core Users Manual (Sony)
 - VU Users Manual (Sony)
 - GCC Source: `gcc/config/mips/mips-vu0.md`
+- GCC Source: `gcc/config/mips/mips-mmi.md`
 - GCC Source: `gcc/config/mips/5900.md`
