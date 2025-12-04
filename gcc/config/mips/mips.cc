@@ -16161,6 +16161,16 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     "__builtin_mips_" #INSN "_s",  MIPS_BUILTIN_DIRECT_NO_TARGET,	\
     FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
 
+/* R5900 FPU min/max aliases - use existing RTL patterns */
+#define CODE_FOR_fpu_min CODE_FOR_sminsf3
+#define CODE_FOR_fpu_max CODE_FOR_smaxsf3
+
+/* VU0 basic arithmetic aliases - use existing RTL patterns */
+#define CODE_FOR_vu0_vadd CODE_FOR_addv4sf3
+#define CODE_FOR_vu0_vsub CODE_FOR_subv4sf3
+#define CODE_FOR_vu0_vmul CODE_FOR_mulv4sf3
+#define CODE_FOR_vu0_vabs CODE_FOR_absv4sf2
+
 #define CODE_FOR_mips_sqrt_ps CODE_FOR_sqrtv2sf2
 #define CODE_FOR_mips_addq_ph CODE_FOR_addv2hi3
 #define CODE_FOR_mips_addu_qb CODE_FOR_addv4qi3
@@ -17313,6 +17323,14 @@ static const struct mips_builtin_description mips_builtins[] = {
   VU0_BUILTIN_PURE (vitof15, MIPS_V4SF_FTYPE_V4SF),
   /* Vector rotate */
   VU0_BUILTIN_PURE (vmr32, MIPS_V4SF_FTYPE_V4SF),
+  /* Explicit intrinsics for automatic operations */
+  VU0_BUILTIN_PURE (vadd, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vsub, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmul, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vabs, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vmax, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmini, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmove, MIPS_V4SF_FTYPE_V4SF),
 
   /* R5900 FPU (COP1) ACC builtins */
   /* ACC-writing instructions: ACC = result (no FP register output) */
@@ -17324,6 +17342,9 @@ static const struct mips_builtin_description mips_builtins[] = {
   /* ACC-reading instructions: fd = ACC op (fs * ft) */
   R5900_FPU_BUILTIN_PURE (madd, MIPS_SF_FTYPE_SF_SF),
   R5900_FPU_BUILTIN_PURE (msub, MIPS_SF_FTYPE_SF_SF),
+  /* R5900 FPU min/max explicit intrinsics */
+  R5900_FPU_BUILTIN_PURE (min, MIPS_SF_FTYPE_SF_SF),
+  R5900_FPU_BUILTIN_PURE (max, MIPS_SF_FTYPE_SF_SF),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
