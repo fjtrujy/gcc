@@ -17261,9 +17261,58 @@ static const struct mips_builtin_description mips_builtins[] = {
   VU0_BUILTIN_PURE (vmaddy, MIPS_V4SF_FTYPE_V4SF_V4SF),
   VU0_BUILTIN_PURE (vmaddz, MIPS_V4SF_FTYPE_V4SF_V4SF),
   VU0_BUILTIN_PURE (vmaddw, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Accumulator multiply-subtract: ACC = ACC - src1 * src2  */
+  VU0_NO_TARGET_BUILTIN (vmsuba, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Accumulator read with subtract: dest = ACC - src1 * src2  */
+  VU0_BUILTIN_PURE (vmsub, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Broadcast multiply-subtract to accumulator: ACC = ACC - src1 * src2.x/y/z/w  */
+  VU0_NO_TARGET_BUILTIN (vmsubax, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmsubay, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmsubaz, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmsubaw, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Broadcast multiply-subtract with result: dest = ACC - src1 * src2.x/y/z/w  */
+  VU0_BUILTIN_PURE (vmsubx, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmsuby, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmsubz, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vmsubw, MIPS_V4SF_FTYPE_V4SF_V4SF),
   /* Outer product (cross product): ACC = src1 x src2  */
   VU0_NO_TARGET_BUILTIN (vopmula, MIPS_VOID_FTYPE_V4SF_V4SF),
   VU0_BUILTIN_PURE (vopmsub, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Broadcast add: dest = src1 + src2.x/y/z/w */
+  VU0_BUILTIN_PURE (vaddx, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vaddy, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vaddz, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vaddw, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Broadcast subtract: dest = src1 - src2.x/y/z/w */
+  VU0_BUILTIN_PURE (vsubx, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vsuby, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vsubz, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  VU0_BUILTIN_PURE (vsubw, MIPS_V4SF_FTYPE_V4SF_V4SF),
+  /* Accumulator add/subtract: ACC = src1 +/- src2 */
+  VU0_NO_TARGET_BUILTIN (vadda, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vsuba, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Broadcast add to accumulator: ACC = src1 + src2.x/y/z/w */
+  VU0_NO_TARGET_BUILTIN (vaddax, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vadday, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vaddaz, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vaddaw, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Broadcast subtract from accumulator: ACC = src1 - src2.x/y/z/w */
+  VU0_NO_TARGET_BUILTIN (vsubax, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vsubay, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vsubaz, MIPS_VOID_FTYPE_V4SF_V4SF),
+  VU0_NO_TARGET_BUILTIN (vsubaw, MIPS_VOID_FTYPE_V4SF_V4SF),
+  /* Float to fixed-point conversions */
+  VU0_BUILTIN_PURE (vftoi0, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vftoi4, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vftoi12, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vftoi15, MIPS_V4SF_FTYPE_V4SF),
+  /* Fixed-point to float conversions */
+  VU0_BUILTIN_PURE (vitof0, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vitof4, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vitof12, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vitof15, MIPS_V4SF_FTYPE_V4SF),
+  /* Vector rotate */
+  VU0_BUILTIN_PURE (vmr32, MIPS_V4SF_FTYPE_V4SF),
 
   /* R5900 FPU (COP1) ACC builtins */
   /* ACC-writing instructions: ACC = result (no FP register output) */
