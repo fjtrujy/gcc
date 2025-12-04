@@ -81,29 +81,6 @@ Special notes:
 - `$vi0` is constant: always 0
 - VF registers use constraint `"C"` in GCC patterns
 
-### VU1-Only Registers (Not Available in Macro Mode)
-
-| Register | Size | Purpose | GCC Status |
-|----------|------|---------|------------|
-| `R` | 23-bit | Random number generator | N/A (VU1 only) |
-| `P` | 32-bit | EFU (Elementary Function Unit) result | N/A (VU1 only) |
-
-VU1 runs independently and is not accessible as a coprocessor from the EE Core.
-
-### COP0 System Control Registers
-
-Standard MIPS COP0 registers are available, plus R5900-specific extensions:
-
-| Register | COP0 Num | Purpose | GCC Status |
-|----------|----------|---------|------------|
-| `Status` | 12 | Processor status, interrupt control | **Implemented** |
-| `Cause` | 13 | Exception cause | **Implemented** |
-| `EPC` | 14 | Exception program counter | **Implemented** |
-| `Config` | 16 | Processor configuration | **Implemented** |
-| `BadPAddr` | 23 | Physical address causing bus error | **Implemented** |
-| `PCCR` | 25 | Performance counter control | **Implemented** |
-| `PCR0/PCR1` | 25 | Performance counters 0 and 1 | **Implemented** |
-
 ### Register Summary
 
 | Category | Total | Implemented | Coverage |
@@ -117,7 +94,6 @@ Standard MIPS COP0 registers are available, plus R5900-specific extensions:
 | VU0 VI | 16 | 0 | 0% |
 | VU0 ACC | 1 | 1 | 100% |
 | VU0 I/Q | 2 | 0 | 0% |
-| COP0 | ~32 | ~32 | ~100% |
 
 ---
 
@@ -532,9 +508,7 @@ Multiply vector by broadcast of single component.
 | `VLQI/VSQI` | Load/Store with increment | Not implemented |
 | `VLQD/VSQD` | Load/Store with decrement | Not implemented |
 | `VILWR/VISWR` | Integer Load/Store | Not implemented |
-| `VRINIT/VRGET/VRNEXT/VRXOR` | Random number | Not implemented |
 | `VWAITQ` | Wait for Q register | Not implemented |
-| `VCALLMS/VCALLMSR` | Call microsubroutine | Not implemented |
 
 ### 6.10 VU0 Branch Instructions
 
@@ -587,7 +561,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | VU0 Broadcast MulAcc | 4 | 4 | 100% |
 | VU0 Broadcast MulAdd | 4 | 4 | 100% |
 | VU0 Outer Product | 2 | 2 | 100% |
-| VU0 Advanced | ~40 | 0 | 0% |
+| VU0 Advanced | ~35 | 0 | 0% |
 
 ---
 
