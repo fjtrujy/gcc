@@ -48,13 +48,24 @@
 ;; Vector Move Patterns for Autovectorization
 ;; -------------------------------------------------------------------------
 
-;; MMI vector moves in GP registers using LQ/SQ for memory
+;; MMI vector moves in GP registers using LQ/SQ for memory.
+;; R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.
+;; Alternatives:
+;;   0: d,d  -> move (128-bit register copy)
+;;   1: d,m  -> lq (128-bit load from memory)
+;;   2: d,YG -> move $d,$0 (128-bit vector zero to register)
+;;   3: m,d  -> sq (128-bit store to memory)
+;;   4: m,YG -> sq $0,mem (128-bit vector zero store to memory)
+;; Note: YG is the constraint for vector zero (const_vector), while J is
+;; only for integer zero (const_int). VMMI modes are vector modes.
 (define_insn "*mov<mode>_mmi"
-  [(set (match_operand:VMMI 0 "nonimmediate_operand" "=d,d,m")
-	(match_operand:VMMI 1 "move_operand" "d,m,d"))]
-  "ISA_HAS_MMI && !ISA_HAS_MSA"
+  [(set (match_operand:VMMI 0 "nonimmediate_operand" "=d,d,d,m,m")
+	(match_operand:VMMI 1 "move_operand" "d,m,YG,d,YG"))]
+  "ISA_HAS_MMI && !ISA_HAS_MSA
+   && (register_operand (operands[0], <MODE>mode)
+       || reg_or_0_operand (operands[1], <MODE>mode))"
   { return mips_output_move (operands[0], operands[1]); }
-  [(set_attr "type" "arith,load,store")
+  [(set_attr "type" "move,load,move,store,store")
    (set_attr "mode" "TI")])
 
 ;; -------------------------------------------------------------------------
