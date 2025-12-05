@@ -23511,6 +23511,61 @@ mips_expand_msa_cmp (rtx dest, enum rtx_code cond, rtx op0, rtx op1)
     }
 }
 
+/* Generate RTL for comparing CMP_OP0 and CMP_OP1 using condition COND and
+   store the result -1 or 0 in DEST using R5900 MMI instructions.
+   MMI only has PCEQ (equal) and PCGT (greater than, signed), so we
+   synthesize other comparisons from these.  */
+
+static void
+mips_expand_mmi_cmp (rtx dest, enum rtx_code cond, rtx op0, rtx op1)
+{
+  machine_mode mode = GET_MODE (dest);
+  rtx temp;
+
+  switch (cond)
+    {
+    case EQ:
+      /* PCEQ directly: dest = (op0 == op1) */
+      mips_emit_binary (EQ, dest, op0, op1);
+      break;
+
+    case NE:
+      /* PCEQ then NOT: dest = ~(op0 == op1) */
+      mips_emit_binary (EQ, dest, op0, op1);
+      emit_move_insn (dest, gen_rtx_NOT (mode, dest));
+      break;
+
+    case GT:
+      /* PCGT directly: dest = (op0 > op1) */
+      mips_emit_binary (GT, dest, op0, op1);
+      break;
+
+    case LT:
+      /* PCGT with swapped operands: dest = (op1 > op0) means (op0 < op1) */
+      mips_emit_binary (GT, dest, op1, op0);
+      break;
+
+    case GE:
+      /* dest = (op0 > op1) | (op0 == op1) */
+      temp = gen_reg_rtx (mode);
+      mips_emit_binary (GT, dest, op0, op1);
+      mips_emit_binary (EQ, temp, op0, op1);
+      emit_insn (gen_rtx_SET (dest, gen_rtx_IOR (mode, dest, temp)));
+      break;
+
+    case LE:
+      /* dest = ~(op0 > op1) */
+      mips_emit_binary (GT, dest, op0, op1);
+      emit_move_insn (dest, gen_rtx_NOT (mode, dest));
+      break;
+
+    default:
+      /* Unsigned comparisons (GTU, LTU, GEU, LEU) are not supported
+	 by MMI - there's no PCGTU instruction.  */
+      gcc_unreachable ();
+    }
+}
+
 void
 mips_expand_vec_cmp_expr (rtx *operands)
 {
@@ -23519,7 +23574,12 @@ mips_expand_vec_cmp_expr (rtx *operands)
   rtx op1 = operands[3];
   rtx res = operands[0];
 
-  mips_expand_msa_cmp (res, GET_CODE (cond), op0, op1);
+  if (ISA_HAS_MSA)
+    mips_expand_msa_cmp (res, GET_CODE (cond), op0, op1);
+  else if (ISA_HAS_MMI)
+    mips_expand_mmi_cmp (res, GET_CODE (cond), op0, op1);
+  else
+    gcc_unreachable ();
 }
 
 /* Expand VEC_COND_EXPR, where:
@@ -23541,7 +23601,12 @@ mips_expand_vec_cond_expr (machine_mode mode, machine_mode vimode,
       rtx cmp_op1 = operands[5];
       cmp_res = gen_reg_rtx (vimode);
 
-      mips_expand_msa_cmp (cmp_res, GET_CODE (cond), cmp_op0, cmp_op1);
+      if (ISA_HAS_MSA)
+	mips_expand_msa_cmp (cmp_res, GET_CODE (cond), cmp_op0, cmp_op1);
+      else if (ISA_HAS_MMI)
+	mips_expand_mmi_cmp (cmp_res, GET_CODE (cond), cmp_op0, cmp_op1);
+      else
+	gcc_unreachable ();
     }
 
   /* We handle the following cases:
@@ -23600,12 +23665,36 @@ mips_expand_vec_cond_expr (machine_mode mode, machine_mode vimode,
 
       /* We deal with case (4) if the mask wasn't moved to either src1 or src2.
 	 In any case, we eventually do vector mask-based copy.  */
-      bsel = gen_rtx_IOR (vimode,
-			  gen_rtx_AND (vimode,
-				       gen_rtx_NOT (vimode, mask), src2),
-			  gen_rtx_AND (vimode, mask, src1));
-      /* The result is placed back to a register with the mask.  */
-      emit_insn (gen_rtx_SET (mask, bsel));
+      if (ISA_HAS_MSA)
+	{
+	  bsel = gen_rtx_IOR (vimode,
+			      gen_rtx_AND (vimode,
+					   gen_rtx_NOT (vimode, mask), src2),
+			      gen_rtx_AND (vimode, mask, src1));
+	  /* The result is placed back to a register with the mask.  */
+	  emit_insn (gen_rtx_SET (mask, bsel));
+	}
+      else if (ISA_HAS_MMI)
+	{
+	  /* MMI doesn't have BSEL, emit explicit AND/NOT/OR sequence:
+	     tmp1 = mask & src1
+	     tmp2 = ~mask & src2
+	     result = tmp1 | tmp2  */
+	  rtx tmp1 = gen_reg_rtx (vimode);
+	  rtx tmp2 = gen_reg_rtx (vimode);
+	  rtx notmask = gen_reg_rtx (vimode);
+
+	  /* tmp1 = mask & src1 */
+	  emit_insn (gen_rtx_SET (tmp1, gen_rtx_AND (vimode, mask, src1)));
+	  /* notmask = ~mask */
+	  emit_insn (gen_rtx_SET (notmask, gen_rtx_NOT (vimode, mask)));
+	  /* tmp2 = notmask & src2 */
+	  emit_insn (gen_rtx_SET (tmp2, gen_rtx_AND (vimode, notmask, src2)));
+	  /* mask = tmp1 | tmp2 */
+	  emit_insn (gen_rtx_SET (mask, gen_rtx_IOR (vimode, tmp1, tmp2)));
+	}
+      else
+	gcc_unreachable ();
       emit_move_insn (operands[0], gen_rtx_SUBREG (mode, mask, 0));
     }
 }
