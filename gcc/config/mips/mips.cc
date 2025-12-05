@@ -5428,7 +5428,7 @@ mips_output_move (rtx dest, rtx src)
 	  if (src_code == MEM)
 	    return "lq\t%0,%1";
 	  if (src == CONST0_RTX (mode))
-	    return "por\t%0,$0,$0";
+	    return "move\t%0,$0";
 	}
       if (dest_code == MEM)
 	{
