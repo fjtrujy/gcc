@@ -137,6 +137,160 @@
    (set_attr "mode" "TI")])
 
 ;; -------------------------------------------------------------------------
+;; Saturating Arithmetic - Explicit Builtins
+;; -------------------------------------------------------------------------
+;; Named mmi_* for __builtin_mmi_* intrinsics.
+;; Note: Standard optab names (ssadd<mode>3, etc.) conflict with MSA patterns
+;; in mips-msa.md, so autovectorization of saturating ops is not supported.
+;; Use builtins explicitly for saturating arithmetic.
+
+;; PADDSB - Parallel Add with Signed Saturation Byte
+(define_insn "mmi_paddsb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(ss_plus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddsb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PADDSH - Parallel Add with Signed Saturation Halfword
+(define_insn "mmi_paddsh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(ss_plus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddsh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PADDSW - Parallel Add with Signed Saturation Word
+(define_insn "mmi_paddsw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ss_plus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddsw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSUBSB - Parallel Subtract with Signed Saturation Byte
+(define_insn "mmi_psubsb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(ss_minus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+			(match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubsb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSUBSH - Parallel Subtract with Signed Saturation Halfword
+(define_insn "mmi_psubsh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(ss_minus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		       (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubsh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSUBSW - Parallel Subtract with Signed Saturation Word
+(define_insn "mmi_psubsw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ss_minus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubsw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PADDUB - Parallel Add with Unsigned Saturation Byte
+(define_insn "mmi_paddub"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(us_plus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddub\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PADDUH - Parallel Add with Unsigned Saturation Halfword
+(define_insn "mmi_padduh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(us_plus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "padduh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PADDUW - Parallel Add with Unsigned Saturation Word
+(define_insn "mmi_padduw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(us_plus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "padduw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSUBUB - Parallel Subtract with Unsigned Saturation Byte
+(define_insn "mmi_psubub"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(us_minus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+			(match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubub\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSUBUH - Parallel Subtract with Unsigned Saturation Halfword
+(define_insn "mmi_psubuh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(us_minus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		       (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubuh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSUBUW - Parallel Subtract with Unsigned Saturation Word
+(define_insn "mmi_psubuw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(us_minus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubuw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Saturating Subtract - Autovectorization Patterns
+;; -------------------------------------------------------------------------
+;; Standard optab names for autovectorization. MSA doesn't have ss_minus/us_minus
+;; patterns, so these don't conflict.
+
+;; Signed saturating subtract (byte/halfword/word)
+(define_insn "sssub<mode>3"
+  [(set (match_operand:VMMIBHW 0 "register_operand" "=d")
+	(ss_minus:VMMIBHW (match_operand:VMMIBHW 1 "register_operand" "d")
+			  (match_operand:VMMIBHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubs<mmi_bhw>\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; Unsigned saturating subtract (byte/halfword/word)
+(define_insn "ussub<mode>3"
+  [(set (match_operand:VMMIBHW 0 "register_operand" "=d")
+	(us_minus:VMMIBHW (match_operand:VMMIBHW 1 "register_operand" "d")
+			  (match_operand:VMMIBHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubu<mmi_bhw>\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
 ;; Parallel Logical Operations - Explicit Builtins
 ;; -------------------------------------------------------------------------
 
