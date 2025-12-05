@@ -200,22 +200,22 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PADDB` | Parallel Add Byte (16x8-bit) | `__builtin_mmi_paddb` | Intrinsic, Autovectorize |
 | `PADDH` | Parallel Add Halfword (8x16-bit) | `__builtin_mmi_paddh` | Intrinsic, Autovectorize |
 | `PADDW` | Parallel Add Word (4x32-bit) | `__builtin_mmi_paddw` | Intrinsic, Autovectorize |
-| `PADDSB` | Parallel Add Signed Saturation Byte | - | - |
-| `PADDSH` | Parallel Add Signed Saturation Halfword | - | - |
-| `PADDSW` | Parallel Add Signed Saturation Word | - | - |
-| `PADDUB` | Parallel Add Unsigned Saturation Byte | - | - |
-| `PADDUH` | Parallel Add Unsigned Saturation Halfword | - | - |
-| `PADDUW` | Parallel Add Unsigned Saturation Word | - | - |
+| `PADDSB` | Parallel Add Signed Saturation Byte | `__builtin_mmi_paddsb` | Intrinsic, Autovectorize |
+| `PADDSH` | Parallel Add Signed Saturation Halfword | `__builtin_mmi_paddsh` | Intrinsic, Autovectorize |
+| `PADDSW` | Parallel Add Signed Saturation Word | `__builtin_mmi_paddsw` | Intrinsic, Autovectorize |
+| `PADDUB` | Parallel Add Unsigned Saturation Byte | `__builtin_mmi_paddub` | Intrinsic, Autovectorize |
+| `PADDUH` | Parallel Add Unsigned Saturation Halfword | `__builtin_mmi_padduh` | Intrinsic, Autovectorize |
+| `PADDUW` | Parallel Add Unsigned Saturation Word | `__builtin_mmi_padduw` | Intrinsic, Autovectorize |
 | **Subtraction** ||||
 | `PSUBB` | Parallel Subtract Byte | `__builtin_mmi_psubb` | Intrinsic, Autovectorize |
 | `PSUBH` | Parallel Subtract Halfword | `__builtin_mmi_psubh` | Intrinsic, Autovectorize |
 | `PSUBW` | Parallel Subtract Word | `__builtin_mmi_psubw` | Intrinsic, Autovectorize |
-| `PSUBSB` | Parallel Subtract Signed Saturation Byte | - | - |
-| `PSUBSH` | Parallel Subtract Signed Saturation Halfword | - | - |
-| `PSUBSW` | Parallel Subtract Signed Saturation Word | - | - |
-| `PSUBUB` | Parallel Subtract Unsigned Saturation Byte | - | - |
-| `PSUBUH` | Parallel Subtract Unsigned Saturation Halfword | - | - |
-| `PSUBUW` | Parallel Subtract Unsigned Saturation Word | - | - |
+| `PSUBSB` | Parallel Subtract Signed Saturation Byte | `__builtin_mmi_psubsb` | Intrinsic, Autovectorize |
+| `PSUBSH` | Parallel Subtract Signed Saturation Halfword | `__builtin_mmi_psubsh` | Intrinsic, Autovectorize |
+| `PSUBSW` | Parallel Subtract Signed Saturation Word | `__builtin_mmi_psubsw` | Intrinsic, Autovectorize |
+| `PSUBUB` | Parallel Subtract Unsigned Saturation Byte | `__builtin_mmi_psubub` | Intrinsic, Autovectorize |
+| `PSUBUH` | Parallel Subtract Unsigned Saturation Halfword | `__builtin_mmi_psubuh` | Intrinsic, Autovectorize |
+| `PSUBUW` | Parallel Subtract Unsigned Saturation Word | `__builtin_mmi_psubuw` | Intrinsic, Autovectorize |
 | **Absolute Value** ||||
 | `PABSH` | Parallel Absolute Halfword | - | - |
 | `PABSW` | Parallel Absolute Word | - | - |
@@ -532,7 +532,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | Feature Category | Total Instructions | Implemented | Coverage |
 |-----------------|-------------------|-------------|----------|
 | 128-bit Load/Store | 2 | 2 | 100% |
-| MMI Arithmetic | 27 | 6 | 22% |
+| MMI Arithmetic | 27 | 18 | 67% |
 | MMI Comparison | 6 | 6 | 100% |
 | MMI Min/Max | 4 | 4 | 100% |
 | MMI Logical | 4 | 4 | 100% |

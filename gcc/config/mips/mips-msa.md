@@ -1155,20 +1155,60 @@
    (set_attr "mode" "<MODE>")])
 
 (define_insn "ssadd<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f")
-	(ss_plus:IMSA (match_operand:IMSA 1 "register_operand" "f")
-		      (match_operand:IMSA 2 "register_operand" "f")))]
-  "ISA_HAS_MSA"
-  "adds_s.<msafmt>\t%w0,%w1,%w2"
+  [(set (match_operand:IMSA 0 "register_operand" "=f,d")
+	(ss_plus:IMSA (match_operand:IMSA 1 "register_operand" "f,d")
+		      (match_operand:IMSA 2 "register_operand" "f,d")))]
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode
+		       || <MODE>mode == V8HImode
+		       || <MODE>mode == V16QImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "adds_s.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      /* R5900 MMI parallel saturating add (signed).  */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V16QImode: return "paddsb\t%0,%1,%2";
+	case E_V8HImode:  return "paddsh\t%0,%1,%2";
+	case E_V4SImode:  return "paddsw\t%0,%1,%2";
+	default: gcc_unreachable ();
+	}
+    default:
+      gcc_unreachable ();
+    }
+}
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "usadd<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f")
-	(us_plus:IMSA (match_operand:IMSA 1 "register_operand" "f")
-		      (match_operand:IMSA 2 "register_operand" "f")))]
-  "ISA_HAS_MSA"
-  "adds_u.<msafmt>\t%w0,%w1,%w2"
+  [(set (match_operand:IMSA 0 "register_operand" "=f,d")
+	(us_plus:IMSA (match_operand:IMSA 1 "register_operand" "f,d")
+		      (match_operand:IMSA 2 "register_operand" "f,d")))]
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode
+		       || <MODE>mode == V8HImode
+		       || <MODE>mode == V16QImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "adds_u.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      /* R5900 MMI parallel saturating add (unsigned).  */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V16QImode: return "paddub\t%0,%1,%2";
+	case E_V8HImode:  return "padduh\t%0,%1,%2";
+	case E_V4SImode:  return "padduw\t%0,%1,%2";
+	default: gcc_unreachable ();
+	}
+    default:
+      gcc_unreachable ();
+    }
+}
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
