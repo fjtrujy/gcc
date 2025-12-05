@@ -226,12 +226,20 @@ These instructions operate on the full 128-bit width of GP registers.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PCEQB` | Parallel Compare Equal Byte | `__builtin_mmi_pceqb` | Intrinsic |
-| `PCEQH` | Parallel Compare Equal Halfword | `__builtin_mmi_pceqh` | Intrinsic |
-| `PCEQW` | Parallel Compare Equal Word | `__builtin_mmi_pceqw` | Intrinsic |
-| `PCGTB` | Parallel Compare Greater Than Byte | `__builtin_mmi_pcgtb` | Intrinsic |
-| `PCGTH` | Parallel Compare Greater Than Halfword | `__builtin_mmi_pcgth` | Intrinsic |
-| `PCGTW` | Parallel Compare Greater Than Word | `__builtin_mmi_pcgtw` | Intrinsic |
+| `PCEQB` | Parallel Compare Equal Byte | `__builtin_mmi_pceqb` | Intrinsic, Vector (==), Autovectorize |
+| `PCEQH` | Parallel Compare Equal Halfword | `__builtin_mmi_pceqh` | Intrinsic, Vector (==), Autovectorize |
+| `PCEQW` | Parallel Compare Equal Word | `__builtin_mmi_pceqw` | Intrinsic, Vector (==), Autovectorize |
+| `PCGTB` | Parallel Compare Greater Than Byte | `__builtin_mmi_pcgtb` | Intrinsic, Vector (>), Autovectorize |
+| `PCGTH` | Parallel Compare Greater Than Halfword | `__builtin_mmi_pcgth` | Intrinsic, Vector (>), Autovectorize |
+| `PCGTW` | Parallel Compare Greater Than Word | `__builtin_mmi_pcgtw` | Intrinsic, Vector (>), Autovectorize |
+
+**Vector Comparison Support**: All six comparison operators (==, !=, <, <=, >, >=) work with vector types.
+Synthesized operations: NE uses PCEQ+PNOR, LT uses PCGT(swapped), LE uses PCGT+PNOR, GE uses PCGT+PCEQ+POR.
+
+**Loop Autovectorization**: The `vcond` pattern supports MMI, enabling autovectorization of
+conditional select operations like `e[i] = (a[i] > b[i]) ? c[i] : d[i]`. The bit select is
+implemented using PAND/PNOR/POR sequence. Note: For autovectorization to work, all loads in
+the loop must be unconditional (read all values before the conditional select).
 
 ### 2.3 Parallel Min/Max
 
@@ -606,6 +614,31 @@ v4si shift_right_arith(v4si a) {
 
 v4si shift_variable(v4si a, v4si amounts) {
     return __builtin_mmi_psllvw(a, amounts);  // Generates: psllvw (per-element shift)
+}
+
+// Vector comparisons (all operators work)
+v4si vec_equal(v4si a, v4si b) {
+    return a == b;  // Generates: pceqw (result: -1 if equal, 0 otherwise)
+}
+
+v4si vec_greater(v4si a, v4si b) {
+    return a > b;   // Generates: pcgtw
+}
+
+v4si vec_less(v4si a, v4si b) {
+    return a < b;   // Generates: pcgtw with swapped operands
+}
+
+v4si vec_not_equal(v4si a, v4si b) {
+    return a != b;  // Generates: pceqw + pnor
+}
+
+v4si vec_less_equal(v4si a, v4si b) {
+    return a <= b;  // Generates: pcgtw + pnor
+}
+
+v4si vec_greater_equal(v4si a, v4si b) {
+    return a >= b;  // Generates: pcgtw + pceqw + por
 }
 ```
 
