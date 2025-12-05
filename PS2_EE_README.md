@@ -186,6 +186,8 @@ These instructions operate on the full 128-bit width of GP registers.
 | `LQ` | Load Quadword (128-bit) | - | Automatic (`__int128`) |
 | `SQ` | Store Quadword (128-bit) | - | Automatic (`__int128`) |
 
+**Callee-saved register preservation**: Function prologues/epilogues use LQ/SQ to save and restore callee-saved registers (s0-s7, gp, fp, ra), preserving the full 128-bit width. This ensures that 128-bit values (`__int128`, vectors) in callee-saved registers are correctly preserved across function calls.
+
 ---
 
 ## 2. MMI (Multimedia Instructions) - 128-bit Integer SIMD
