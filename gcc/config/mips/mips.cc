@@ -11627,11 +11627,13 @@ mips_compute_frame_info (void)
  			      ARRAY_SIZE (mips16e_a0_a3_regs), &frame->num_gp);
     }
 
-  /* Move above the GPR save area.  */
+  /* Move above the GPR save area.
+     R5900 GPRs are 128-bit wide, so we need 16 bytes per register.  */
   if (frame->num_gp > 0)
     {
-      offset += MIPS_STACK_ALIGN (frame->num_gp * UNITS_PER_WORD);
-      frame->gp_sp_offset = offset - UNITS_PER_WORD;
+      HOST_WIDE_INT gp_reg_size = TARGET_MIPS5900 ? 16 : UNITS_PER_WORD;
+      offset += MIPS_STACK_ALIGN (frame->num_gp * gp_reg_size);
+      frame->gp_sp_offset = offset - gp_reg_size;
     }
 
   /* Find out which FPRs we need to save.  This loop must iterate over
@@ -12189,14 +12191,18 @@ mips_for_each_saved_gpr_and_fpr (HOST_WIDE_INT sp_offset,
   if (TARGET_MICROMIPS)
     umips_build_save_restore (fn, &mask, &offset);
 
+  /* R5900 GPRs are 128-bit wide, so use TImode for save/restore.  */
+  machine_mode gpr_mode = TARGET_MIPS5900 ? E_TImode : word_mode;
+  HOST_WIDE_INT gp_reg_size = TARGET_MIPS5900 ? 16 : UNITS_PER_WORD;
+
   for (regno = GP_REG_LAST; regno >= GP_REG_FIRST; regno--)
     if (BITSET_P (mask, regno - GP_REG_FIRST))
       {
 	/* Record the ra offset for use by mips_function_profiler.  */
 	if (regno == RETURN_ADDR_REGNUM)
 	  cfun->machine->frame.ra_fp_offset = offset + sp_offset;
-	mips_save_restore_reg (word_mode, regno, offset, fn);
-	offset -= UNITS_PER_WORD;
+	mips_save_restore_reg (gpr_mode, regno, offset, fn);
+	offset -= gp_reg_size;
       }
 
   /* This loop must iterate over the same space as its companion in
