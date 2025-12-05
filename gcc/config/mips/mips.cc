@@ -17438,6 +17438,17 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_BUILTIN_PURE (pmaxw, MIPS_V4SI_FTYPE_V4SI_V4SI),
   MMI_BUILTIN_PURE (pminh, MIPS_V8HI_FTYPE_V8HI_V8HI),
   MMI_BUILTIN_PURE (pminw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel shifts (immediate): PSLLH, PSLLW, PSRLH, PSRLW, PSRAH, PSRAW */
+  MMI_BUILTIN_PURE (psllh, MIPS_V8HI_FTYPE_V8HI_UQI),
+  MMI_BUILTIN_PURE (psllw, MIPS_V4SI_FTYPE_V4SI_UQI),
+  MMI_BUILTIN_PURE (psrlh, MIPS_V8HI_FTYPE_V8HI_UQI),
+  MMI_BUILTIN_PURE (psrlw, MIPS_V4SI_FTYPE_V4SI_UQI),
+  MMI_BUILTIN_PURE (psrah, MIPS_V8HI_FTYPE_V8HI_UQI),
+  MMI_BUILTIN_PURE (psraw, MIPS_V4SI_FTYPE_V4SI_UQI),
+  /* Parallel variable shifts (word only): PSLLVW, PSRLVW, PSRAVW */
+  MMI_BUILTIN_PURE (psllvw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (psrlvw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (psravw, MIPS_V4SI_FTYPE_V4SI_V4SI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
