@@ -146,7 +146,7 @@ These use the 128-bit GP registers for integer SIMD:
 | `V4SI` | 128-bit | 4 × 32-bit int | Parallel word operations | **Implemented** (builtins + autovec) |
 | `V2DI` | 128-bit | 2 × 64-bit int | Parallel doubleword operations | **Implemented** (builtins) |
 
-These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub, min/max, and logical operations at `-O3 -ftree-vectorize`.
+These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub, min/max, logical, and shift operations at `-O3`.
 
 ### Type Usage Examples
 
@@ -253,15 +253,15 @@ These instructions operate on the full 128-bit width of GP registers.
 
 | Instruction | Description | Intrinsic | Usage |
 |-------------|-------------|-----------|-------|
-| `PSLLH` | Parallel Shift Left Logical Halfword | - | - |
-| `PSLLW` | Parallel Shift Left Logical Word | - | - |
-| `PSLLVW` | Parallel Shift Left Logical Variable Word | - | - |
-| `PSRAH` | Parallel Shift Right Arithmetic Halfword | - | - |
-| `PSRAW` | Parallel Shift Right Arithmetic Word | - | - |
-| `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | - | - |
-| `PSRLH` | Parallel Shift Right Logical Halfword | - | - |
-| `PSRLW` | Parallel Shift Right Logical Word | - | - |
-| `PSRLVW` | Parallel Shift Right Logical Variable Word | - | - |
+| `PSLLH` | Parallel Shift Left Logical Halfword | `__builtin_mmi_psllh` | Intrinsic, Autovectorize |
+| `PSLLW` | Parallel Shift Left Logical Word | `__builtin_mmi_psllw` | Intrinsic, Autovectorize |
+| `PSLLVW` | Parallel Shift Left Logical Variable Word | `__builtin_mmi_psllvw` | Intrinsic |
+| `PSRLH` | Parallel Shift Right Logical Halfword | `__builtin_mmi_psrlh` | Intrinsic, Autovectorize |
+| `PSRLW` | Parallel Shift Right Logical Word | `__builtin_mmi_psrlw` | Intrinsic, Autovectorize |
+| `PSRLVW` | Parallel Shift Right Logical Variable Word | `__builtin_mmi_psrlvw` | Intrinsic |
+| `PSRAH` | Parallel Shift Right Arithmetic Halfword | `__builtin_mmi_psrah` | Intrinsic, Autovectorize |
+| `PSRAW` | Parallel Shift Right Arithmetic Word | `__builtin_mmi_psraw` | Intrinsic, Autovectorize |
+| `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | `__builtin_mmi_psravw` | Intrinsic |
 
 ### 2.6 Parallel Multiply/Divide
 
@@ -526,7 +526,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | MMI Comparison | 6 | 6 | 100% |
 | MMI Min/Max | 4 | 4 | 100% |
 | MMI Logical | 4 | 4 | 100% |
-| MMI Shift | 9 | 0 | 0% |
+| MMI Shift | 9 | 9 | 100% |
 | MMI Multiply/Divide | 13 | 0 | 0% |
 | MMI Data Movement | 23 | 0 | 0% |
 | MMI Format Convert | 2 | 0 | 0% |
@@ -592,6 +592,19 @@ v4si add_words(v4si a, v4si b) {
 v2di and_128bit(v2di a, v2di b) {
     return __builtin_mmi_pand(a, b);   // Generates: pand
 }
+
+// Shift operations (immediate and variable)
+v8hi shift_left_h(v8hi a) {
+    return __builtin_mmi_psllh(a, 4);  // Generates: psllh (shift by 4)
+}
+
+v4si shift_right_arith(v4si a) {
+    return __builtin_mmi_psraw(a, 8);  // Generates: psraw (shift by 8)
+}
+
+v4si shift_variable(v4si a, v4si amounts) {
+    return __builtin_mmi_psllvw(a, amounts);  // Generates: psllvw (per-element shift)
+}
 ```
 
 ### MMI Autovectorization
@@ -622,6 +635,22 @@ void and_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) 
 void not_arrays(int *__restrict a, int *__restrict c, int n) {
     for (int i = 0; i < n; i++)
         c[i] = ~a[i];  // Auto-vectorized to: pnor
+}
+
+// Shift operations (constant shift amounts)
+void shl_arrays(short *__restrict a, short *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = a[i] << 4;  // Auto-vectorized to: psllh
+}
+
+void shr_arrays(int *__restrict a, int *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = a[i] >> 8;  // Auto-vectorized to: psraw (arithmetic)
+}
+
+void shr_logical(unsigned int *__restrict a, unsigned int *__restrict c, int n) {
+    for (int i = 0; i < n; i++)
+        c[i] = a[i] >> 8;  // Auto-vectorized to: psrlw (logical)
 }
 ```
 

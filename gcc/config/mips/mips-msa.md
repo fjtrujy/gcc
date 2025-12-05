@@ -939,48 +939,99 @@
    (set_attr "mode" "TI")])
 
 (define_insn "vlshr<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
 	(lshiftrt:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
-  if (which_alternative == 0)
-    return "srl.<msafmt>\t%w0,%w1,%w2";
-
-  return mips_msa_output_shift_immediate("srli.<msafmt>\t%w0,%w1,%E2", operands);
+  switch (which_alternative)
+    {
+    case 0:
+      return "srl.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      return mips_msa_output_shift_immediate ("srli.<msafmt>\t%w0,%w1,%E2", operands);
+    case 2:
+      /* R5900 MMI parallel immediate shift */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V8HImode: return "psrlh\t%0,%1,%E2";
+	case E_V4SImode: return "psrlw\t%0,%1,%E2";
+	default: gcc_unreachable ();
+	}
+    case 3:
+      /* R5900 MMI parallel variable shift (V4SI only) */
+      gcc_assert (GET_MODE (operands[0]) == E_V4SImode);
+      return "psrlvw\t%0,%1,%2";
+    default:
+      gcc_unreachable ();
+    }
 }
-  [(set_attr "type" "simd_shift")
+  [(set_attr "type" "simd_shift,simd_shift,arith,arith")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "vashr<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
 	(ashiftrt:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
-  if (which_alternative == 0)
-    return "sra.<msafmt>\t%w0,%w1,%w2";
-
-  return mips_msa_output_shift_immediate("srai.<msafmt>\t%w0,%w1,%E2", operands);
+  switch (which_alternative)
+    {
+    case 0:
+      return "sra.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      return mips_msa_output_shift_immediate ("srai.<msafmt>\t%w0,%w1,%E2", operands);
+    case 2:
+      /* R5900 MMI parallel immediate shift */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V8HImode: return "psrah\t%0,%1,%E2";
+	case E_V4SImode: return "psraw\t%0,%1,%E2";
+	default: gcc_unreachable ();
+	}
+    case 3:
+      /* R5900 MMI parallel variable shift (V4SI only) */
+      gcc_assert (GET_MODE (operands[0]) == E_V4SImode);
+      return "psravw\t%0,%1,%2";
+    default:
+      gcc_unreachable ();
+    }
 }
-  [(set_attr "type" "simd_shift")
+  [(set_attr "type" "simd_shift,simd_shift,arith,arith")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "vashl<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
 	(ashift:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6")))]
-  "ISA_HAS_MSA"
+	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
-  if (which_alternative == 0)
-    return "sll.<msafmt>\t%w0,%w1,%w2";
-
-  return mips_msa_output_shift_immediate("slli.<msafmt>\t%w0,%w1,%E2", operands);
+  switch (which_alternative)
+    {
+    case 0:
+      return "sll.<msafmt>\t%w0,%w1,%w2";
+    case 1:
+      return mips_msa_output_shift_immediate ("slli.<msafmt>\t%w0,%w1,%E2", operands);
+    case 2:
+      /* R5900 MMI parallel immediate shift */
+      switch (GET_MODE (operands[0]))
+	{
+	case E_V8HImode: return "psllh\t%0,%1,%E2";
+	case E_V4SImode: return "psllw\t%0,%1,%E2";
+	default: gcc_unreachable ();
+	}
+    case 3:
+      /* R5900 MMI parallel variable shift (V4SI only) */
+      gcc_assert (GET_MODE (operands[0]) == E_V4SImode);
+      return "psllvw\t%0,%1,%2";
+    default:
+      gcc_unreachable ();
+    }
 }
-  [(set_attr "type" "simd_shift")
+  [(set_attr "type" "simd_shift,simd_shift,arith,arith")
    (set_attr "mode" "<MODE>")])
 
 ;; Floating-point operations (V2DF only - V4SF handled separately for VU0 compatibility)

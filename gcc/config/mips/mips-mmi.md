@@ -259,3 +259,105 @@
   "pmin<mmi_hw>\t%0,%1,%2"
   [(set_attr "type" "arith")
    (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Parallel Shift Operations - Explicit Builtins
+;; -------------------------------------------------------------------------
+;; MMI shifts use a 5-bit immediate shift amount (sa field).
+;; Halfword shifts: sa = 0-15, Word shifts: sa = 0-31
+
+;; PSLLH - Parallel Shift Left Logical Halfword (8 x 16-bit)
+(define_insn "mmi_psllh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(ashift:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		     (match_operand:SI 2 "const_uimm5_operand" "")))]
+  "ISA_HAS_MMI"
+  "psllh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSLLW - Parallel Shift Left Logical Word (4 x 32-bit)
+(define_insn "mmi_psllw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ashift:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		     (match_operand:SI 2 "const_uimm5_operand" "")))]
+  "ISA_HAS_MMI"
+  "psllw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSRLH - Parallel Shift Right Logical Halfword (8 x 16-bit)
+(define_insn "mmi_psrlh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(lshiftrt:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		       (match_operand:SI 2 "const_uimm5_operand" "")))]
+  "ISA_HAS_MMI"
+  "psrlh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSRLW - Parallel Shift Right Logical Word (4 x 32-bit)
+(define_insn "mmi_psrlw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(lshiftrt:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:SI 2 "const_uimm5_operand" "")))]
+  "ISA_HAS_MMI"
+  "psrlw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSRAH - Parallel Shift Right Arithmetic Halfword (8 x 16-bit)
+(define_insn "mmi_psrah"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(ashiftrt:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		       (match_operand:SI 2 "const_uimm5_operand" "")))]
+  "ISA_HAS_MMI"
+  "psrah\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSRAW - Parallel Shift Right Arithmetic Word (4 x 32-bit)
+(define_insn "mmi_psraw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ashiftrt:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:SI 2 "const_uimm5_operand" "")))]
+  "ISA_HAS_MMI"
+  "psraw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Variable Shift Operations (shift amount in register, word only)
+;; -------------------------------------------------------------------------
+;; These use per-element shift amounts from a register.
+
+;; PSLLVW - Parallel Shift Left Logical Variable Word
+(define_insn "mmi_psllvw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ashift:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		     (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psllvw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSRLVW - Parallel Shift Right Logical Variable Word
+(define_insn "mmi_psrlvw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(lshiftrt:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psrlvw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PSRAVW - Parallel Shift Right Arithmetic Variable Word
+(define_insn "mmi_psravw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ashiftrt:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psravw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
