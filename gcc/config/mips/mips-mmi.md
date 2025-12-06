@@ -548,3 +548,118 @@
   [(set_attr "type" "arith")
    (set_attr "mode" "TI")])
 
+;; -------------------------------------------------------------------------
+;; SA Register Operations (for QFSRV)
+;; -------------------------------------------------------------------------
+;; The SA (Shift Amount) register is used by QFSRV for variable 128-bit
+;; funnel shifts. It must be set via MTSAB (byte count) or MTSAH (halfword
+;; count) before using QFSRV.
+
+;; MTSAB - Move Byte Count to Shift Amount Register
+;; SA = (rs[3:0] XOR imm[3:0]) * 8
+;; Common usage: mtsab $0, N  (sets shift to N bytes)
+;;               mtsab $r, 0  (sets shift from register)
+(define_insn "mmi_mtsab"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")
+		     (match_operand:SI 1 "const_int_operand" "")]
+		    UNSPEC_MMI_MTSAB)]
+  "ISA_HAS_MMI"
+  "mtsab\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "SI")])
+
+;; MTSAH - Move Halfword Count to Shift Amount Register
+;; SA = (rs[2:0] XOR imm[2:0]) * 16
+;; Common usage: mtsah $0, N  (sets shift to N halfwords)
+;;               mtsah $r, 0  (sets shift from register)
+(define_insn "mmi_mtsah"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")
+		     (match_operand:SI 1 "const_int_operand" "")]
+		    UNSPEC_MMI_MTSAH)]
+  "ISA_HAS_MMI"
+  "mtsah\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "SI")])
+
+;; MFSA - Move From Shift Amount Register
+;; Used for context save/restore
+(define_insn "mmi_mfsa"
+  [(set (match_operand:SI 0 "register_operand" "=d")
+	(unspec_volatile:SI [(const_int 0)] UNSPEC_MMI_MFSA))]
+  "ISA_HAS_MMI"
+  "mfsa\t%0"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "SI")])
+
+;; MTSA - Move To Shift Amount Register
+;; Used for context restore only (not for setting shift amount directly)
+(define_insn "mmi_mtsa"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")]
+		    UNSPEC_MMI_MTSA)]
+  "ISA_HAS_MMI"
+  "mtsa\t%0"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "SI")])
+
+;; -------------------------------------------------------------------------
+;; QFSRV - Quadword Funnel Shift Right Variable
+;; -------------------------------------------------------------------------
+;; rd = (rs || rt) >> SA
+;; Concatenates rs (high) and rt (low) into 256 bits, shifts right by SA
+;; register value, and stores the low 128 bits in rd.
+;;
+;; Primary use case: Unaligned 128-bit loads
+;;   1. Load two aligned quadwords containing the unaligned data
+;;   2. Set SA register with misalignment using MTSAB
+;;   3. Use QFSRV to extract correctly aligned data
+;;
+;; Also useful for 128-bit rotation when rs == rt
+
+(define_insn "mmi_qfsrv"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(unspec:TI [(match_operand:TI 1 "register_operand" "d")
+		    (match_operand:TI 2 "register_operand" "d")]
+		   UNSPEC_MMI_QFSRV))]
+  "ISA_HAS_MMI"
+  "qfsrv\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Unaligned 128-bit Memory Access using QFSRV
+;; -------------------------------------------------------------------------
+;; R5900's LQ/SQ require 16-byte alignment. For unaligned access, we use:
+;;   Load:  LQ + LQ + MTSAB + QFSRV
+;;   Store: More complex (load-modify-store)
+
+(define_expand "movmisalignti"
+  [(set (match_operand:TI 0 "nonimmediate_operand")
+	(match_operand:TI 1 "nonimmediate_operand"))]
+  "ISA_HAS_MMI"
+{
+  if (mips_expand_movmisalign_ti (operands[0], operands[1]))
+    DONE;
+  else
+    FAIL;
+})
+
+;; Unaligned 128-bit loads for V4SF when VU0 is NOT enabled.
+;; When VU0 is enabled, we don't define movmisalignv4sf because:
+;; 1. VU0 autovectorization needs to handle both loads and stores
+;; 2. Our QFSRV-based pattern only handles loads
+;; 3. Without movmisalign, VU0 will use regular moves (which may trap on
+;;    misaligned access - user must ensure alignment)
+;; When VU0 is disabled but MMI is enabled, we can use QFSRV for loads only.
+;; TI mode (scalar __int128) uses movmisalignti above.
+
+(define_expand "movmisalignv4sf"
+  [(set (match_operand:V4SF 0 "nonimmediate_operand")
+	(match_operand:V4SF 1 "nonimmediate_operand"))]
+  "ISA_HAS_MMI && !ISA_HAS_VU0"
+{
+  if (mips_expand_movmisalign_128 (operands[0], operands[1], V4SFmode))
+    DONE;
+  else
+    FAIL;
+})
+

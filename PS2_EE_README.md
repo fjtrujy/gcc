@@ -51,9 +51,9 @@ The R5900 has dual multiply/divide pipelines. MULT1/DIV1/MADD1 use HI1/LO1.
 
 | Register | Size | Purpose | GCC Status | GCC Regnum |
 |----------|------|---------|------------|------------|
-| `SA` | 8-bit | Shift amount for QFSRV (funnel shift) | Not implemented | - |
+| `SA` | 8-bit | Shift amount for QFSRV (funnel shift) | **Implemented** | - |
 
-Used by MTSAB, MTSAH, and QFSRV instructions for 128-bit funnel shifts.
+Used by MTSAB, MTSAH, and QFSRV instructions for 128-bit funnel shifts. Accessible via intrinsics for unaligned 128-bit memory access.
 
 ### FPU (COP1) Registers
 
@@ -87,7 +87,7 @@ Special notes:
 |----------|-------|-------------|----------|
 | GP (128-bit) | 32 | 32 | 100% |
 | HI/LO (dual pipeline) | 4 | 2 | 50% |
-| SA | 1 | 0 | 0% |
+| SA | 1 | 1 | 100% |
 | FPU Data | 32 | 32 | 100% |
 | FPU ACC | 1 | 1 | 100% |
 | VU0 VF | 32 | 32 | 100% |
@@ -188,6 +188,17 @@ These instructions operate on the full 128-bit width of GP registers.
 
 **Callee-saved register preservation**: Function prologues/epilogues use LQ/SQ to save and restore callee-saved registers (s0-s7, gp, fp, ra), preserving the full 128-bit width. This ensures that 128-bit values (`__int128`, vectors) in callee-saved registers are correctly preserved across function calls.
 
+**Automatic Unaligned 128-bit Access**: GCC automatically uses QFSRV for unaligned 128-bit loads of `__int128` (TI mode) when the type has `__attribute__((aligned(1)))`. Vector modes (V16QI, V8HI, V4SI, V4SF) do not use QFSRV because the movmisalign patterns would interfere with autovectorization, which expects aligned accesses.
+
+```c
+typedef __int128 ti;
+typedef ti unaligned_ti __attribute__((aligned(1)));  // Tell GCC this is misaligned
+
+ti load_unaligned(unaligned_ti *ptr) {
+    return *ptr;  // Generates: LQ + LQ + MTSAB + QFSRV
+}
+```
+
 ---
 
 ## 2. MMI (Multimedia Instructions) - 128-bit Integer SIMD
@@ -246,12 +257,10 @@ These instructions operate on the full 128-bit width of GP registers.
 
 ### 2.3 Shift Operations
 
+#### 2.3.1 Parallel Shifts
+
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `MFSA` | Move From SA Register | - | - | - |
-| `MTSA` | Move To SA Register | - | - | - |
-| `MTSAB` | Move Byte Count to SA Register | - | - | - |
-| `MTSAH` | Move Halfword Count to SA Register | - | - | - |
 | `PSLLH` | Parallel Shift Left Logical Halfword | `__builtin_mmi_psllh` | `v8hi (<<)` | ✓ |
 | `PSRLH` | Parallel Shift Right Logical Halfword | `__builtin_mmi_psrlh` | `v8hi (>>)` | ✓ |
 | `PSRAH` | Parallel Shift Right Arithmetic Halfword | `__builtin_mmi_psrah` | `v8hi (>>)` | ✓ |
@@ -261,7 +270,16 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PSRLVW` | Parallel Shift Right Logical Variable Word | `__builtin_mmi_psrlvw` | - | - |
 | `PSRAW` | Parallel Shift Right Arithmetic Word | `__builtin_mmi_psraw` | `v4si (>>)` | ✓ |
 | `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | `__builtin_mmi_psravw` | - | - |
-| `QFSRV` | Quadword Funnel Shift Right Variable | - | - | - |
+
+#### 2.3.2 SA Register Operations
+
+| Instruction | Description | Intrinsic | Auto-used |
+|-------------|-------------|-----------|-----------|
+| `MFSA` | Move From SA Register | `__builtin_mmi_mfsa` | - |
+| `MTSA` | Move To SA Register | `__builtin_mmi_mtsa` | - |
+| `MTSAB` | Move Byte Count to SA Register | `__builtin_mmi_mtsab` | ✓ |
+| `MTSAH` | Move Halfword Count to SA Register | `__builtin_mmi_mtsah` | - |
+| `QFSRV` | Quadword Funnel Shift Right Variable | `__builtin_mmi_qfsrv` | ✓ |
 
 ### 2.4 Others (Min/Max, Logical, Absolute)
 
@@ -512,7 +530,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | MMI Other | 2 | 0 | 0% |
 | MMI HI/LO | 10 | 0 | 0% |
 | Dual Pipeline | 12 | 2 | 17% |
-| SA Register | 4 | 0 | 0% |
+| SA Register | 5 | 5 | 100% |
 | FPU Extensions | 11 | 11 | 100% |
 | VU0 Data Transfer | 6 | 4 | 67% |
 | VU0 Basic Arithmetic | 7 | 7 | 100% |
