@@ -1216,9 +1216,10 @@
 
 ;; PMFHL.LH - Parallel Move From HI/LO (Low Halfword)
 ;; Packs low 16-bit halfwords from each 32-bit word in HI/LO
+;; Explicit use of HI/LO prevents DCE from removing preceding writes.
 (define_insn "mmi_pmfhl_lh"
   [(set (match_operand:V8HI 0 "register_operand" "=d")
-	(unspec_volatile:V8HI [(const_int 0)] UNSPEC_MMI_PMFHL_LH))]
+	(unspec_volatile:V8HI [(reg:TI 64) (reg:TI 65)] UNSPEC_MMI_PMFHL_LH))]
   "ISA_HAS_MMI"
   "pmfhl.lh\t%0"
   [(set_attr "type" "mflo")
@@ -1283,15 +1284,42 @@
 ;; PMULTH - Parallel Multiply Halfword (signed)
 ;; Multiplies 8 pairs of 16-bit halfwords, producing 8 x 32-bit results
 ;; 4 results (even indices) go to rd, 4 (odd indices) to HI/LO
+;; Uses set instead of clobber for HI/LO to establish data dependency
+;; with PMFHL instructions.
 (define_insn "mmi_pmulth"
   [(set (match_operand:V4SI 0 "register_operand" "=d")
 	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMULTH))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (set (reg:TI 64) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:TI 65) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))]
   "ISA_HAS_MMI"
   "pmulth\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; V8HI multiply implementation for MMI (used by unified mulv8hi3 expand)
+;; Uses PMULTH (widening to 32-bit) + PMFHL.LH (pack low 16-bits)
+;; Uses match_scratch for temp register which is allocated before reload.
+;; HI/LO are set (not clobbered) to establish data dependency with PMFHL.
+(define_insn_and_split "mmi_mulv8hi3_internal"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMULTH))
+   (clobber (match_scratch:V4SI 3 "=&d"))
+   (set (reg:TI 64) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:TI 65) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))]
+  "ISA_HAS_MMI"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  /* Use the pre-allocated scratch register (operands[3]) */
+  emit_insn (gen_mmi_pmulth (operands[3], operands[1], operands[2]));
+  emit_insn (gen_mmi_pmfhl_lh (operands[0]));
+  DONE;
+}
   [(set_attr "type" "imul")
    (set_attr "mode" "TI")])
 

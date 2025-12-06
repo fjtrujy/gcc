@@ -1,6 +1,7 @@
 /* Test autovectorization of MMI data rearrangement operations.  */
 /* { dg-do compile } */
-/* { dg-options "-march=r5900 -O3 -ftree-vectorize" } */
+/* { dg-options "-march=r5900 -ftree-vectorize" } */
+/* { dg-skip-if "vectorization requires -O3" { *-*-* } { "-O0" "-O1" "-O2" "-Os" } { "" } } */
 
 typedef signed char v16qi __attribute__((vector_size(16)));
 typedef short v8hi __attribute__((vector_size(16)));

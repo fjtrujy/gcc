@@ -8207,6 +8207,28 @@
 ; PS2 R5900 MMI (Multimedia Instructions).
 (include "mips-mmi.md")
 
+;; -------------------------------------------------------------------------
+;; Unified V8HI multiply expand (handles both MSA and MMI)
+;; -------------------------------------------------------------------------
+;; This expand dispatches to either MSA (msa_mulv8hi3_insn) or
+;; MMI (mmi_mulv8hi3_internal) based on the target configuration.
+;; ISA_HAS_MSA and ISA_HAS_MMI are mutually exclusive.
+(define_expand "mulv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+	(mult:V8HI (match_operand:V8HI 1 "register_operand")
+		   (match_operand:V8HI 2 "register_operand")))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
+{
+  if (ISA_HAS_MMI)
+    {
+      emit_insn (gen_mmi_mulv8hi3_internal (operands[0], operands[1], operands[2]));
+      DONE;
+    }
+  /* For MSA, emit the MSA insn pattern directly */
+  emit_insn (gen_msa_mulv8hi3_insn (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
 (define_c_enum "unspec" [
   UNSPEC_ADDRESS_FIRST
 ])
