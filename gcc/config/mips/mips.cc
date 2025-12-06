@@ -9003,6 +9003,123 @@ mips_expand_ins_as_unaligned_store (rtx dest, rtx src, HOST_WIDE_INT width,
   return true;
 }
 
+/* Expand an unaligned 128-bit (TI mode) memory access for R5900.
+   DEST is the destination register and SRC is the source memory for loads,
+   or vice versa for stores.
+
+   For loads, we generate:
+     1. Two aligned LQ loads bracketing the unaligned data
+     2. MTSAB to set shift amount from address misalignment
+     3. QFSRV to extract the correctly aligned 128 bits
+
+   For stores, the operation is more complex and not yet implemented.
+
+   Return true on success, false if expansion is not possible.  */
+
+bool
+mips_expand_movmisalign_ti (rtx dest, rtx src)
+{
+  /* Only handle loads for now.  */
+  if (!REG_P (dest) || !MEM_P (src))
+    return false;
+
+  rtx addr = XEXP (src, 0);
+  rtx aligned_addr, aligned_lo, aligned_hi;
+  rtx temp_lo, temp_hi, result;
+
+  /* Get the address into a register if needed.  */
+  if (!REG_P (addr))
+    addr = force_reg (Pmode, addr);
+
+  /* Calculate aligned base address: addr & ~15.
+     Since -16 (0xFFFFFFF0) doesn't fit in andi's 16-bit unsigned immediate,
+     we load the mask into a register first.  */
+  aligned_addr = gen_reg_rtx (Pmode);
+  rtx mask = force_reg (Pmode, GEN_INT (-16));
+  if (Pmode == DImode)
+    emit_insn (gen_anddi3 (aligned_addr, addr, mask));
+  else
+    emit_insn (gen_andsi3 (aligned_addr, addr, mask));
+
+  /* Load the two aligned quadwords.
+     aligned_lo = *(TI *)(aligned_addr)
+     aligned_hi = *(TI *)(aligned_addr + 16)  */
+  aligned_lo = gen_rtx_MEM (TImode, aligned_addr);
+  rtx addr_plus_16 = gen_rtx_PLUS (Pmode, aligned_addr, GEN_INT (16));
+  aligned_hi = gen_rtx_MEM (TImode, addr_plus_16);
+
+  temp_lo = gen_reg_rtx (TImode);
+  temp_hi = gen_reg_rtx (TImode);
+
+  emit_move_insn (temp_lo, aligned_lo);
+  emit_move_insn (temp_hi, aligned_hi);
+
+  /* Set the SA register with the misalignment.
+     MTSAB uses: SA = (rs[3:0] XOR imm[3:0]) * 8
+     With imm = 0, this gives SA = (addr & 15) * 8 = byte offset in bits.  */
+  emit_insn (gen_mmi_mtsab (gen_lowpart (SImode, addr), const0_rtx));
+
+  /* Use QFSRV to extract the correctly aligned data.
+     QFSRV: rd = (rs || rt) >> SA
+     Here: dest = (temp_hi || temp_lo) >> (misalignment * 8)  */
+  result = gen_reg_rtx (TImode);
+  emit_insn (gen_mmi_qfsrv (result, temp_hi, temp_lo));
+  emit_move_insn (dest, result);
+
+  return true;
+}
+
+/* Expand unaligned 128-bit memory access for vector modes using QFSRV.
+   MODE specifies the vector mode (V16QI, V8HI, V4SI, V4SF).
+   Return true on success, false if expansion is not possible.  */
+
+bool
+mips_expand_movmisalign_128 (rtx dest, rtx src, machine_mode mode)
+{
+  /* Only handle loads for now.  */
+  if (!REG_P (dest) || !MEM_P (src))
+    return false;
+
+  rtx addr = XEXP (src, 0);
+  rtx aligned_addr, aligned_lo, aligned_hi;
+  rtx temp_lo, temp_hi, result;
+
+  /* Get the address into a register if needed.  */
+  if (!REG_P (addr))
+    addr = force_reg (Pmode, addr);
+
+  /* Calculate aligned base address: addr & ~15.  */
+  aligned_addr = gen_reg_rtx (Pmode);
+  rtx mask = force_reg (Pmode, GEN_INT (-16));
+  if (Pmode == DImode)
+    emit_insn (gen_anddi3 (aligned_addr, addr, mask));
+  else
+    emit_insn (gen_andsi3 (aligned_addr, addr, mask));
+
+  /* Load the two aligned quadwords using TImode.  */
+  aligned_lo = gen_rtx_MEM (TImode, aligned_addr);
+  rtx addr_plus_16 = gen_rtx_PLUS (Pmode, aligned_addr, GEN_INT (16));
+  aligned_hi = gen_rtx_MEM (TImode, addr_plus_16);
+
+  temp_lo = gen_reg_rtx (TImode);
+  temp_hi = gen_reg_rtx (TImode);
+
+  emit_move_insn (temp_lo, aligned_lo);
+  emit_move_insn (temp_hi, aligned_hi);
+
+  /* Set the SA register with the misalignment.  */
+  emit_insn (gen_mmi_mtsab (gen_lowpart (SImode, addr), const0_rtx));
+
+  /* Use QFSRV to extract the correctly aligned data.  */
+  result = gen_reg_rtx (TImode);
+  emit_insn (gen_mmi_qfsrv (result, temp_hi, temp_lo));
+
+  /* Convert from TImode to the target vector mode.  */
+  emit_move_insn (dest, gen_lowpart (mode, result));
+
+  return true;
+}
+
 /* Return true if X is a MEM with the same size as MODE.  */
 
 bool
@@ -13387,10 +13504,12 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
     return true;
 
-  /* R5900 MMI uses 128-bit vector modes in GPRs.  */
+  /* R5900 MMI uses 128-bit vector modes in GPRs.
+     V4SF is also allowed in GPRs for unaligned access via QFSRV.  */
   if (GP_REG_P (regno) && ISA_HAS_MMI
       && (mode == E_V16QImode || mode == E_V8HImode
-	  || mode == E_V4SImode || mode == E_V2DImode))
+	  || mode == E_V4SImode || mode == E_V2DImode
+	  || mode == E_V4SFmode))
     return true;
 
   if (FP_REG_P (regno)
@@ -14068,13 +14187,16 @@ mips_vector_mode_supported_p (machine_mode mode)
     case E_V8QImode:
       return TARGET_LOONGSON_MMI;
 
-    /* R5900 MMI uses 128-bit vectors in GPRs.  */
+    /* R5900 MMI uses 128-bit integer vectors in GPRs.  */
     case E_V16QImode:
     case E_V8HImode:
     case E_V4SImode:
     case E_V2DImode:
       return ISA_HAS_MMI || MSA_SUPPORTED_MODE_P (mode);
 
+    /* V4SF is supported by VU0 (R5900) and MSA, but NOT by MMI which
+       only has integer SIMD.  MMI can still use V4SF for movmisalign
+       (QFSRV-based unaligned loads) via mips_hard_regno_mode_ok.  */
     case E_V4SFmode:
       return ISA_HAS_VU0 || MSA_SUPPORTED_MODE_P (mode);
 
@@ -17474,6 +17596,13 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_BUILTIN_PURE (psllvw, MIPS_V4SI_FTYPE_V4SI_V4SI),
   MMI_BUILTIN_PURE (psrlvw, MIPS_V4SI_FTYPE_V4SI_V4SI),
   MMI_BUILTIN_PURE (psravw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* SA register operations: MTSAB, MTSAH, MFSA, MTSA */
+  MMI_NO_TARGET_BUILTIN (mtsab, MIPS_VOID_FTYPE_SI_SI),
+  MMI_NO_TARGET_BUILTIN (mtsah, MIPS_VOID_FTYPE_SI_SI),
+  MMI_BUILTIN_PURE (mfsa, MIPS_SI_FTYPE_VOID),
+  MMI_NO_TARGET_BUILTIN (mtsa, MIPS_VOID_FTYPE_SI),
+  /* Quadword funnel shift: QFSRV */
+  MMI_BUILTIN_PURE (qfsrv, MIPS_TI_FTYPE_TI_TI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
@@ -17530,6 +17659,7 @@ mips_build_cvpointer_type (void)
 #define MIPS_ATYPE_USI unsigned_intSI_type_node
 #define MIPS_ATYPE_DI intDI_type_node
 #define MIPS_ATYPE_UDI unsigned_intDI_type_node
+#define MIPS_ATYPE_TI intTI_type_node
 #define MIPS_ATYPE_SF float_type_node
 #define MIPS_ATYPE_DF double_type_node
 

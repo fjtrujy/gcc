@@ -703,6 +703,9 @@
     DONE;
 })
 
+;; movmisalign for vector modes - MSA only.
+;; R5900 MMI uses separate movmisalign patterns in mips-mmi.md that only
+;; handle explicit aligned(1) types, not autovectorization.
 (define_expand "movmisalign<mode>"
   [(set (match_operand:MSA_NO_V4SF 0)
 	(match_operand:MSA_NO_V4SF 1))]
