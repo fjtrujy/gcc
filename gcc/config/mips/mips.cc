@@ -17603,6 +17603,35 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_NO_TARGET_BUILTIN (mtsa, MIPS_VOID_FTYPE_SI),
   /* Quadword funnel shift: QFSRV */
   MMI_BUILTIN_PURE (qfsrv, MIPS_TI_FTYPE_TI_TI),
+  /* Data rearrangement: Pack instructions */
+  MMI_BUILTIN_PURE (ppacb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (ppach, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (ppacw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (ppac5, MIPS_V8HI_FTYPE_V4SI),
+  /* Data rearrangement: Extend lower instructions */
+  MMI_BUILTIN_PURE (pextlb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (pextlh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pextlw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Data rearrangement: Extend upper instructions */
+  MMI_BUILTIN_PURE (pextub, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (pextuh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pextuw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pext5, MIPS_V4SI_FTYPE_V8HI),
+  /* Data rearrangement: Copy instructions */
+  MMI_BUILTIN_PURE (pcpyh, MIPS_V8HI_FTYPE_V8HI),
+  MMI_BUILTIN_PURE (pcpyld, MIPS_V2DI_FTYPE_V2DI_V2DI),
+  MMI_BUILTIN_PURE (pcpyud, MIPS_V2DI_FTYPE_V2DI_V2DI),
+  /* Data rearrangement: Exchange instructions */
+  MMI_BUILTIN_PURE (pexch, MIPS_V8HI_FTYPE_V8HI),
+  MMI_BUILTIN_PURE (pexcw, MIPS_V4SI_FTYPE_V4SI),
+  MMI_BUILTIN_PURE (pexeh, MIPS_V8HI_FTYPE_V8HI),
+  MMI_BUILTIN_PURE (pexew, MIPS_V4SI_FTYPE_V4SI),
+  MMI_BUILTIN_PURE (prevh, MIPS_V8HI_FTYPE_V8HI),
+  /* Data rearrangement: Interleave instructions */
+  MMI_BUILTIN_PURE (pinteh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pinth, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  /* Data rearrangement: Rotation */
+  MMI_BUILTIN_PURE (prot3w, MIPS_V4SI_FTYPE_V4SI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the

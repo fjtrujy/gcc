@@ -320,28 +320,28 @@ the loop must be unconditional (read all values before the conditional select).
 
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `PPACB` | Parallel Pack to Byte | - | - | - |
-| `PPACH` | Parallel Pack to Halfword | - | - | - |
-| `PPACW` | Parallel Pack to Word | - | - | - |
-| `PINTEH` | Parallel Interleave Even Halfword | - | - | - |
-| `PEXTUB` | Parallel Extend Upper from Byte | - | - | - |
-| `PEXTLB` | Parallel Extend Lower from Byte | - | - | - |
-| `PEXTUH` | Parallel Extend Upper from Halfword | - | - | - |
-| `PEXTLH` | Parallel Extend Lower from Halfword | - | - | - |
-| `PEXTUW` | Parallel Extend Upper from Word | - | - | - |
-| `PEXTLW` | Parallel Extend Lower from Word | - | - | - |
-| `PEXT5` | Parallel Extend from 5 bits (RGB555 expand) | - | - | - |
-| `PPAC5` | Parallel Pack to 5 bits (RGB555 pack) | - | - | - |
-| `PCPYH` | Parallel Copy Halfword | - | - | - |
-| `PCPYLD` | Parallel Copy Lower Doubleword | - | - | - |
-| `PCPYUD` | Parallel Copy Upper Doubleword | - | - | - |
-| `PREVH` | Parallel Reverse Halfword | - | - | - |
-| `PINTH` | Parallel Interleave Halfword | - | - | - |
-| `PEXEH` | Parallel Exchange Even Halfword | - | - | - |
-| `PEXCH` | Parallel Exchange Center Halfword | - | - | - |
-| `PEXEW` | Parallel Exchange Even Word | - | - | - |
-| `PEXCW` | Parallel Exchange Center Word | - | - | - |
-| `PROT3W` | Parallel Rotate 3 Words | - | - | - |
+| `PPACB` | Parallel Pack to Byte | `__builtin_mmi_ppacb` | - | - |
+| `PPACH` | Parallel Pack to Halfword | `__builtin_mmi_ppach` | - | - |
+| `PPACW` | Parallel Pack to Word | `__builtin_mmi_ppacw` | - | - |
+| `PPAC5` | Parallel Pack to 5 bits (RGB555 pack) | `__builtin_mmi_ppac5` | - | - |
+| `PEXTLB` | Parallel Extend Lower from Byte | `__builtin_mmi_pextlb` | - | - |
+| `PEXTLH` | Parallel Extend Lower from Halfword | `__builtin_mmi_pextlh` | - | - |
+| `PEXTLW` | Parallel Extend Lower from Word | `__builtin_mmi_pextlw` | - | - |
+| `PEXTUB` | Parallel Extend Upper from Byte | `__builtin_mmi_pextub` | - | - |
+| `PEXTUH` | Parallel Extend Upper from Halfword | `__builtin_mmi_pextuh` | - | - |
+| `PEXTUW` | Parallel Extend Upper from Word | `__builtin_mmi_pextuw` | - | - |
+| `PEXT5` | Parallel Extend from 5 bits (RGB555 expand) | `__builtin_mmi_pext5` | - | - |
+| `PCPYH` | Parallel Copy Halfword | `__builtin_mmi_pcpyh` | - | - |
+| `PCPYLD` | Parallel Copy Lower Doubleword | `__builtin_mmi_pcpyld` | - | - |
+| `PCPYUD` | Parallel Copy Upper Doubleword | `__builtin_mmi_pcpyud` | - | - |
+| `PEXCH` | Parallel Exchange Center Halfword | `__builtin_mmi_pexch` | - | - |
+| `PEXCW` | Parallel Exchange Center Word | `__builtin_mmi_pexcw` | - | - |
+| `PEXEH` | Parallel Exchange Even Halfword | `__builtin_mmi_pexeh` | - | - |
+| `PEXEW` | Parallel Exchange Even Word | `__builtin_mmi_pexew` | - | - |
+| `PREVH` | Parallel Reverse Halfword | `__builtin_mmi_prevh` | - | - |
+| `PINTEH` | Parallel Interleave Even Halfword | `__builtin_mmi_pinteh` | - | - |
+| `PINTH` | Parallel Interleave Halfword | `__builtin_mmi_pinth` | - | - |
+| `PROT3W` | Parallel Rotate 3 Words | `__builtin_mmi_prot3w` | - | - |
 
 ---
 
@@ -525,8 +525,8 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | MMI Logical | 4 | 4 | 100% |
 | MMI Shift | 9 | 9 | 100% |
 | MMI Multiply/Divide | 13 | 0 | 0% |
-| MMI Data Movement | 23 | 0 | 0% |
-| MMI Format Convert | 2 | 0 | 0% |
+| MMI Data Rearrangement | 22 | 22 | 100% |
+| MMI Format Convert | 2 | 2 | 100% |
 | MMI Other | 2 | 0 | 0% |
 | MMI HI/LO | 10 | 0 | 0% |
 | Dual Pipeline | 12 | 2 | 17% |
