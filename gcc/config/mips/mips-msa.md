@@ -90,6 +90,7 @@
   UNSPEC_MSA_SUBSUU_S
   UNSPEC_MSA_SUBSUS_U
   UNSPEC_MSA_VSHF
+  UNSPEC_MSA_PCKEV
 ])
 
 ;; All vector modes with 128 bits.
@@ -199,6 +200,14 @@
    (V4SI "h")
    (V8HI "b")])
 
+;; This attribute indicates whether the mode is supported by R5900 MMI
+;; for integer arithmetic operations.  V2DI is not supported.
+(define_mode_attr mmi_supported
+  [(V2DI "no")
+   (V4SI "yes")
+   (V8HI "yes")
+   (V16QI "yes")])
+
 ;; This attribute gives define_insn suffix for MSA instructions that need
 ;; distinction between integer and floating point.
 (define_mode_attr msafmt_f
@@ -250,18 +259,29 @@
   DONE;
 })
 
-;; pckev pattern with implicit type conversion.
-(define_insn "vec_pack_trunc_<mode>"
-   [(set (match_operand:<VHMODE> 0 "register_operand" "=f")
-	 (vec_concat:<VHMODE>
-	   (truncate:<VTRUNCMODE>
-	     (match_operand:IMSA_DWH 1 "register_operand" "f"))
-	   (truncate:<VTRUNCMODE>
-	     (match_operand:IMSA_DWH 2 "register_operand" "f"))))]
+;; Internal pattern for MSA pckev instruction (used by expand).
+(define_insn "msa_pckev_<mode>"
+  [(set (match_operand:<VHMODE> 0 "register_operand" "=f")
+	(unspec:<VHMODE>
+	  [(match_operand:IMSA_DWH 1 "register_operand" "f")
+	   (match_operand:IMSA_DWH 2 "register_operand" "f")]
+	  UNSPEC_MSA_PCKEV))]
   "ISA_HAS_MSA"
   "pckev.<hmsafmt>\t%w0,%w2,%w1"
   [(set_attr "type" "simd_permute")
    (set_attr "mode" "<MODE>")])
+
+;; vec_pack_trunc - pack with truncation (narrowing).
+;; Handles both MSA (pckev) and R5900 MMI (ppac*) via helper function.
+(define_expand "vec_pack_trunc_<mode>"
+  [(match_operand:<VHMODE> 0 "register_operand")
+   (match_operand:IMSA_DWH 1 "register_operand")
+   (match_operand:IMSA_DWH 2 "register_operand")]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
+{
+  mips_expand_vec_pack_trunc (operands);
+  DONE;
+})
 
 (define_expand "vec_unpacks_hi_v4sf"
   [(set (match_operand:V2DF 0 "register_operand" "=f")
@@ -288,7 +308,7 @@
 (define_expand "vec_unpacks_hi_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA"
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   mips_expand_vec_unpack (operands, false/*unsigned_p*/, true/*high_p*/);
   DONE;
@@ -297,7 +317,7 @@
 (define_expand "vec_unpacks_lo_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA"
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   mips_expand_vec_unpack (operands, false/*unsigned_p*/, false/*high_p*/);
   DONE;
@@ -306,7 +326,7 @@
 (define_expand "vec_unpacku_hi_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA"
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   mips_expand_vec_unpack (operands, true/*unsigned_p*/, true/*high_p*/);
   DONE;
@@ -315,7 +335,7 @@
 (define_expand "vec_unpacku_lo_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA"
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   mips_expand_vec_unpack (operands, true/*unsigned_p*/, false/*high_p*/);
   DONE;
@@ -782,12 +802,40 @@
 })
 
 ;; Integer operations
+;; V2DI add - MSA only (R5900 MMI doesn't have 64-bit packed add)
+(define_insn "addv2di3"
+  [(set (match_operand:V2DI 0 "register_operand" "=f,f,f")
+	(plus:V2DI
+	  (match_operand:V2DI 1 "register_operand" "f,f,f")
+	  (match_operand:V2DI 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5")))]
+  "ISA_HAS_MSA"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "addv.d\t%w0,%w1,%w2";
+    case 1:
+      {
+	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
+	operands[2] = GEN_INT (-val);
+	return "subvi.d\t%w0,%w1,%d2";
+      }
+    case 2:
+      return "addvi.d\t%w0,%w1,%E2";
+    default:
+      gcc_unreachable ();
+    }
+}
+  [(set_attr "alu_type" "simd_add")
+   (set_attr "type" "simd_int_arith")
+   (set_attr "mode" "V2DI")])
+
 ;; Supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "add<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
-	(plus:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5,d")))]
+  [(set (match_operand:IMSA_WHB 0 "register_operand" "=f,f,f,d")
+	(plus:IMSA_WHB
+	  (match_operand:IMSA_WHB 1 "register_operand" "f,f,f,d")
+	  (match_operand:IMSA_WHB 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5,d")))]
   "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   switch (which_alternative)
@@ -820,12 +868,34 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
+;; V2DI sub - MSA only (R5900 MMI doesn't have 64-bit packed subtract)
+(define_insn "subv2di3"
+  [(set (match_operand:V2DI 0 "register_operand" "=f,f")
+	(minus:V2DI
+	  (match_operand:V2DI 1 "register_operand" "f,f")
+	  (match_operand:V2DI 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5")))]
+  "ISA_HAS_MSA"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "subv.d\t%w0,%w1,%w2";
+    case 1:
+      return "subvi.d\t%w0,%w1,%E2";
+    default:
+      gcc_unreachable ();
+    }
+}
+  [(set_attr "alu_type" "simd_add")
+   (set_attr "type" "simd_int_arith")
+   (set_attr "mode" "V2DI")])
+
 ;; Supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "sub<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d")
-	(minus:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5,d")))]
+  [(set (match_operand:IMSA_WHB 0 "register_operand" "=f,f,d")
+	(minus:IMSA_WHB
+	  (match_operand:IMSA_WHB 1 "register_operand" "f,f,d")
+	  (match_operand:IMSA_WHB 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5,d")))]
   "ISA_HAS_MSA || ISA_HAS_MMI"
 {
   switch (which_alternative)

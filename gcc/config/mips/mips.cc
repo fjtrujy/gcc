@@ -17632,6 +17632,40 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_BUILTIN_PURE (pinth, MIPS_V8HI_FTYPE_V8HI_V8HI),
   /* Data rearrangement: Rotation */
   MMI_BUILTIN_PURE (prot3w, MIPS_V4SI_FTYPE_V4SI),
+
+  /* HI/LO register operations: PMFHI, PMFLO, PMTHI, PMTLO */
+  MMI_BUILTIN_PURE (pmfhi, MIPS_TI_FTYPE_VOID),
+  MMI_BUILTIN_PURE (pmflo, MIPS_TI_FTYPE_VOID),
+  MMI_NO_TARGET_BUILTIN (pmthi, MIPS_VOID_FTYPE_TI),
+  MMI_NO_TARGET_BUILTIN (pmtlo, MIPS_VOID_FTYPE_TI),
+  /* HI/LO pack operations: PMFHL variants */
+  MMI_BUILTIN_PURE (pmfhl_lw, MIPS_V2DI_FTYPE_VOID),
+  MMI_BUILTIN_PURE (pmfhl_uw, MIPS_V2DI_FTYPE_VOID),
+  MMI_BUILTIN_PURE (pmfhl_slw, MIPS_V2DI_FTYPE_VOID),
+  MMI_BUILTIN_PURE (pmfhl_lh, MIPS_V8HI_FTYPE_VOID),
+  MMI_BUILTIN_PURE (pmfhl_sh, MIPS_V8HI_FTYPE_VOID),
+  MMI_NO_TARGET_BUILTIN (pmthl_lw, MIPS_VOID_FTYPE_V4SI),
+
+  /* Parallel multiply: PMULTW, PMULTUW, PMULTH */
+  MMI_BUILTIN_PURE (pmultw, MIPS_V2DI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pmultuw, MIPS_V2DI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pmulth, MIPS_V4SI_FTYPE_V8HI_V8HI),
+
+  /* Parallel multiply-add/subtract: PMADDW, PMADDUW, PMADDH, PMSUBW, PMSUBH */
+  MMI_BUILTIN_PURE (pmaddw, MIPS_V2DI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pmadduw, MIPS_V2DI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pmaddh, MIPS_V4SI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (pmsubw, MIPS_V2DI_FTYPE_V4SI_V4SI),
+  MMI_BUILTIN_PURE (pmsubh, MIPS_V4SI_FTYPE_V8HI_V8HI),
+
+  /* Parallel horizontal multiply: PHMADH, PHMSBH */
+  MMI_BUILTIN_PURE (phmadh, MIPS_V4SI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (phmsbh, MIPS_V4SI_FTYPE_V8HI_V8HI),
+
+  /* Parallel divide: PDIVW, PDIVUW, PDIVBW */
+  MMI_NO_TARGET_BUILTIN (pdivw, MIPS_VOID_FTYPE_V4SI_V4SI),
+  MMI_NO_TARGET_BUILTIN (pdivuw, MIPS_VOID_FTYPE_V4SI_V4SI),
+  MMI_NO_TARGET_BUILTIN (pdivbw, MIPS_VOID_FTYPE_V4SI_V8HI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
@@ -23070,6 +23104,56 @@ mips_expand_vec_unpack (rtx operands[2], bool unsigned_p, bool high_p)
       return;
     }
 
+  /* R5900 MMI path - uses PEXTL/PEXTU with PCGT for sign extension.  */
+  if (ISA_HAS_MMI)
+    {
+      switch (imode)
+	{
+	case E_V4SImode:
+	  if (high_p)
+	    unpack = gen_mmi_pextuw;
+	  else
+	    unpack = gen_mmi_pextlw;
+	  cmpFunc = gen_mmi_pcgtw;
+	  break;
+
+	case E_V8HImode:
+	  if (high_p)
+	    unpack = gen_mmi_pextuh;
+	  else
+	    unpack = gen_mmi_pextlh;
+	  cmpFunc = gen_mmi_pcgth;
+	  break;
+
+	case E_V16QImode:
+	  if (high_p)
+	    unpack = gen_mmi_pextub;
+	  else
+	    unpack = gen_mmi_pextlb;
+	  cmpFunc = gen_mmi_pcgtb;
+	  break;
+
+	default:
+	  gcc_unreachable ();
+	}
+
+      zero = force_reg (imode, CONST0_RTX (imode));
+      if (unsigned_p)
+	tmp = zero;
+      else
+	{
+	  /* Sign extend: compare 0 > input to get sign bits */
+	  tmp = gen_reg_rtx (imode);
+	  emit_insn (cmpFunc (tmp, zero, operands[1]));
+	}
+
+      dest = gen_reg_rtx (imode);
+      emit_insn (unpack (dest, operands[1], tmp));
+      emit_move_insn (operands[0], gen_lowpart (GET_MODE (operands[0]), dest));
+      return;
+    }
+
+  /* Loongson MMI path */
   switch (imode)
     {
     case E_V8QImode:
@@ -23103,6 +23187,48 @@ mips_expand_vec_unpack (rtx operands[2], bool unsigned_p, bool high_p)
   emit_insn (unpack (dest, operands[1], tmp));
 
   emit_move_insn (operands[0], gen_lowpart (GET_MODE (operands[0]), dest));
+}
+
+/* Expand a vector pack operation (narrowing).  */
+
+void
+mips_expand_vec_pack_trunc (rtx operands[3])
+{
+  machine_mode imode = GET_MODE (operands[1]);
+  machine_mode omode = GET_MODE (operands[0]);
+
+  if (MSA_SUPPORTED_MODE_P (imode))
+    {
+      rtx (*pack_fn) (rtx, rtx, rtx);
+      switch (imode)
+	{
+	case E_V2DImode: pack_fn = gen_msa_pckev_v2di; break;
+	case E_V4SImode: pack_fn = gen_msa_pckev_v4si; break;
+	case E_V8HImode: pack_fn = gen_msa_pckev_v8hi; break;
+	default: gcc_unreachable ();
+	}
+      emit_insn (pack_fn (operands[0], operands[1], operands[2]));
+      return;
+    }
+
+  if (ISA_HAS_MMI)
+    {
+      rtx (*pack_fn) (rtx, rtx, rtx);
+      switch (imode)
+	{
+	case E_V2DImode: pack_fn = gen_mmi_ppacw; break;
+	case E_V4SImode: pack_fn = gen_mmi_ppach; break;
+	case E_V8HImode: pack_fn = gen_mmi_ppacb; break;
+	default: gcc_unreachable ();
+	}
+      /* Convert operands to output mode for the mmi_ppac* patterns.  */
+      rtx op1 = gen_lowpart (omode, operands[1]);
+      rtx op2 = gen_lowpart (omode, operands[2]);
+      emit_insn (pack_fn (operands[0], op1, op2));
+      return;
+    }
+
+  gcc_unreachable ();
 }
 
 /* Construct and return PARALLEL RTX with CONST_INTs for HIGH (high_p == TRUE)

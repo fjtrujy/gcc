@@ -231,29 +231,29 @@ ti load_unaligned(unaligned_ti *ptr) {
 
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `PMULTW` | Parallel Multiply Word | - | - | - |
-| `PMULTUW` | Parallel Multiply Unsigned Word | - | - | - |
-| `PDIVW` | Parallel Divide Word | - | - | - |
-| `PDIVUW` | Parallel Divide Unsigned Word | - | - | - |
-| `PMADDW` | Parallel Multiply-Add Word | - | - | - |
-| `PMADDUW` | Parallel Multiply-Add Unsigned Word | - | - | - |
-| `PMSUBW` | Parallel Multiply-Subtract Word | - | - | - |
-| `PMULTH` | Parallel Multiply Halfword | - | - | - |
-| `PMADDH` | Parallel Multiply-Add Halfword | - | - | - |
-| `PMSUBH` | Parallel Multiply-Subtract Halfword | - | - | - |
-| `PHMADH` | Parallel Horizontal Multiply-Add Halfword | - | - | - |
-| `PHMSBH` | Parallel Horizontal Multiply-Subtract Halfword | - | - | - |
-| `PDIVBW` | Parallel Divide Broadcast Word | - | - | - |
-| `PMFHI` | Parallel Move From HI Register | - | - | - |
-| `PMFLO` | Parallel Move From LO Register | - | - | - |
-| `PMTHI` | Parallel Move To HI Register | - | - | - |
-| `PMTLO` | Parallel Move To LO Register | - | - | - |
-| `PMFHL.LW` | Parallel Move From HI/LO (Low Word) | - | - | - |
-| `PMFHL.UW` | Parallel Move From HI/LO (Upper Word) | - | - | - |
-| `PMFHL.SLW` | Parallel Move From HI/LO (Signed Low Word) | - | - | - |
-| `PMFHL.LH` | Parallel Move From HI/LO (Low Halfword) | - | - | - |
-| `PMFHL.SH` | Parallel Move From HI/LO (Signed Halfword) | - | - | - |
-| `PMTHL.LW` | Parallel Move To HI/LO (Low Word) | - | - | - |
+| `PMULTW` | Parallel Multiply Word | `__builtin_mmi_pmultw` | - | - |
+| `PMULTUW` | Parallel Multiply Unsigned Word | `__builtin_mmi_pmultuw` | - | - |
+| `PDIVW` | Parallel Divide Word | `__builtin_mmi_pdivw` | - | - |
+| `PDIVUW` | Parallel Divide Unsigned Word | `__builtin_mmi_pdivuw` | - | - |
+| `PMADDW` | Parallel Multiply-Add Word | `__builtin_mmi_pmaddw` | - | - |
+| `PMADDUW` | Parallel Multiply-Add Unsigned Word | `__builtin_mmi_pmadduw` | - | - |
+| `PMSUBW` | Parallel Multiply-Subtract Word | `__builtin_mmi_pmsubw` | - | - |
+| `PMULTH` | Parallel Multiply Halfword | `__builtin_mmi_pmulth` | - | - |
+| `PMADDH` | Parallel Multiply-Add Halfword | `__builtin_mmi_pmaddh` | - | - |
+| `PMSUBH` | Parallel Multiply-Subtract Halfword | `__builtin_mmi_pmsubh` | - | - |
+| `PHMADH` | Parallel Horizontal Multiply-Add Halfword | `__builtin_mmi_phmadh` | - | - |
+| `PHMSBH` | Parallel Horizontal Multiply-Subtract Halfword | `__builtin_mmi_phmsbh` | - | - |
+| `PDIVBW` | Parallel Divide Broadcast Word | `__builtin_mmi_pdivbw` | - | - |
+| `PMFHI` | Parallel Move From HI Register | `__builtin_mmi_pmfhi` | - | - |
+| `PMFLO` | Parallel Move From LO Register | `__builtin_mmi_pmflo` | - | - |
+| `PMTHI` | Parallel Move To HI Register | `__builtin_mmi_pmthi` | - | - |
+| `PMTLO` | Parallel Move To LO Register | `__builtin_mmi_pmtlo` | - | - |
+| `PMFHL.LW` | Parallel Move From HI/LO (Low Word) | `__builtin_mmi_pmfhl_lw` | - | - |
+| `PMFHL.UW` | Parallel Move From HI/LO (Upper Word) | `__builtin_mmi_pmfhl_uw` | - | - |
+| `PMFHL.SLW` | Parallel Move From HI/LO (Signed Low Word) | `__builtin_mmi_pmfhl_slw` | - | - |
+| `PMFHL.LH` | Parallel Move From HI/LO (Low Halfword) | `__builtin_mmi_pmfhl_lh` | - | - |
+| `PMFHL.SH` | Parallel Move From HI/LO (Signed Halfword) | `__builtin_mmi_pmfhl_sh` | - | - |
+| `PMTHL.LW` | Parallel Move To HI/LO (Low Word) | `__builtin_mmi_pmthl_lw` | - | - |
 
 ### 2.3 Shift Operations
 
@@ -320,16 +320,16 @@ the loop must be unconditional (read all values before the conditional select).
 
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `PPACB` | Parallel Pack to Byte | `__builtin_mmi_ppacb` | - | - |
-| `PPACH` | Parallel Pack to Halfword | `__builtin_mmi_ppach` | - | - |
-| `PPACW` | Parallel Pack to Word | `__builtin_mmi_ppacw` | - | - |
+| `PPACB` | Parallel Pack to Byte | `__builtin_mmi_ppacb` | - | ✓ (narrow) |
+| `PPACH` | Parallel Pack to Halfword | `__builtin_mmi_ppach` | - | ✓ (narrow) |
+| `PPACW` | Parallel Pack to Word | `__builtin_mmi_ppacw` | - | ✓ (narrow) |
 | `PPAC5` | Parallel Pack to 5 bits (RGB555 pack) | `__builtin_mmi_ppac5` | - | - |
-| `PEXTLB` | Parallel Extend Lower from Byte | `__builtin_mmi_pextlb` | - | - |
-| `PEXTLH` | Parallel Extend Lower from Halfword | `__builtin_mmi_pextlh` | - | - |
-| `PEXTLW` | Parallel Extend Lower from Word | `__builtin_mmi_pextlw` | - | - |
-| `PEXTUB` | Parallel Extend Upper from Byte | `__builtin_mmi_pextub` | - | - |
-| `PEXTUH` | Parallel Extend Upper from Halfword | `__builtin_mmi_pextuh` | - | - |
-| `PEXTUW` | Parallel Extend Upper from Word | `__builtin_mmi_pextuw` | - | - |
+| `PEXTLB` | Parallel Extend Lower from Byte | `__builtin_mmi_pextlb` | - | ✓ (widen) |
+| `PEXTLH` | Parallel Extend Lower from Halfword | `__builtin_mmi_pextlh` | - | ✓ (widen) |
+| `PEXTLW` | Parallel Extend Lower from Word | `__builtin_mmi_pextlw` | - | ✓ (widen) |
+| `PEXTUB` | Parallel Extend Upper from Byte | `__builtin_mmi_pextub` | - | ✓ (widen) |
+| `PEXTUH` | Parallel Extend Upper from Halfword | `__builtin_mmi_pextuh` | - | ✓ (widen) |
+| `PEXTUW` | Parallel Extend Upper from Word | `__builtin_mmi_pextuw` | - | ✓ (widen) |
 | `PEXT5` | Parallel Extend from 5 bits (RGB555 expand) | `__builtin_mmi_pext5` | - | - |
 | `PCPYH` | Parallel Copy Halfword | `__builtin_mmi_pcpyh` | - | - |
 | `PCPYLD` | Parallel Copy Lower Doubleword | `__builtin_mmi_pcpyld` | - | - |
@@ -342,6 +342,11 @@ the loop must be unconditional (read all values before the conditional select).
 | `PINTEH` | Parallel Interleave Even Halfword | `__builtin_mmi_pinteh` | - | - |
 | `PINTH` | Parallel Interleave Halfword | `__builtin_mmi_pinth` | - | - |
 | `PROT3W` | Parallel Rotate 3 Words | `__builtin_mmi_prot3w` | - | - |
+
+**Autovectorization Notes**: The data rearrangement instructions are automatically used by GCC for:
+- **Widening conversions** (PEXTL*/PEXTU*): Loops like `dst[i] = src[i]` where `dst` is wider than `src` (e.g., `char` to `short`)
+- **Narrowing conversions** (PPACB/PPACH/PPACW): Loops like `dst[i] = (T)src[i]` where `dst` is narrower than `src` (e.g., `short` to `char`)
+- **Vector interleave**: Shuffle operations with interleave patterns
 
 ---
 
@@ -524,11 +529,11 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | MMI Min/Max | 4 | 4 | 100% |
 | MMI Logical | 4 | 4 | 100% |
 | MMI Shift | 9 | 9 | 100% |
-| MMI Multiply/Divide | 13 | 0 | 0% |
+| MMI Multiply/Divide | 13 | 13 | 100% |
 | MMI Data Rearrangement | 22 | 22 | 100% |
 | MMI Format Convert | 2 | 2 | 100% |
 | MMI Other | 2 | 0 | 0% |
-| MMI HI/LO | 10 | 0 | 0% |
+| MMI HI/LO | 10 | 10 | 100% |
 | Dual Pipeline | 12 | 2 | 17% |
 | SA Register | 5 | 5 | 100% |
 | FPU Extensions | 11 | 11 | 100% |
