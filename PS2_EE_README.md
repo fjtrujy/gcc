@@ -217,8 +217,8 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PSUBUH` | Parallel Subtract Unsigned Saturation Halfword | `__builtin_mmi_psubuh` | Intrinsic, Autovectorize |
 | `PSUBUW` | Parallel Subtract Unsigned Saturation Word | `__builtin_mmi_psubuw` | Intrinsic, Autovectorize |
 | **Absolute Value** ||||
-| `PABSH` | Parallel Absolute Halfword | - | - |
-| `PABSW` | Parallel Absolute Word | - | - |
+| `PABSH` | Parallel Absolute Halfword | `__builtin_mmi_pabsh` | Intrinsic, Autovectorize |
+| `PABSW` | Parallel Absolute Word | `__builtin_mmi_pabsw` | Intrinsic, Autovectorize |
 | **Add/Subtract Combined** ||||
 | `PADSBH` | Parallel Add/Subtract Halfword | - | - |
 
@@ -532,7 +532,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | Feature Category | Total Instructions | Implemented | Coverage |
 |-----------------|-------------------|-------------|----------|
 | 128-bit Load/Store | 2 | 2 | 100% |
-| MMI Arithmetic | 27 | 18 | 67% |
+| MMI Arithmetic | 27 | 20 | 74% |
 | MMI Comparison | 6 | 6 | 100% |
 | MMI Min/Max | 4 | 4 | 100% |
 | MMI Logical | 4 | 4 | 100% |
