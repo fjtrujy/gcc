@@ -188,7 +188,7 @@ These instructions operate on the full 128-bit width of GP registers.
 
 **Callee-saved register preservation**: Function prologues/epilogues use LQ/SQ to save and restore callee-saved registers (s0-s7, gp, fp, ra), preserving the full 128-bit width. This ensures that 128-bit values (`__int128`, vectors) in callee-saved registers are correctly preserved across function calls.
 
-**Automatic Unaligned 128-bit Access**: GCC automatically uses QFSRV for unaligned 128-bit loads of `__int128` (TI mode) when the type has `__attribute__((aligned(1)))`. Vector modes (V16QI, V8HI, V4SI, V4SF) do not use QFSRV because the movmisalign patterns would interfere with autovectorization, which expects aligned accesses.
+**Automatic Unaligned 128-bit Access**: GCC automatically uses QFSRV for unaligned 128-bit loads when the type has `__attribute__((aligned(1)))`. This applies to all 128-bit types: `__int128` (TI), and vector types V16QI, V8HI, V4SI, V4SF. For stores, regular moves are used (which may trap on truly misaligned access on PS2 hardware).
 
 ```c
 typedef __int128 ti;

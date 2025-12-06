@@ -629,37 +629,51 @@
 ;; Unaligned 128-bit Memory Access using QFSRV
 ;; -------------------------------------------------------------------------
 ;; R5900's LQ/SQ require 16-byte alignment. For unaligned access, we use:
-;;   Load:  LQ + LQ + MTSAB + QFSRV
-;;   Store: More complex (load-modify-store)
+;;   Load:  LQ + LQ + MTSAB + QFSRV (optimized)
+;;   Store: Regular move (may trap on truly misaligned access)
+;; CRITICAL: Never FAIL - use emit_move_insn as fallback to avoid ICE.
 
 (define_expand "movmisalignti"
   [(set (match_operand:TI 0 "nonimmediate_operand")
 	(match_operand:TI 1 "nonimmediate_operand"))]
   "ISA_HAS_MMI"
 {
-  if (mips_expand_movmisalign_ti (operands[0], operands[1]))
-    DONE;
-  else
-    FAIL;
+  /* Handle mem-to-mem: force source to register first */
+  if (MEM_P (operands[0]) && MEM_P (operands[1]))
+    operands[1] = force_reg (TImode, operands[1]);
+
+  /* Load: Use optimized QFSRV sequence */
+  if (REG_P (operands[0]) && MEM_P (operands[1]))
+    {
+      if (mips_expand_movmisalign_ti (operands[0], operands[1]))
+	DONE;
+    }
+  /* Store or fallback: Use regular move */
+  emit_move_insn (operands[0], operands[1]);
+  DONE;
 })
 
-;; Unaligned 128-bit loads for V4SF when VU0 is NOT enabled.
-;; When VU0 is enabled, we don't define movmisalignv4sf because:
-;; 1. VU0 autovectorization needs to handle both loads and stores
-;; 2. Our QFSRV-based pattern only handles loads
-;; 3. Without movmisalign, VU0 will use regular moves (which may trap on
-;;    misaligned access - user must ensure alignment)
-;; When VU0 is disabled but MMI is enabled, we can use QFSRV for loads only.
-;; TI mode (scalar __int128) uses movmisalignti above.
+;; Unaligned 128-bit access for V4SF (VU0 float vector).
+;; Uses QFSRV for loads, regular moves for stores.
+;; V4SF is not in MSA_NO_V4SF so it needs its own pattern.
 
 (define_expand "movmisalignv4sf"
   [(set (match_operand:V4SF 0 "nonimmediate_operand")
 	(match_operand:V4SF 1 "nonimmediate_operand"))]
-  "ISA_HAS_MMI && !ISA_HAS_VU0"
+  "ISA_HAS_MMI"
 {
-  if (mips_expand_movmisalign_128 (operands[0], operands[1], V4SFmode))
-    DONE;
-  else
-    FAIL;
+  /* Handle mem-to-mem: force source to register first */
+  if (MEM_P (operands[0]) && MEM_P (operands[1]))
+    operands[1] = force_reg (V4SFmode, operands[1]);
+
+  /* Load: Use optimized QFSRV sequence */
+  if (REG_P (operands[0]) && MEM_P (operands[1]))
+    {
+      if (mips_expand_movmisalign_128 (operands[0], operands[1], V4SFmode))
+	DONE;
+    }
+  /* Store or fallback: Use regular move */
+  emit_move_insn (operands[0], operands[1]);
+  DONE;
 })
 

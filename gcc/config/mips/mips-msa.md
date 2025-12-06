@@ -703,14 +703,32 @@
     DONE;
 })
 
-;; movmisalign for vector modes - MSA only.
-;; R5900 MMI uses separate movmisalign patterns in mips-mmi.md that only
-;; handle explicit aligned(1) types, not autovectorization.
+;; movmisalign for vector modes - MSA and MMI.
+;; For MMI: Uses QFSRV for loads, falls back to regular moves for stores.
+;; CRITICAL: Never FAIL - use emit_move_insn as fallback to avoid ICE.
 (define_expand "movmisalign<mode>"
   [(set (match_operand:MSA_NO_V4SF 0)
 	(match_operand:MSA_NO_V4SF 1))]
-  "ISA_HAS_MSA"
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
+  /* Handle mem-to-mem: force source to register first */
+  if (MEM_P (operands[0]) && MEM_P (operands[1]))
+    operands[1] = force_reg (<MODE>mode, operands[1]);
+
+  /* For MMI (R5900), use QFSRV for loads, regular moves for stores */
+  if (ISA_HAS_MMI && !ISA_HAS_MSA)
+    {
+      if (REG_P (operands[0]) && MEM_P (operands[1]))
+	{
+	  /* Load: Use optimized QFSRV sequence */
+	  if (mips_expand_movmisalign_128 (operands[0], operands[1], <MODE>mode))
+	    DONE;
+	}
+      /* Store or fallback: Use regular move (may trap on misaligned HW) */
+      emit_move_insn (operands[0], operands[1]);
+      DONE;
+    }
+  /* For MSA, use the standard move which handles misalignment */
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
     DONE;
 })
