@@ -45,6 +45,40 @@
 (define_mode_attr mmi_hw [(V8HI "h") (V4SI "w")])
 
 ;; -------------------------------------------------------------------------
+;; Mode Iterators and Attributes for Pack/Unpack Autovectorization
+;; -------------------------------------------------------------------------
+
+;; Source modes for pack operations (wider types that pack to narrower)
+(define_mode_iterator MMI_DWH [V2DI V4SI V8HI])
+
+;; Source modes for unpack operations (narrower types that unpack to wider)
+(define_mode_iterator MMI_WHB [V4SI V8HI V16QI])
+
+;; Half-width mode (result of packing)
+(define_mode_attr MMI_VHMODE
+  [(V8HI "V16QI")
+   (V4SI "V8HI")
+   (V2DI "V4SI")])
+
+;; Double-width mode (result of unpacking)
+(define_mode_attr MMI_VDMODE
+  [(V4SI "V2DI")
+   (V8HI "V4SI")
+   (V16QI "V8HI")])
+
+;; Truncated mode (same element count, half element width)
+(define_mode_attr MMI_VTRUNCMODE
+  [(V8HI "V8QI")
+   (V4SI "V4HI")
+   (V2DI "V2SI")])
+
+;; Doubled-width concat mode for vec_select patterns
+(define_mode_attr MMI_VCONCATMODE
+  [(V16QI "V32QI")
+   (V8HI "V16HI")
+   (V4SI "V8SI")])
+
+;; -------------------------------------------------------------------------
 ;; Vector Move Patterns for Autovectorization
 ;; -------------------------------------------------------------------------
 
@@ -976,5 +1010,433 @@
   "ISA_HAS_MMI"
   "prot3w\t%0,%1"
   [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Autovectorization Patterns for Data Rearrangement
+;; -------------------------------------------------------------------------
+;; These patterns use standard optab names that GCC's autovectorizer recognizes.
+;; They enable automatic selection of PEXTL*/PEXTU*/PPAC* instructions.
+
+;; -------------------------------------------------------------------------
+;; vec_interleave_low - Interleave lower halves (uses PEXTL*)
+;; -------------------------------------------------------------------------
+;; Interleaves elements from the lower halves of two vectors.
+;; For V16QI: takes bytes 0-7 from each input, interleaves to produce bytes 0-15
+;; For V8HI: takes halfwords 0-3 from each input, interleaves to produce 0-7
+;; For V4SI: takes words 0-1 from each input, interleaves to produce 0-3
+
+(define_insn "vec_interleave_low_v16qi"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(vec_select:V16QI
+	  (vec_concat:V32QI
+	    (match_operand:V16QI 1 "register_operand" "d")
+	    (match_operand:V16QI 2 "register_operand" "d"))
+	  (parallel [(const_int 0) (const_int 16)
+		     (const_int 1) (const_int 17)
+		     (const_int 2) (const_int 18)
+		     (const_int 3) (const_int 19)
+		     (const_int 4) (const_int 20)
+		     (const_int 5) (const_int 21)
+		     (const_int 6) (const_int 22)
+		     (const_int 7) (const_int 23)])))]
+  "ISA_HAS_MMI"
+  "pextlb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "vec_interleave_low_v8hi"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(vec_select:V8HI
+	  (vec_concat:V16HI
+	    (match_operand:V8HI 1 "register_operand" "d")
+	    (match_operand:V8HI 2 "register_operand" "d"))
+	  (parallel [(const_int 0) (const_int 8)
+		     (const_int 1) (const_int 9)
+		     (const_int 2) (const_int 10)
+		     (const_int 3) (const_int 11)])))]
+  "ISA_HAS_MMI"
+  "pextlh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "vec_interleave_low_v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(vec_select:V4SI
+	  (vec_concat:V8SI
+	    (match_operand:V4SI 1 "register_operand" "d")
+	    (match_operand:V4SI 2 "register_operand" "d"))
+	  (parallel [(const_int 0) (const_int 4)
+		     (const_int 1) (const_int 5)])))]
+  "ISA_HAS_MMI"
+  "pextlw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; vec_interleave_high - Interleave upper halves (uses PEXTU*)
+;; -------------------------------------------------------------------------
+;; Interleaves elements from the upper halves of two vectors.
+;; For V16QI: takes bytes 8-15 from each input, interleaves to produce bytes 0-15
+;; For V8HI: takes halfwords 4-7 from each input, interleaves to produce 0-7
+;; For V4SI: takes words 2-3 from each input, interleaves to produce 0-3
+
+(define_insn "vec_interleave_high_v16qi"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(vec_select:V16QI
+	  (vec_concat:V32QI
+	    (match_operand:V16QI 1 "register_operand" "d")
+	    (match_operand:V16QI 2 "register_operand" "d"))
+	  (parallel [(const_int 8) (const_int 24)
+		     (const_int 9) (const_int 25)
+		     (const_int 10) (const_int 26)
+		     (const_int 11) (const_int 27)
+		     (const_int 12) (const_int 28)
+		     (const_int 13) (const_int 29)
+		     (const_int 14) (const_int 30)
+		     (const_int 15) (const_int 31)])))]
+  "ISA_HAS_MMI"
+  "pextub\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "vec_interleave_high_v8hi"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(vec_select:V8HI
+	  (vec_concat:V16HI
+	    (match_operand:V8HI 1 "register_operand" "d")
+	    (match_operand:V8HI 2 "register_operand" "d"))
+	  (parallel [(const_int 4) (const_int 12)
+		     (const_int 5) (const_int 13)
+		     (const_int 6) (const_int 14)
+		     (const_int 7) (const_int 15)])))]
+  "ISA_HAS_MMI"
+  "pextuh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "vec_interleave_high_v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(vec_select:V4SI
+	  (vec_concat:V8SI
+	    (match_operand:V4SI 1 "register_operand" "d")
+	    (match_operand:V4SI 2 "register_operand" "d"))
+	  (parallel [(const_int 2) (const_int 6)
+		     (const_int 3) (const_int 7)])))]
+  "ISA_HAS_MMI"
+  "pextuw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; vec_pack_trunc - Pack with truncation (narrowing)
+;; -------------------------------------------------------------------------
+;; vec_pack_trunc patterns are defined in mips-msa.md with the condition
+;; "ISA_HAS_MSA || ISA_HAS_MMI". The mips_expand_vec_pack_trunc() function
+;; in mips.cc handles both MSA and MMI cases, emitting PPACB/PPACH/PPACW.
+
+;; -------------------------------------------------------------------------
+;; vec_unpack - Unpack/widen operations
+;; -------------------------------------------------------------------------
+;; vec_unpack patterns are defined in mips-msa.md with the condition
+;; "ISA_HAS_MSA || ISA_HAS_MMI". The mips_expand_vec_unpack() function
+;; in mips.cc handles both MSA and MMI cases.
+
+;; =========================================================================
+;; Parallel Move From/To HI/LO Registers
+;; =========================================================================
+;; The R5900 has 128-bit HI and LO registers (parallel to the 128-bit GPRs).
+;; These instructions move data between GPRs and the parallel HI/LO registers.
+;; We use unspec_volatile because HI/LO are implicit state not tracked by GCC.
+
+;; PMFHI - Parallel Move From HI Register (128-bit)
+(define_insn "mmi_pmfhi"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(unspec_volatile:TI [(const_int 0)] UNSPEC_MMI_PMFHI))]
+  "ISA_HAS_MMI"
+  "pmfhi\t%0"
+  [(set_attr "type" "mfhi")
+   (set_attr "mode" "TI")])
+
+;; PMFLO - Parallel Move From LO Register (128-bit)
+(define_insn "mmi_pmflo"
+  [(set (match_operand:TI 0 "register_operand" "=d")
+	(unspec_volatile:TI [(const_int 0)] UNSPEC_MMI_PMFLO))]
+  "ISA_HAS_MMI"
+  "pmflo\t%0"
+  [(set_attr "type" "mflo")
+   (set_attr "mode" "TI")])
+
+;; PMTHI - Parallel Move To HI Register (128-bit)
+(define_insn "mmi_pmthi"
+  [(unspec_volatile [(match_operand:TI 0 "register_operand" "d")]
+		    UNSPEC_MMI_PMTHI)]
+  "ISA_HAS_MMI"
+  "pmthi\t%0"
+  [(set_attr "type" "mtlo")
+   (set_attr "mode" "TI")])
+
+;; PMTLO - Parallel Move To LO Register (128-bit)
+(define_insn "mmi_pmtlo"
+  [(unspec_volatile [(match_operand:TI 0 "register_operand" "d")]
+		    UNSPEC_MMI_PMTLO)]
+  "ISA_HAS_MMI"
+  "pmtlo\t%0"
+  [(set_attr "type" "mtlo")
+   (set_attr "mode" "TI")])
+
+;; PMFHL.LW - Parallel Move From HI/LO (Low Word)
+;; Extracts low 32-bit words from each 64-bit HI/LO pair, producing 2 x 64-bit
+(define_insn "mmi_pmfhl_lw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec_volatile:V2DI [(const_int 0)] UNSPEC_MMI_PMFHL_LW))]
+  "ISA_HAS_MMI"
+  "pmfhl.lw\t%0"
+  [(set_attr "type" "mflo")
+   (set_attr "mode" "TI")])
+
+;; PMFHL.UW - Parallel Move From HI/LO (Upper Word)
+;; Extracts upper 32-bit words from each 64-bit HI/LO pair
+(define_insn "mmi_pmfhl_uw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec_volatile:V2DI [(const_int 0)] UNSPEC_MMI_PMFHL_UW))]
+  "ISA_HAS_MMI"
+  "pmfhl.uw\t%0"
+  [(set_attr "type" "mflo")
+   (set_attr "mode" "TI")])
+
+;; PMFHL.SLW - Parallel Move From HI/LO (Signed Low Word with saturation)
+(define_insn "mmi_pmfhl_slw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec_volatile:V2DI [(const_int 0)] UNSPEC_MMI_PMFHL_SLW))]
+  "ISA_HAS_MMI"
+  "pmfhl.slw\t%0"
+  [(set_attr "type" "mflo")
+   (set_attr "mode" "TI")])
+
+;; PMFHL.LH - Parallel Move From HI/LO (Low Halfword)
+;; Packs low 16-bit halfwords from each 32-bit word in HI/LO
+(define_insn "mmi_pmfhl_lh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec_volatile:V8HI [(const_int 0)] UNSPEC_MMI_PMFHL_LH))]
+  "ISA_HAS_MMI"
+  "pmfhl.lh\t%0"
+  [(set_attr "type" "mflo")
+   (set_attr "mode" "TI")])
+
+;; PMFHL.SH - Parallel Move From HI/LO (Signed Halfword with saturation)
+(define_insn "mmi_pmfhl_sh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec_volatile:V8HI [(const_int 0)] UNSPEC_MMI_PMFHL_SH))]
+  "ISA_HAS_MMI"
+  "pmfhl.sh\t%0"
+  [(set_attr "type" "mflo")
+   (set_attr "mode" "TI")])
+
+;; PMTHL.LW - Parallel Move To HI/LO (Low Word)
+;; Writes low 32-bit words to each 64-bit HI/LO pair
+(define_insn "mmi_pmthl_lw"
+  [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")]
+		    UNSPEC_MMI_PMTHL_LW)]
+  "ISA_HAS_MMI"
+  "pmthl.lw\t%0"
+  [(set_attr "type" "mtlo")
+   (set_attr "mode" "TI")])
+
+;; =========================================================================
+;; Parallel Multiply Instructions
+;; =========================================================================
+;; R5900 parallel multiply instructions produce widened results.
+;; PMULTW: 2 x 32-bit -> 2 x 64-bit (result in rd, HI, LO)
+;; PMULTH: 8 x 16-bit -> 8 x 32-bit (4 results in rd, 4 in HI/LO)
+;; We model rd as the primary output, with HI/LO as clobbers.
+;; Users who need HI/LO contents can use PMFHI/PMFLO builtins after.
+
+;; PMULTW - Parallel Multiply Word (signed)
+;; Multiplies rs[31:0] * rt[31:0] and rs[95:64] * rt[95:64]
+;; Produces two 64-bit products in rd
+(define_insn "mmi_pmultw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMULTW))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmultw\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PMULTUW - Parallel Multiply Unsigned Word
+(define_insn "mmi_pmultuw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMULTUW))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmultuw\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PMULTH - Parallel Multiply Halfword (signed)
+;; Multiplies 8 pairs of 16-bit halfwords, producing 8 x 32-bit results
+;; 4 results (even indices) go to rd, 4 (odd indices) to HI/LO
+(define_insn "mmi_pmulth"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMULTH))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmulth\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; =========================================================================
+;; Parallel Multiply-Add/Subtract Instructions
+;; =========================================================================
+;; These instructions accumulate into the HI/LO registers.
+;; (GPR[rd], HI, LO) <- (HI, LO) +/- GPR[rs] * GPR[rt]
+
+;; PMADDW - Parallel Multiply-Add Word (signed)
+(define_insn "mmi_pmaddw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMADDW))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmaddw\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PMADDUW - Parallel Multiply-Add Unsigned Word
+(define_insn "mmi_pmadduw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMADDUW))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmadduw\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PMADDH - Parallel Multiply-Add Halfword (signed)
+(define_insn "mmi_pmaddh"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMADDH))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmaddh\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PMSUBW - Parallel Multiply-Subtract Word (signed)
+(define_insn "mmi_pmsubw"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMSUBW))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmsubw\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PMSUBH - Parallel Multiply-Subtract Halfword (signed)
+(define_insn "mmi_pmsubh"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PMSUBH))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "pmsubh\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; =========================================================================
+;; Parallel Horizontal Multiply Instructions
+;; =========================================================================
+;; These multiply adjacent halfword pairs and add/subtract the results.
+
+;; PHMADH - Parallel Horizontal Multiply-Add Halfword
+;; Multiplies adjacent pairs, adds results: (a*b + c*d) for each quad
+(define_insn "mmi_phmadh"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PHMADH))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "phmadh\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; PHMSBH - Parallel Horizontal Multiply-Subtract Halfword
+;; Multiplies adjacent pairs, subtracts results: (a*b - c*d) for each quad
+(define_insn "mmi_phmsbh"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PHMSBH))
+   (clobber (reg:TI 64))
+   (clobber (reg:TI 65))]
+  "ISA_HAS_MMI"
+  "phmsbh\t%0,%1,%2"
+  [(set_attr "type" "imul")
+   (set_attr "mode" "TI")])
+
+;; =========================================================================
+;; Parallel Divide Instructions
+;; =========================================================================
+;; Division results go to HI (remainder) and LO (quotient).
+;; No destination register, so we use unspec_volatile with no output.
+;; Users must use PMFHI/PMFLO builtins to retrieve results.
+
+;; PDIVW - Parallel Divide Word (signed)
+;; Divides rs[31:0]/rt[31:0] and rs[95:64]/rt[95:64]
+;; Quotients in LO, remainders in HI
+(define_insn "mmi_pdivw"
+  [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")
+		     (match_operand:V4SI 1 "register_operand" "d")]
+		    UNSPEC_MMI_PDIVW)]
+  "ISA_HAS_MMI"
+  "pdivw\t%0,%1"
+  [(set_attr "type" "idiv")
+   (set_attr "mode" "TI")])
+
+;; PDIVUW - Parallel Divide Unsigned Word
+(define_insn "mmi_pdivuw"
+  [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")
+		     (match_operand:V4SI 1 "register_operand" "d")]
+		    UNSPEC_MMI_PDIVUW)]
+  "ISA_HAS_MMI"
+  "pdivuw\t%0,%1"
+  [(set_attr "type" "idiv")
+   (set_attr "mode" "TI")])
+
+;; PDIVBW - Parallel Divide Broadcast Word
+;; Divides four 32-bit words in rs by the low 16-bit halfword of rt
+;; Four quotients in LO, four 16-bit remainders in HI
+(define_insn "mmi_pdivbw"
+  [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")
+		     (match_operand:V8HI 1 "register_operand" "d")]
+		    UNSPEC_MMI_PDIVBW)]
+  "ISA_HAS_MMI"
+  "pdivbw\t%0,%1"
+  [(set_attr "type" "idiv")
    (set_attr "mode" "TI")])
 
