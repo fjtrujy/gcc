@@ -677,3 +677,304 @@
   DONE;
 })
 
+;; -------------------------------------------------------------------------
+;; Data Rearrangement Instructions
+;; -------------------------------------------------------------------------
+;; These instructions reorganize data within 128-bit registers without
+;; performing arithmetic operations. They're used for packing, unpacking,
+;; interleaving, shuffling, and copying vector elements.
+
+;; -------------------------------------------------------------------------
+;; Pack Instructions
+;; -------------------------------------------------------------------------
+;; Pack operations take elements from two source registers and combine
+;; them into a single destination register with narrower elements.
+
+;; PPACB - Parallel Pack to Byte
+;; Takes low-order bytes from each halfword in rs and rt, packs into rd
+(define_insn "mmi_ppacb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(unspec:V16QI [(match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")]
+		      UNSPEC_MMI_PPACB))]
+  "ISA_HAS_MMI"
+  "ppacb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PPACH - Parallel Pack to Halfword
+;; Takes low-order halfwords from each word in rs and rt, packs into rd
+(define_insn "mmi_ppach"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PPACH))]
+  "ISA_HAS_MMI"
+  "ppach\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PPACW - Parallel Pack to Word
+;; Takes low-order words from each doubleword in rs and rt, packs into rd
+(define_insn "mmi_ppacw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PPACW))]
+  "ISA_HAS_MMI"
+  "ppacw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PPAC5 - Parallel Pack to 5 bits
+;; Packs 4 words in 8-8-8-8 format to 4 halfwords in 1-5-5-5 format (RGB555)
+(define_insn "mmi_ppac5"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V4SI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PPAC5))]
+  "ISA_HAS_MMI"
+  "ppac5\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Extend Lower Instructions
+;; -------------------------------------------------------------------------
+;; Extend operations interleave elements from the lower 64 bits of two
+;; source registers into the full 128-bit destination.
+
+;; PEXTLB - Parallel Extend Lower from Byte
+;; Interleaves bytes from lower 64 bits of rs and rt
+(define_insn "mmi_pextlb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(unspec:V16QI [(match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")]
+		      UNSPEC_MMI_PEXTLB))]
+  "ISA_HAS_MMI"
+  "pextlb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXTLH - Parallel Extend Lower from Halfword
+;; Interleaves halfwords from lower 64 bits of rs and rt
+(define_insn "mmi_pextlh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PEXTLH))]
+  "ISA_HAS_MMI"
+  "pextlh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXTLW - Parallel Extend Lower from Word
+;; Interleaves words from lower 64 bits of rs and rt
+(define_insn "mmi_pextlw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PEXTLW))]
+  "ISA_HAS_MMI"
+  "pextlw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Extend Upper Instructions
+;; -------------------------------------------------------------------------
+;; Extend operations interleave elements from the upper 64 bits of two
+;; source registers into the full 128-bit destination.
+
+;; PEXTUB - Parallel Extend Upper from Byte
+;; Interleaves bytes from upper 64 bits of rs and rt
+(define_insn "mmi_pextub"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(unspec:V16QI [(match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")]
+		      UNSPEC_MMI_PEXTUB))]
+  "ISA_HAS_MMI"
+  "pextub\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXTUH - Parallel Extend Upper from Halfword
+;; Interleaves halfwords from upper 64 bits of rs and rt
+(define_insn "mmi_pextuh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PEXTUH))]
+  "ISA_HAS_MMI"
+  "pextuh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXTUW - Parallel Extend Upper from Word
+;; Interleaves words from upper 64 bits of rs and rt
+(define_insn "mmi_pextuw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PEXTUW))]
+  "ISA_HAS_MMI"
+  "pextuw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXT5 - Parallel Extend from 5 bits
+;; Expands 4 halfwords in 1-5-5-5 format to 4 words in 8-8-8-8 format (RGB555)
+(define_insn "mmi_pext5"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PEXT5))]
+  "ISA_HAS_MMI"
+  "pext5\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Copy Instructions
+;; -------------------------------------------------------------------------
+;; Copy operations duplicate or combine doublewords/halfwords.
+
+;; PCPYH - Parallel Copy Halfword
+;; Broadcasts low halfword of each doubleword to all halfwords in that doubleword
+(define_insn "mmi_pcpyh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PCPYH))]
+  "ISA_HAS_MMI"
+  "pcpyh\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PCPYLD - Parallel Copy Lower Doubleword
+;; Concatenates low doubleword of rs (to high) with low doubleword of rt (to low)
+(define_insn "mmi_pcpyld"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V2DI 1 "register_operand" "d")
+		      (match_operand:V2DI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PCPYLD))]
+  "ISA_HAS_MMI"
+  "pcpyld\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PCPYUD - Parallel Copy Upper Doubleword
+;; Concatenates high doubleword of rs (to high) with high doubleword of rt (to low)
+(define_insn "mmi_pcpyud"
+  [(set (match_operand:V2DI 0 "register_operand" "=d")
+	(unspec:V2DI [(match_operand:V2DI 1 "register_operand" "d")
+		      (match_operand:V2DI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PCPYUD))]
+  "ISA_HAS_MMI"
+  "pcpyud\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Exchange Instructions
+;; -------------------------------------------------------------------------
+;; Exchange operations swap elements within a single register.
+
+;; PEXCH - Parallel Exchange Center Halfword
+;; Exchanges center halfwords within each doubleword
+(define_insn "mmi_pexch"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PEXCH))]
+  "ISA_HAS_MMI"
+  "pexch\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXCW - Parallel Exchange Center Word
+;; Exchanges center words (words 1 and 2 of 4)
+(define_insn "mmi_pexcw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V4SI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PEXCW))]
+  "ISA_HAS_MMI"
+  "pexcw\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXEH - Parallel Exchange Even Halfword
+;; Exchanges even-positioned halfwords within each doubleword
+(define_insn "mmi_pexeh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PEXEH))]
+  "ISA_HAS_MMI"
+  "pexeh\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PEXEW - Parallel Exchange Even Word
+;; Exchanges even-positioned words (words 0 and 2)
+(define_insn "mmi_pexew"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V4SI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PEXEW))]
+  "ISA_HAS_MMI"
+  "pexew\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PREVH - Parallel Reverse Halfword
+;; Reverses order of all 8 halfwords
+(define_insn "mmi_prevh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PREVH))]
+  "ISA_HAS_MMI"
+  "prevh\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Interleave Instructions
+;; -------------------------------------------------------------------------
+;; Interleave operations combine elements from two source registers
+;; by alternating elements.
+
+;; PINTEH - Parallel Interleave Even Halfword
+;; Interleaves even halfwords from rs and rt at word level
+(define_insn "mmi_pinteh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PINTEH))]
+  "ISA_HAS_MMI"
+  "pinteh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PINTH - Parallel Interleave Halfword
+;; Interleaves halfwords from upper 64 bits of rs with lower 64 bits of rt
+(define_insn "mmi_pinth"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")]
+		     UNSPEC_MMI_PINTH))]
+  "ISA_HAS_MMI"
+  "pinth\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; Rotation Instructions
+;; -------------------------------------------------------------------------
+
+;; PROT3W - Parallel Rotate 3 Words Left
+;; Rotates the three lower words left by one position; word 3 unchanged
+;; [w3 w2 w1 w0] -> [w3 w1 w0 w2]
+(define_insn "mmi_prot3w"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(unspec:V4SI [(match_operand:V4SI 1 "register_operand" "d")]
+		     UNSPEC_MMI_PROT3W))]
+  "ISA_HAS_MMI"
+  "prot3w\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
