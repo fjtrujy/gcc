@@ -135,6 +135,9 @@
 ;; Only used for reduce_plus_scal: V4SI, V8HI, V16QI have HADD.
 (define_mode_iterator MSA_NO_HADD [V2DF V4SF V2DI])
 
+;; Integer modes excluding V8HI (which may be handled by MMI for R5900).
+(define_mode_iterator IMSA_NO_V8HI [V2DI V4SI V16QI])
+
 ;; The attribute gives the integer vector mode with same size.
 (define_mode_attr VIMODE
   [(V2DF "V2DI")
@@ -921,14 +924,27 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
+;; Use IMSA_NO_V8HI to avoid conflict with mulv8hi3 expand in mips.md.
+;; V8HI multiply is handled by a unified expand that dispatches to
+;; either MSA (msa_mulv8hi3_insn) or MMI (mmi_mulv8hi3_internal).
 (define_insn "mul<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f")
-	(mult:IMSA (match_operand:IMSA 1 "register_operand" "f")
-		   (match_operand:IMSA 2 "register_operand" "f")))]
+  [(set (match_operand:IMSA_NO_V8HI 0 "register_operand" "=f")
+	(mult:IMSA_NO_V8HI (match_operand:IMSA_NO_V8HI 1 "register_operand" "f")
+			   (match_operand:IMSA_NO_V8HI 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "mulv.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_mul")
    (set_attr "mode" "<MODE>")])
+
+;; V8HI multiply - MSA implementation (used by unified mulv8hi3 expand).
+(define_insn "msa_mulv8hi3_insn"
+  [(set (match_operand:V8HI 0 "register_operand" "=f")
+	(mult:V8HI (match_operand:V8HI 1 "register_operand" "f")
+		   (match_operand:V8HI 2 "register_operand" "f")))]
+  "ISA_HAS_MSA"
+  "mulv.h\t%w0,%w1,%w2"
+  [(set_attr "type" "simd_mul")
+   (set_attr "mode" "V8HI")])
 
 (define_insn "msa_maddv_<msafmt>"
   [(set (match_operand:IMSA 0 "register_operand" "=f")

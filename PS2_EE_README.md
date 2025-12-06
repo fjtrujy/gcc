@@ -146,7 +146,7 @@ These use the 128-bit GP registers for integer SIMD:
 | `V4SI` | 128-bit | 4 × 32-bit int | Parallel word operations | **Implemented** (builtins + autovec) |
 | `V2DI` | 128-bit | 2 × 64-bit int | Parallel doubleword operations | **Implemented** (builtins) |
 
-These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub, min/max, logical, and shift operations at `-O3`.
+These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub, min/max, logical, shift, and multiply (V8HI) operations at `-O3`.
 
 ### Type Usage Examples
 
@@ -238,7 +238,7 @@ ti load_unaligned(unaligned_ti *ptr) {
 | `PMADDW` | Parallel Multiply-Add Word | `__builtin_mmi_pmaddw` | - | - |
 | `PMADDUW` | Parallel Multiply-Add Unsigned Word | `__builtin_mmi_pmadduw` | - | - |
 | `PMSUBW` | Parallel Multiply-Subtract Word | `__builtin_mmi_pmsubw` | - | - |
-| `PMULTH` | Parallel Multiply Halfword | `__builtin_mmi_pmulth` | - | - |
+| `PMULTH` | Parallel Multiply Halfword | `__builtin_mmi_pmulth` | `v8hi (*)` | ✓ |
 | `PMADDH` | Parallel Multiply-Add Halfword | `__builtin_mmi_pmaddh` | - | - |
 | `PMSUBH` | Parallel Multiply-Subtract Halfword | `__builtin_mmi_pmsubh` | - | - |
 | `PHMADH` | Parallel Horizontal Multiply-Add Halfword | `__builtin_mmi_phmadh` | - | - |
