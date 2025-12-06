@@ -624,14 +624,29 @@
    (set_attr "mode" "<MODE>")])
 
 (define_expand "abs<mode>2"
-  [(match_operand:IMSA 0 "register_operand" "=f")
-   (abs:IMSA (match_operand:IMSA 1 "register_operand" "f"))]
-  "ISA_HAS_MSA"
+  [(match_operand:IMSA 0 "register_operand")
+   (abs:IMSA (match_operand:IMSA 1 "register_operand"))]
+  "ISA_HAS_MSA || ISA_HAS_MMI"
 {
-  rtx reg = gen_reg_rtx (<MODE>mode);
-  emit_move_insn (reg, CONST0_RTX (<MODE>mode));
-  emit_insn (gen_msa_add_a_<msafmt> (operands[0], operands[1], reg));
-  DONE;
+  if (ISA_HAS_MMI
+      && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))
+    {
+      /* R5900 MMI has native pabsw/pabsh instructions.  */
+      if (<MODE>mode == V4SImode)
+	emit_insn (gen_mmi_pabsw (operands[0], operands[1]));
+      else
+	emit_insn (gen_mmi_pabsh (operands[0], operands[1]));
+      DONE;
+    }
+  else if (ISA_HAS_MSA)
+    {
+      rtx reg = gen_reg_rtx (<MODE>mode);
+      emit_move_insn (reg, CONST0_RTX (<MODE>mode));
+      emit_insn (gen_msa_add_a_<msafmt> (operands[0], operands[1], reg));
+      DONE;
+    }
+  else
+    FAIL;
 })
 
 (define_expand "neg<mode>2"

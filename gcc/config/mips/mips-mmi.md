@@ -291,6 +291,28 @@
    (set_attr "mode" "TI")])
 
 ;; -------------------------------------------------------------------------
+;; Parallel Absolute Value - Explicit Builtins
+;; -------------------------------------------------------------------------
+
+;; PABSH - Parallel Absolute Halfword
+(define_insn "mmi_pabsh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(abs:V8HI (match_operand:V8HI 1 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pabsh\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; PABSW - Parallel Absolute Word
+(define_insn "mmi_pabsw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(abs:V4SI (match_operand:V4SI 1 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pabsw\t%0,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
 ;; Parallel Logical Operations - Explicit Builtins
 ;; -------------------------------------------------------------------------
 
