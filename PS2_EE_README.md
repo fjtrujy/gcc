@@ -73,8 +73,8 @@ Note: R5900 FPU is single-precision only. Double-precision is NOT supported.
 | `$vf0-$vf31` | 128-bit | Vector FP (4x32-bit floats, xyzw) | **Implemented** | 112-143 |
 | `$vi0-$vi15` | 16-bit | Integer registers (counters, addresses) | Not implemented | - |
 | `ACC` | 128-bit | Vector accumulator (4x32-bit floats) | **Implemented** | 188 |
-| `I` | 32-bit | Immediate FP value (loaded via instruction) | Not implemented | - |
-| `Q` | 32-bit | Division/sqrt result register | Not implemented | - |
+| `Q` | 32-bit | Division/sqrt result register | **Implemented** | 192 |
+| `I` | 32-bit | Immediate FP value (loaded via CTC2) | **Implemented** | 193 |
 
 Special notes:
 - `$vf0` is constant: x=0.0, y=0.0, z=0.0, w=1.0
@@ -93,7 +93,7 @@ Special notes:
 | VU0 VF | 32 | 32 | 100% |
 | VU0 VI | 16 | 0 | 0% |
 | VU0 ACC | 1 | 1 | 100% |
-| VU0 I/Q | 2 | 0 | 0% |
+| VU0 Q/I | 2 | 2 | 100% |
 
 ---
 
@@ -570,13 +570,80 @@ VU0 has an implicit ACC register for efficient FMA chains.
 |-------------|-------------|-----------|--------|---------------|
 | `VMR32.xyzw` | dest.xyzw = src.yzwx | `__builtin_vu0_vmr32(a)` | - | - |
 
-### 5.9 Not Yet Implemented
+### 5.9 I Register Operations
+
+The I (Immediate) register holds a 32-bit floating-point value loaded via `CTC2` instruction. Operations suffixed with `i` use this implicit value.
 
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `VADDi/q`, `VSUBi/q`, `VMULi/q` | Arithmetic with I/Q register | - | - | - |
-| `VMADDi/q`, `VMSUBi/q` | Multiply-accumulate with I/Q | - | - | - |
-| `VDIV`, `VSQRT`, `VRSQRT` | Division and square root | - | - | - |
+| `CTC2 $reg, $21` | Load I register from GP | `__builtin_vu0_ctc2_i(int bits)` | - | - |
+| `CFC2 $reg, $21` | Read I register to GP | `__builtin_vu0_cfc2_i()` | - | - |
+| `VADDi.xyzw` | dest = a + I | `__builtin_vu0_vaddi(a)` | - | - |
+| `VSUBi.xyzw` | dest = a - I | `__builtin_vu0_vsubi(a)` | - | - |
+| `VMULi.xyzw` | dest = a * I | `__builtin_vu0_vmuli(a)` | - | - |
+| `VMADDi.xyzw` | dest = ACC + a * I | `__builtin_vu0_vmaddi(a)` | - | - |
+| `VMSUBi.xyzw` | dest = ACC - a * I | `__builtin_vu0_vmsubi(a)` | - | - |
+| `VMADDAi.xyzw` | ACC += a * I | `__builtin_vu0_vmaddai(a)` | - | - |
+| `VMSUBAi.xyzw` | ACC -= a * I | `__builtin_vu0_vmsubai(a)` | - | - |
+| `VMULAi.xyzw` | ACC = a * I | `__builtin_vu0_vmulai(a)` | - | - |
+| `VADDAi.xyzw` | ACC = a + I | `__builtin_vu0_vaddai(a)` | - | - |
+| `VSUBAi.xyzw` | ACC = a - I | `__builtin_vu0_vsubai(a)` | - | - |
+
+**Usage Example:**
+```c
+typedef float v4sf __attribute__((vector_size(16)));
+
+v4sf scale_by_constant(v4sf v, float scale) {
+    // Load scalar into I register
+    __builtin_vu0_ctc2_i(*(int*)&scale);
+    // Multiply using I register
+    return __builtin_vu0_vmuli(v);
+}
+```
+
+**Autovectorization Note:** Vector-by-scalar operations (`v * scalar`) are autovectorized using **VMULx/VADDx/VSUBx** (broadcast component) instructions instead of the I register. This approach fits GCC's register model better since the scalar is placed in a normal VU0 register:
+```c
+v4sf v = ...; float s = ...;
+v4sf result = v * s;  // Generates: mfc1, qmtc2, vmulx.xyzw
+```
+
+### 5.10 Q Register Operations
+
+The Q register holds the result of division and square root operations. These operations have multi-cycle latency; use `VWAITQ` or check status flags before reading Q.
+
+| Instruction | Description | Intrinsic | Vector | Autovectorize |
+|-------------|-------------|-----------|--------|---------------|
+| `VDIV` | Q = fs.bc / ft.bc | `__builtin_vu0_vdiv(v4sf fs, v4sf ft)` | - | - |
+| `VSQRT` | Q = sqrt(ft.bc) | `__builtin_vu0_vsqrt(v4sf ft)` | - | - |
+| `VRSQRT` | Q = fs.bc / sqrt(ft.bc) | `__builtin_vu0_vrsqrt(v4sf fs, v4sf ft)` | - | - |
+| `VWAITQ` | Wait for Q register ready | `__builtin_vu0_vwaitq()` | - | - |
+| `VADDq.xyzw` | dest = a + Q | `__builtin_vu0_vaddq(a)` | - | - |
+| `VSUBq.xyzw` | dest = a - Q | `__builtin_vu0_vsubq(a)` | - | - |
+| `VMULq.xyzw` | dest = a * Q | `__builtin_vu0_vmulq(a)` | - | - |
+| `VMADDq.xyzw` | dest = ACC + a * Q | `__builtin_vu0_vmaddq(a)` | - | - |
+| `VMSUBq.xyzw` | dest = ACC - a * Q | `__builtin_vu0_vmsubq(a)` | - | - |
+| `VMADDAq.xyzw` | ACC += a * Q | `__builtin_vu0_vmaddaq(a)` | - | - |
+| `VMSUBAq.xyzw` | ACC -= a * Q | `__builtin_vu0_vmsubaq(a)` | - | - |
+| `VMULAq.xyzw` | ACC = a * Q | `__builtin_vu0_vmulaq(a)` | - | - |
+| `VADDAq.xyzw` | ACC = a + Q | `__builtin_vu0_vaddaq(a)` | - | - |
+| `VSUBAq.xyzw` | ACC = a - Q | `__builtin_vu0_vsubaq(a)` | - | - |
+
+**Usage Example:**
+```c
+typedef float v4sf __attribute__((vector_size(16)));
+
+// Divide and broadcast result to all lanes
+v4sf divide_broadcast(v4sf a, v4sf b) {
+    __builtin_vu0_vdiv(a, b);   // Q = a.x / b.x
+    __builtin_vu0_vwaitq();     // Wait for division to complete
+    return __builtin_vu0_vmulq(/* ones vector */);  // Multiply by Q to broadcast
+}
+```
+
+### 5.11 Not Yet Implemented
+
+| Instruction | Description | Intrinsic | Vector | Autovectorize |
+|-------------|-------------|-----------|--------|---------------|
 | `VCLIP` | Clipping judgment | - | - | - |
 | `VIADD/ISUB/IAND/IOR` | Integer operations (VI regs) | - | - | - |
 | `VLQI/VSQI`, `VLQD/VSQD` | Load/Store with inc/dec | - | - | - |
@@ -625,7 +692,9 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | VU0 Outer Product | 2 | 2 | 100% |
 | VU0 Conversions | 8 | 8 | 100% |
 | VU0 Data Movement | 1 | 1 | 100% |
-| VU0 Advanced (I/Q/VI) | ~25 | 0 | 0% |
+| VU0 I Register | 12 | 12 | 100% |
+| VU0 Q Register | 14 | 14 | 100% |
+| VU0 VI/Other | ~10 | 0 | 0% |
 
 ---
 
