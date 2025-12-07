@@ -42,10 +42,10 @@ Standard MIPS uses 64-bit GP registers; R5900 extends these to 128-bit. GCC uses
 |----------|------|---------|------------|------------|
 | `HI` | 64-bit | Upper result of multiply/divide (Pipeline 0) | **Implemented** | 64 |
 | `LO` | 64-bit | Lower result of multiply/divide (Pipeline 0) | **Implemented** | 65 |
-| `HI1` | 64-bit | Upper result of multiply/divide (Pipeline 1) | Not implemented | - |
-| `LO1` | 64-bit | Lower result of multiply/divide (Pipeline 1) | Not implemented | - |
+| `HI1` | 64-bit | Upper result of multiply/divide (Pipeline 1) | **Implemented** | 190 |
+| `LO1` | 64-bit | Lower result of multiply/divide (Pipeline 1) | **Implemented** | 191 |
 
-The R5900 has dual multiply/divide pipelines. MULT1/DIV1/MADD1 use HI1/LO1.
+The R5900 has dual multiply/divide pipelines (MAC0 and MAC1). MULT1/DIV1/MADD1 use HI1/LO1 and can execute in parallel with Pipeline 0 operations for improved throughput.
 
 ### Shift Amount Register
 
@@ -86,7 +86,7 @@ Special notes:
 | Category | Total | Implemented | Coverage |
 |----------|-------|-------------|----------|
 | GP (128-bit) | 32 | 32 | 100% |
-| HI/LO (dual pipeline) | 4 | 2 | 50% |
+| HI/LO (dual pipeline) | 4 | 4 | 100% |
 | SA | 1 | 1 | 100% |
 | FPU Data | 32 | 32 | 100% |
 | FPU ACC | 1 | 1 | 100% |
@@ -352,22 +352,61 @@ the loop must be unconditional (read all values before the conditional select).
 
 ## 3. Dual Pipeline Instructions
 
-R5900 has a second multiply/divide unit (Pipeline 1) with dedicated HI1/LO1 registers.
+R5900 has a second multiply/divide unit (MAC1/Pipeline 1) with dedicated HI1/LO1 registers.
+This enables parallel execution of multiply/divide operations on both MAC units for improved throughput.
 
 | Instruction | Description | Intrinsic | Auto-used |
 |-------------|-------------|-----------|-----------|
-| `MULT1` | Multiply Word Pipeline 1 | - | - |
-| `MULTU1` | Multiply Unsigned Word Pipeline 1 | - | - |
-| `DIV1` | Divide Word Pipeline 1 | - | - |
-| `DIVU1` | Divide Unsigned Word Pipeline 1 | - | - |
+| `MULT1` | Multiply Word Pipeline 1 | `__builtin_mips_mult1` | - |
+| `MULTU1` | Multiply Unsigned Word Pipeline 1 | `__builtin_mips_multu1` | - |
+| `DIV1` | Divide Word Pipeline 1 | `__builtin_mips_div1` | - |
+| `DIVU1` | Divide Unsigned Word Pipeline 1 | `__builtin_mips_divu1` | - |
 | `MADD` | Multiply-Add Word | - | ✓ |
-| `MADD1` | Multiply-Add Word Pipeline 1 | - | - |
+| `MADD1` | Multiply-Add Word Pipeline 1 | `__builtin_mips_madd1` | - |
 | `MADDU` | Multiply-Add Unsigned Word | - | ✓ |
-| `MADDU1` | Multiply-Add Unsigned Word Pipeline 1 | - | - |
-| `MFHI1` | Move From HI1 Register | - | - |
-| `MFLO1` | Move From LO1 Register | - | - |
-| `MTHI1` | Move To HI1 Register | - | - |
-| `MTLO1` | Move To LO1 Register | - | - |
+| `MADDU1` | Multiply-Add Unsigned Word Pipeline 1 | `__builtin_mips_maddu1` | - |
+| `MFHI1` | Move From HI1 Register | `__builtin_mips_mfhi1` | - |
+| `MFLO1` | Move From LO1 Register | `__builtin_mips_mflo1` | - |
+| `MTHI1` | Move To HI1 Register | `__builtin_mips_mthi1` | - |
+| `MTLO1` | Move To LO1 Register | `__builtin_mips_mtlo1` | - |
+
+### Pipeline 1 Usage Example
+
+```c
+// Dual pipeline multiply - both MAC units work in parallel
+void dual_multiply(int a, int b, int c, int d, int *result0, int *result1) {
+    // Pipeline 1 starts first
+    __builtin_mips_mult1(c, d);
+
+    // Pipeline 0 can execute while Pipeline 1 is busy
+    *result0 = a * b;
+
+    // Retrieve Pipeline 1 result
+    *result1 = __builtin_mips_mflo1();
+}
+
+// Full 64-bit multiply using Pipeline 1
+long long mult1_64(int a, int b) {
+    __builtin_mips_mult1(a, b);
+    int hi = __builtin_mips_mfhi1();
+    int lo = __builtin_mips_mflo1();
+    return ((long long)hi << 32) | (unsigned int)lo;
+}
+
+// Division with quotient and remainder via Pipeline 1
+void div1_full(int a, int b, int *quot, int *rem) {
+    __builtin_mips_div1(a, b);
+    *quot = __builtin_mips_mflo1();  // quotient in LO1
+    *rem = __builtin_mips_mfhi1();   // remainder in HI1
+}
+
+// Multiply-accumulate chain on Pipeline 1
+int mac1_chain(int a, int b, int c, int d) {
+    __builtin_mips_mult1(a, b);      // HI1:LO1 = a * b
+    __builtin_mips_madd1(c, d);      // HI1:LO1 += c * d
+    return __builtin_mips_mflo1();   // return low 32 bits
+}
+```
 
 ---
 
@@ -534,7 +573,7 @@ vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
 | MMI Format Convert | 2 | 2 | 100% |
 | MMI Other | 2 | 0 | 0% |
 | MMI HI/LO | 10 | 10 | 100% |
-| Dual Pipeline | 12 | 2 | 17% |
+| Dual Pipeline | 12 | 12 | 100% |
 | SA Register | 5 | 5 | 100% |
 | FPU Extensions | 11 | 11 | 100% |
 | VU0 Data Transfer | 6 | 4 | 67% |
