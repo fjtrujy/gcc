@@ -16377,6 +16377,22 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
     FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
 
+/* Define an R5900 Pipeline 0 MIPS_BUILTIN_DIRECT function.
+   INSN is the instruction, and maps __builtin_mips_<INSN>
+   to CODE_FOR_pipe0_<INSN>.  */
+#define R5900_PIPE0_BUILTIN_PURE(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_pipe0_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, true }
+
+/* Define an R5900 Pipeline 0 MIPS_BUILTIN_DIRECT_NO_TARGET function.
+   These are for operations with no return value (like multiplies that
+   only write to HI0/LO0).  */
+#define R5900_PIPE0_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)		\
+    { CODE_FOR_pipe0_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
+
 /* R5900 FPU min/max aliases - use existing RTL patterns */
 #define CODE_FOR_fpu_min CODE_FOR_sminsf3
 #define CODE_FOR_fpu_max CODE_FOR_smaxsf3
@@ -17696,6 +17712,26 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_NO_TARGET_BUILTIN (pdivw, MIPS_VOID_FTYPE_V4SI_V4SI),
   MMI_NO_TARGET_BUILTIN (pdivuw, MIPS_VOID_FTYPE_V4SI_V4SI),
   MMI_NO_TARGET_BUILTIN (pdivbw, MIPS_VOID_FTYPE_V4SI_V8HI),
+
+  /* R5900 Pipeline 0 multiply/divide builtins.
+     These provide explicit control over the primary MAC unit (MAC0)
+     with HI0/LO0 registers, matching Pipeline 1 intrinsics for
+     symmetric dual-pipeline programming.  */
+  /* Multiply operations - write to HI0:LO0 */
+  R5900_PIPE0_NO_TARGET_BUILTIN (mult, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (multu, MIPS_VOID_FTYPE_SI_SI),
+  /* Multiply-add operations - accumulate to HI0:LO0 */
+  R5900_PIPE0_NO_TARGET_BUILTIN (madd, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (maddu, MIPS_VOID_FTYPE_SI_SI),
+  /* Divide operations - write quotient to LO0, remainder to HI0 */
+  R5900_PIPE0_NO_TARGET_BUILTIN (div, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (divu, MIPS_VOID_FTYPE_SI_SI),
+  /* Move from HI0/LO0 registers */
+  R5900_PIPE0_BUILTIN_PURE (mfhi, MIPS_SI_FTYPE_VOID),
+  R5900_PIPE0_BUILTIN_PURE (mflo, MIPS_SI_FTYPE_VOID),
+  /* Move to HI0/LO0 registers */
+  R5900_PIPE0_NO_TARGET_BUILTIN (mthi, MIPS_VOID_FTYPE_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (mtlo, MIPS_VOID_FTYPE_SI),
 
   /* R5900 Pipeline 1 multiply/divide builtins.
      These instructions use the second MAC unit (MAC1) with dedicated
