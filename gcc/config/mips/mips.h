@@ -1831,7 +1831,17 @@ FP_ASM_SPEC "\
 #define MD1_REG_LAST  191
 #define MD1_REG_NUM   (MD1_REG_LAST - MD1_REG_FIRST + 1)
 
-#define FIRST_PSEUDO_REGISTER 192
+/* VU0 Q register for R5900 (division/sqrt result).  */
+#define VU0_Q_REG_FIRST 192
+#define VU0_Q_REG_LAST 192
+#define VU0_Q_REG_NUM 1
+
+/* VU0 I register for R5900 (immediate float value).  */
+#define VU0_I_REG_FIRST 193
+#define VU0_I_REG_LAST 193
+#define VU0_I_REG_NUM 1
+
+#define FIRST_PSEUDO_REGISTER 194
 
 /* By default, fix the kernel registers ($26 and $27), the global
    pointer ($28) and the stack pointer ($29).  This can change
@@ -1866,7 +1876,9 @@ FP_ASM_SPEC "\
   /* FPU (COP1) accumulator register - fixed, use intrinsics only */	\
   1,									\
   /* R5900 Pipeline 1 HI1/LO1 registers */				\
-  0, 0									\
+  0, 0,									\
+  /* VU0 Q and I registers - fixed, use intrinsics only */		\
+  1, 1									\
 }
 
 
@@ -1906,6 +1918,8 @@ FP_ASM_SPEC "\
   /* FPU (COP1) accumulator register */					\
   1,									\
   /* R5900 Pipeline 1 HI1/LO1 registers (call-clobbered) */		\
+  1, 1,									\
+  /* VU0 Q and I registers (call-clobbered) */				\
   1, 1									\
 }
 
@@ -2042,6 +2056,12 @@ FP_ASM_SPEC "\
 /* Test if REGNO is the FPU (COP1) accumulator register.  */
 #define FPU_ACC_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - FPU_ACC_REG_FIRST) < FPU_ACC_REG_NUM)
+/* Test if REGNO is the VU0 Q register (division/sqrt result).  */
+#define VU0_Q_REG_P(REGNO) \
+  ((unsigned int) ((int) (REGNO) - VU0_Q_REG_FIRST) < VU0_Q_REG_NUM)
+/* Test if REGNO is the VU0 I register (immediate float value).  */
+#define VU0_I_REG_P(REGNO) \
+  ((unsigned int) ((int) (REGNO) - VU0_I_REG_FIRST) < VU0_I_REG_NUM)
 #define MSA_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - MSA_REG_FIRST) < MSA_REG_NUM)
 
@@ -2193,6 +2213,8 @@ enum reg_class
   ACC_REGS,			/* Hi/Lo, DSP, and MD1 accumulator registers */
   VU0_ACC_REGS,			/* VU0 accumulator register */
   FPU_ACC_REGS,			/* FPU (COP1) accumulator register */
+  VU0_Q_REGS,			/* VU0 Q register (division/sqrt result) */
+  VU0_I_REGS,			/* VU0 I register (immediate float) */
   FRAME_REGS,			/* $arg and $frame */
   GR_AND_MD0_REGS,		/* union classes */
   GR_AND_MD1_REGS,
@@ -2239,6 +2261,8 @@ enum reg_class
   "ACC_REGS",								\
   "VU0_ACC_REGS",							\
   "FPU_ACC_REGS",							\
+  "VU0_Q_REGS",								\
+  "VU0_I_REGS",								\
   "FRAME_REGS",								\
   "GR_AND_MD0_REGS",							\
   "GR_AND_MD1_REGS",							\
@@ -2258,40 +2282,42 @@ enum reg_class
    sub-initializer must be suitable as an initializer for the type
    `HARD_REG_SET' which is defined in `hard-reg-set.h'.  */
 
-#define REG_CLASS_CONTENTS						                                \
-{									                                \
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* NO_REGS */		\
-  { 0x000200fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_STORE_REGS */	\
-  { 0x000300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_REGS */		\
-  { 0x200300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_SP_REGS */		\
-  { 0x01000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* T_REG */		\
-  { 0x010300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_T_REGS */	\
-  { 0x02000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* PIC_FN_ADDR_REG */	\
-  { 0x00000008, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* V1_REG */		\
-  { 0x0303fffc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* SPILL_REGS */      	\
-  { 0xfdffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* LEA_REGS */		\
-  { 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_REGS */		\
-  { 0x00000000, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* FP_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000 },	/* MD0_REG */		\
-  { 0x00000000, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000 },	/* MD1_REG */		\
-  { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000 },	/* MD_REGS */		\
-  { 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff, 0x00000000, 0x00000000 },   /* COP0_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff, 0x00000000 },   /* COP2_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff },   /* COP3_REGS */		\
-  { 0x00000000, 0x00000000, 0x000007f8, 0x00000000, 0x00000000, 0x00000000 },	/* ST_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x003f0000 },	/* DSP_ACC_REGS */	\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x40000000 },	/* MD1_0_REG */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x80000000 },	/* MD1_1_REG */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xc0000000 },	/* MD1_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0xc03f0000 },	/* ACC_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000 },	/* VU0_ACC_REGS */	\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x20000000 },	/* FPU_ACC_REGS */	\
-  { 0x00000000, 0x00000000, 0x00006000, 0x00000000, 0x00000000, 0x00000000 },	/* FRAME_REGS */	\
-  { 0xffffffff, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD0_REGS */	\
-  { 0xffffffff, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD1_REGS */	\
-  { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD_REGS */	\
-  { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0xc03f0000 },	/* GR_AND_ACC_REGS */	\
-  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0xffffffff }	/* ALL_REGS */		\
+#define REG_CLASS_CONTENTS						                                          \
+{									                                          \
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* NO_REGS */		\
+  { 0x000200fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_STORE_REGS */	\
+  { 0x000300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_REGS */		\
+  { 0x200300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_SP_REGS */	\
+  { 0x01000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* T_REG */		\
+  { 0x010300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_T_REGS */	\
+  { 0x02000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* PIC_FN_ADDR_REG */	\
+  { 0x00000008, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* V1_REG */		\
+  { 0x0303fffc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* SPILL_REGS */	\
+  { 0xfdffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* LEA_REGS */		\
+  { 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_REGS */		\
+  { 0x00000000, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* FP_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* MD0_REG */		\
+  { 0x00000000, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* MD1_REG */		\
+  { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* MD_REGS */		\
+  { 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff, 0x00000000, 0x00000000, 0x00000000 },	/* COP0_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff, 0x00000000, 0x00000000 },	/* COP2_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff, 0x00000000 },	/* COP3_REGS */		\
+  { 0x00000000, 0x00000000, 0x000007f8, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* ST_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x003f0000, 0x00000000 },	/* DSP_ACC_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x40000000, 0x00000000 },	/* MD1_0_REG */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x80000000, 0x00000000 },	/* MD1_1_REG */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xc0000000, 0x00000000 },	/* MD1_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0xc03f0000, 0x00000000 },	/* ACC_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000, 0x00000000 },	/* VU0_ACC_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x20000000, 0x00000000 },	/* FPU_ACC_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000001 },	/* VU0_Q_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000002 },	/* VU0_I_REGS */	\
+  { 0x00000000, 0x00000000, 0x00006000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* FRAME_REGS */	\
+  { 0xffffffff, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD0_REGS */	\
+  { 0xffffffff, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD1_REGS */	\
+  { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD_REGS */	\
+  { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0xc03f0000, 0x00000000 },	/* GR_AND_ACC_REGS */	\
+  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0xffffffff, 0x00000003 }	/* ALL_REGS */		\
 }
 
 
@@ -2870,7 +2896,8 @@ typedef struct mips_args {
   "$dsp_ca","$dsp_ou","$dsp_cc","$dsp_ef",				   \
   "$vu0acc",								   \
   "$fpuacc",								   \
-  "hi1",   "lo1" }
+  "hi1",   "lo1",							   \
+  "$vu0q", "$vu0i" }
 
 /* List the "software" names for each register.  Also list the numerical
    names for $fp and $sp.  */

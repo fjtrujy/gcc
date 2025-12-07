@@ -51,3 +51,27 @@ test_return_param (v4sf a)
   return a;
 }
 /* { dg-final { scan-assembler "\tpor\t" } } */
+
+/* Test VU0 vector*scalar autovectorization (vmulx.xyzw) */
+NOMIPS16 v4sf
+test_mul_scalar (v4sf v, float s)
+{
+  return v * s;
+}
+/* { dg-final { scan-assembler "\tvmulx\\.xyzw\t" } } */
+
+/* Test VU0 vector+scalar autovectorization (vaddx.xyzw) */
+NOMIPS16 v4sf
+test_add_scalar (v4sf v, float s)
+{
+  return v + s;
+}
+/* { dg-final { scan-assembler "\tvaddx\\.xyzw\t" } } */
+
+/* Test VU0 vector-scalar autovectorization (vsubx.xyzw) */
+NOMIPS16 v4sf
+test_sub_scalar (v4sf v, float s)
+{
+  return v - s;
+}
+/* { dg-final { scan-assembler "\tvsubx\\.xyzw\t" } } */

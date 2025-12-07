@@ -612,7 +612,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
   VU0_ACC_REGS,
   FPU_ACC_REGS,
-  MD1_0_REG,	MD1_1_REG	/* R5900 Pipeline 1 HI1/LO1 registers */
+  MD1_0_REG,	MD1_1_REG,	/* R5900 Pipeline 1 HI1/LO1 registers */
+  VU0_Q_REGS,	VU0_I_REGS	/* VU0 Q and I registers */
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -17570,6 +17571,55 @@ static const struct mips_builtin_description mips_builtins[] = {
   VU0_BUILTIN_PURE (vmax, MIPS_V4SF_FTYPE_V4SF_V4SF),
   VU0_BUILTIN_PURE (vmini, MIPS_V4SF_FTYPE_V4SF_V4SF),
   VU0_BUILTIN_PURE (vmove, MIPS_V4SF_FTYPE_V4SF),
+
+  /* Q register operations (division/sqrt) */
+  VU0_NO_TARGET_BUILTIN (vdiv, MIPS_VOID_FTYPE_V4SF_SI_V4SF_SI),
+  VU0_NO_TARGET_BUILTIN (vsqrt, MIPS_VOID_FTYPE_V4SF_SI),
+  VU0_NO_TARGET_BUILTIN (vrsqrt, MIPS_VOID_FTYPE_V4SF_SI_V4SF_SI),
+  VU0_NO_TARGET_BUILTIN (vwaitq, MIPS_VOID_FTYPE_SI),
+
+  /* Q broadcast operations: dest = src op Q */
+  VU0_BUILTIN_PURE (vaddq, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vsubq, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vmulq, MIPS_V4SF_FTYPE_V4SF),
+  /* Q broadcast to accumulator: ACC = src op Q */
+  VU0_NO_TARGET_BUILTIN (vaddaq, MIPS_VOID_FTYPE_V4SF),
+  VU0_NO_TARGET_BUILTIN (vsubaq, MIPS_VOID_FTYPE_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmulaq, MIPS_VOID_FTYPE_V4SF),
+  /* Q broadcast multiply-add/sub with result: dest = ACC +/- src * Q */
+  VU0_BUILTIN_PURE (vmaddq, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vmsubq, MIPS_V4SF_FTYPE_V4SF),
+  /* Q broadcast multiply-add/sub to ACC: ACC = ACC +/- src * Q */
+  VU0_NO_TARGET_BUILTIN (vmaddaq, MIPS_VOID_FTYPE_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmsubaq, MIPS_VOID_FTYPE_V4SF),
+  /* Q broadcast min/max: dest = min/max(src, Q) */
+  VU0_BUILTIN_PURE (vmaxq, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vminiq, MIPS_V4SF_FTYPE_V4SF),
+
+  /* I register load (CTC2 to register 21) */
+  VU0_NO_TARGET_BUILTIN (ctc2_i, MIPS_VOID_FTYPE_SI),
+
+  /* I broadcast operations: dest = src op I */
+  VU0_BUILTIN_PURE (vaddi, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vsubi, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vmuli, MIPS_V4SF_FTYPE_V4SF),
+  /* I broadcast to accumulator: ACC = src op I */
+  VU0_NO_TARGET_BUILTIN (vaddai, MIPS_VOID_FTYPE_V4SF),
+  VU0_NO_TARGET_BUILTIN (vsubai, MIPS_VOID_FTYPE_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmulai, MIPS_VOID_FTYPE_V4SF),
+  /* I broadcast multiply-add/sub with result: dest = ACC +/- src * I */
+  VU0_BUILTIN_PURE (vmaddi, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vmsubi, MIPS_V4SF_FTYPE_V4SF),
+  /* I broadcast multiply-add/sub to ACC: ACC = ACC +/- src * I */
+  VU0_NO_TARGET_BUILTIN (vmaddai, MIPS_VOID_FTYPE_V4SF),
+  VU0_NO_TARGET_BUILTIN (vmsubai, MIPS_VOID_FTYPE_V4SF),
+  /* I broadcast min/max: dest = min/max(src, I) */
+  VU0_BUILTIN_PURE (vmaxi, MIPS_V4SF_FTYPE_V4SF),
+  VU0_BUILTIN_PURE (vminii, MIPS_V4SF_FTYPE_V4SF),
+
+  /* CTC2/CFC2 generic control register transfer */
+  VU0_BUILTIN_PURE (cfc2, MIPS_SI_FTYPE_SI),
+  VU0_NO_TARGET_BUILTIN (ctc2, MIPS_VOID_FTYPE_SI_SI),
 
   /* R5900 FPU (COP1) ACC builtins */
   /* ACC-writing instructions: ACC = result (no FP register output) */

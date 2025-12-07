@@ -24,7 +24,9 @@
 
 ;; VU0 register constants
 (define_constants
-  [(VU0_ACC_REGNUM		188)])
+  [(VU0_ACC_REGNUM		188)
+   (VU0_Q_REGNUM		192)
+   (VU0_I_REGNUM		193)])
 
 ;; VU0 UNSPEC constants
 (define_c_enum "unspec" [
@@ -106,6 +108,45 @@
   UNSPEC_VU0_VMAX
   UNSPEC_VU0_VMINI
   UNSPEC_VU0_VMOVE
+  ;; Q register operations (division/sqrt)
+  UNSPEC_VU0_VDIV          ;; Q = fs.bc / ft.bc
+  UNSPEC_VU0_VSQRT         ;; Q = sqrt(ft.bc)
+  UNSPEC_VU0_VRSQRT        ;; Q = fs.bc / sqrt(ft.bc)
+  UNSPEC_VU0_WAITQ         ;; Wait for Q ready
+  ;; Q broadcast operations
+  UNSPEC_VU0_VADDQ         ;; dest = src + Q
+  UNSPEC_VU0_VSUBQ         ;; dest = src - Q
+  UNSPEC_VU0_VMULQ         ;; dest = src * Q
+  UNSPEC_VU0_VADDQA        ;; ACC = src + Q
+  UNSPEC_VU0_VSUBQA        ;; ACC = src - Q
+  UNSPEC_VU0_VMULQA        ;; ACC = src * Q (vmulaQ)
+  UNSPEC_VU0_VMADDQ        ;; dest = ACC + src * Q
+  UNSPEC_VU0_VMSUBQ        ;; dest = ACC - src * Q
+  UNSPEC_VU0_VMADDQA       ;; ACC = ACC + src * Q
+  UNSPEC_VU0_VMSUBQA       ;; ACC = ACC - src * Q
+  UNSPEC_VU0_VMAXQ         ;; dest = max(src, Q)
+  UNSPEC_VU0_VMINIQ        ;; dest = min(src, Q)
+  ;; I register operations
+  UNSPEC_VU0_CTC2_I        ;; Load I register via CTC2
+  ;; I broadcast operations
+  UNSPEC_VU0_VADDI         ;; dest = src + I
+  UNSPEC_VU0_VSUBI         ;; dest = src - I
+  UNSPEC_VU0_VMULI         ;; dest = src * I
+  UNSPEC_VU0_VADDAI        ;; ACC = src + I
+  UNSPEC_VU0_VSUBAI        ;; ACC = src - I
+  UNSPEC_VU0_VMULAI        ;; ACC = src * I (vmulaI)
+  UNSPEC_VU0_VMADDI        ;; dest = ACC + src * I
+  UNSPEC_VU0_VMSUBI        ;; dest = ACC - src * I
+  UNSPEC_VU0_VMADDAI       ;; ACC = ACC + src * I
+  UNSPEC_VU0_VMSUBAI       ;; ACC = ACC - src * I
+  UNSPEC_VU0_VMAXI         ;; dest = max(src, I)
+  UNSPEC_VU0_VMINII        ;; dest = min(src, I)
+  ;; CTC2/CFC2 generic control register transfer
+  UNSPEC_VU0_CTC2          ;; Write GP to VU0 control register
+  UNSPEC_VU0_CFC2          ;; Read VU0 control register to GP
+  ;; Helper for autovectorization
+  UNSPEC_MFC1_VU0          ;; Move FP bits to GP for CTC2
+  UNSPEC_VU0_QMTC2_SCALAR  ;; Transfer scalar (SI) to VU0 reg x component
 ])
 
 ;; -------------------------------------------------------------------------
@@ -979,3 +1020,582 @@
   "vmove.xyzw\t%0,%1"
   [(set_attr "type" "fmove")
    (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Division and Square Root Operations (Q register)
+;; These write results to the Q register asynchronously.
+;; Component selector: 0=x, 1=y, 2=z, 3=w
+;; -------------------------------------------------------------------------
+
+;; vdiv: Q = fs.bc / ft.bc
+;; Uses unspec_volatile to prevent elimination (starts async division)
+(define_insn "vu0_vdiv"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:SI 1 "const_int_operand" "n")
+                     (match_operand:V4SF 2 "register_operand" "C")
+                     (match_operand:SI 3 "const_int_operand" "n")]
+                    UNSPEC_VU0_VDIV)
+   (clobber (reg:SF VU0_Q_REGNUM))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const bc[] = { "x", "y", "z", "w" };
+    static char buf[32];
+    sprintf (buf, "vdiv\tQ,%%0.%s,%%2.%s",
+             bc[INTVAL (operands[1]) & 3],
+             bc[INTVAL (operands[3]) & 3]);
+    return buf;
+  }
+  [(set_attr "type" "fdiv")
+   (set_attr "mode" "SF")])
+
+;; vsqrt: Q = sqrt(ft.bc)
+;; Uses unspec_volatile to prevent elimination (starts async sqrt)
+(define_insn "vu0_vsqrt"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:SI 1 "const_int_operand" "n")]
+                    UNSPEC_VU0_VSQRT)
+   (clobber (reg:SF VU0_Q_REGNUM))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const bc[] = { "x", "y", "z", "w" };
+    static char buf[32];
+    sprintf (buf, "vsqrt\tQ,%%0.%s", bc[INTVAL (operands[1]) & 3]);
+    return buf;
+  }
+  [(set_attr "type" "fsqrt")
+   (set_attr "mode" "SF")])
+
+;; vrsqrt: Q = fs.bc / sqrt(ft.bc)
+;; Uses unspec_volatile to prevent elimination (starts async division)
+(define_insn "vu0_vrsqrt"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:SI 1 "const_int_operand" "n")
+                     (match_operand:V4SF 2 "register_operand" "C")
+                     (match_operand:SI 3 "const_int_operand" "n")]
+                    UNSPEC_VU0_VRSQRT)
+   (clobber (reg:SF VU0_Q_REGNUM))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const bc[] = { "x", "y", "z", "w" };
+    static char buf[32];
+    sprintf (buf, "vrsqrt\tQ,%%0.%s,%%2.%s",
+             bc[INTVAL (operands[1]) & 3],
+             bc[INTVAL (operands[3]) & 3]);
+    return buf;
+  }
+  [(set_attr "type" "fdiv")
+   (set_attr "mode" "SF")])
+
+;; vwaitq: Wait for Q register to be ready
+;; Takes a dummy SI argument for builtin compatibility (ignored)
+(define_insn "vu0_vwaitq"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")
+                     (reg:SF VU0_Q_REGNUM)] UNSPEC_VU0_WAITQ)]
+  "ISA_HAS_VU0"
+  "vwaitq"
+  [(set_attr "type" "nop")
+   (set_attr "mode" "none")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Q Broadcast Operations
+;; These read the Q register and broadcast it across all vector components.
+;; -------------------------------------------------------------------------
+
+;; vaddq: dest = src + Q
+(define_insn "vu0_vaddq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VADDQ))]
+  "ISA_HAS_VU0"
+  "vaddq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubq: dest = src - Q
+(define_insn "vu0_vsubq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VSUBQ))]
+  "ISA_HAS_VU0"
+  "vsubq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulq: dest = src * Q
+(define_insn "vu0_vmulq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VMULQ))]
+  "ISA_HAS_VU0"
+  "vmulq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vaddaQ: ACC = src + Q
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vaddaq"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_Q_REGNUM)]
+                    UNSPEC_VU0_VADDQA)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vaddaq.xyzw\tACC,%0,Q"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubaQ: ACC = src - Q
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vsubaq"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_Q_REGNUM)]
+                    UNSPEC_VU0_VSUBQA)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vsubaq.xyzw\tACC,%0,Q"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulaQ: ACC = src * Q
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vmulaq"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_Q_REGNUM)]
+                    UNSPEC_VU0_VMULQA)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vmulaq.xyzw\tACC,%0,Q"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddq: dest = ACC + src * Q
+(define_insn "vu0_vmaddq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VMADDQ))]
+  "ISA_HAS_VU0"
+  "vmaddq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubq: dest = ACC - src * Q
+(define_insn "vu0_vmsubq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VMSUBQ))]
+  "ISA_HAS_VU0"
+  "vmsubq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddaQ: ACC = ACC + src * Q
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vmaddaq"
+  [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
+                     (match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_Q_REGNUM)]
+                    UNSPEC_VU0_VMADDQA)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vmaddaq.xyzw\tACC,%0,Q"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubaQ: ACC = ACC - src * Q
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vmsubaq"
+  [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
+                     (match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_Q_REGNUM)]
+                    UNSPEC_VU0_VMSUBQA)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vmsubaq.xyzw\tACC,%0,Q"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaxQ: dest = max(src, Q)
+(define_insn "vu0_vmaxq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VMAXQ))]
+  "ISA_HAS_VU0"
+  "vmaxq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vminiQ: dest = min(src, Q)
+(define_insn "vu0_vminiq"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)]
+                     UNSPEC_VU0_VMINIQ))]
+  "ISA_HAS_VU0"
+  "vminiq.xyzw\t%0,%1,Q"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 I Register Load (CTC2 to I)
+;; Loads the I register with an immediate float value via CTC2.
+;; -------------------------------------------------------------------------
+
+;; ctc2 to I register: set I from GP register bits
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_ctc2_i"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")]
+                    UNSPEC_VU0_CTC2_I)
+   (clobber (reg:SF VU0_I_REGNUM))]
+  "ISA_HAS_VU0"
+  "ctc2\t%0,$21"
+  [(set_attr "type" "mtc")
+   (set_attr "mode" "SI")])
+
+;; -------------------------------------------------------------------------
+;; VU0 I Broadcast Operations
+;; These read the I register and broadcast it across all vector components.
+;; -------------------------------------------------------------------------
+
+;; vaddi: dest = src + I
+(define_insn "vu0_vaddi"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VADDI))]
+  "ISA_HAS_VU0"
+  "vaddi.xyzw\t%0,%1,I"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubi: dest = src - I
+(define_insn "vu0_vsubi"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VSUBI))]
+  "ISA_HAS_VU0"
+  "vsubi.xyzw\t%0,%1,I"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmuli: dest = src * I
+(define_insn "vu0_vmuli"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VMULI))]
+  "ISA_HAS_VU0"
+  "vmuli.xyzw\t%0,%1,I"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vaddaI: ACC = src + I
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vaddai"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_I_REGNUM)]
+                    UNSPEC_VU0_VADDAI)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vaddai.xyzw\tACC,%0,I"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubaI: ACC = src - I
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vsubai"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_I_REGNUM)]
+                    UNSPEC_VU0_VSUBAI)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vsubai.xyzw\tACC,%0,I"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulaI: ACC = src * I
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vmulai"
+  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_I_REGNUM)]
+                    UNSPEC_VU0_VMULAI)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vmulai.xyzw\tACC,%0,I"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddi: dest = ACC + src * I
+(define_insn "vu0_vmaddi"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VMADDI))]
+  "ISA_HAS_VU0"
+  "vmaddi.xyzw\t%0,%1,I"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubi: dest = ACC - src * I
+(define_insn "vu0_vmsubi"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VMSUBI))]
+  "ISA_HAS_VU0"
+  "vmsubi.xyzw\t%0,%1,I"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddaI: ACC = ACC + src * I
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vmaddai"
+  [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
+                     (match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_I_REGNUM)]
+                    UNSPEC_VU0_VMADDAI)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vmaddai.xyzw\tACC,%0,I"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubaI: ACC = ACC - src * I
+;; Uses unspec_volatile to prevent elimination
+(define_insn "vu0_vmsubai"
+  [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
+                     (match_operand:V4SF 0 "register_operand" "C")
+                     (reg:SF VU0_I_REGNUM)]
+                    UNSPEC_VU0_VMSUBAI)
+   (clobber (reg:V4SF VU0_ACC_REGNUM))]
+  "ISA_HAS_VU0"
+  "vmsubai.xyzw\tACC,%0,I"
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaxI: dest = max(src, I)
+(define_insn "vu0_vmaxi"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VMAXI))]
+  "ISA_HAS_VU0"
+  "vmaxi.xyzw\t%0,%1,I"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vminiI: dest = min(src, I)
+(define_insn "vu0_vminii"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)]
+                     UNSPEC_VU0_VMINII))]
+  "ISA_HAS_VU0"
+  "vminii.xyzw\t%0,%1,I"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 CTC2/CFC2 Generic Control Register Transfer
+;; For accessing all VU0 control registers by ID.
+;; -------------------------------------------------------------------------
+
+;; cfc2: Read VU0 control register to GP register
+(define_insn "vu0_cfc2"
+  [(set (match_operand:SI 0 "register_operand" "=d")
+        (unspec_volatile:SI [(match_operand:SI 1 "const_int_operand" "n")]
+                            UNSPEC_VU0_CFC2))]
+  "ISA_HAS_VU0"
+  "cfc2\t%0,$%1"
+  [(set_attr "type" "mfc")
+   (set_attr "mode" "SI")])
+
+;; ctc2: Write GP register to VU0 control register
+(define_insn "vu0_ctc2"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")
+                     (match_operand:SI 1 "const_int_operand" "n")]
+                    UNSPEC_VU0_CTC2)]
+  "ISA_HAS_VU0"
+  "ctc2\t%0,$%1"
+  [(set_attr "type" "mtc")
+   (set_attr "mode" "SI")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Scalar-Vector Autovectorization via VMULx/VADDx/VSUBx
+;; These patterns enable automatic generation of broadcast component ops
+;; for expressions like: vector * scalar, vector + scalar, vector - scalar
+;; The scalar is loaded into a VU0 register's x component via qmtc2,
+;; then VMULx/VADDx/VSUBx broadcast the x component across all lanes.
+;; This fits GCC's register model better than the I register approach.
+;; -------------------------------------------------------------------------
+
+;; Helper: Move float bits from FP register to GP register
+(define_insn "mfc1_vu0"
+  [(set (match_operand:SI 0 "register_operand" "=d")
+        (unspec:SI [(match_operand:SF 1 "register_operand" "f")]
+                   UNSPEC_MFC1_VU0))]
+  "ISA_HAS_VU0"
+  "mfc1\t%0,%1"
+  [(set_attr "type" "mfc")
+   (set_attr "mode" "SI")])
+
+;; Helper: Transfer scalar (SI bits) to VU0 register x component via qmtc2
+;; The scalar value ends up in the x component; y/z/w are undefined but unused.
+(define_insn "vu0_qmtc2_scalar"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:SI 1 "register_operand" "d")]
+                     UNSPEC_VU0_QMTC2_SCALAR))]
+  "ISA_HAS_VU0"
+  "qmtc2\t%1,%0"
+  [(set_attr "type" "mtc")
+   (set_attr "mode" "V4SF")])
+
+;; vec_duplicate fallback: Creates a broadcast vector when not combined
+;; with a vector operation. Uses mfc1 + qmtc2 to load scalar into VU0 reg,
+;; then vaddx to broadcast the x component to all lanes.
+(define_insn_and_split "vec_duplicatev4sf"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (vec_duplicate:V4SF (match_operand:SF 1 "register_operand" "f")))
+   (clobber (match_scratch:V4SF 2 "=&C"))
+   (clobber (match_scratch:SI 3 "=&d"))]
+  "ISA_HAS_VU0"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  /* Load scalar into VU0 register x component */
+  emit_insn (gen_mfc1_vu0 (operands[3], operands[1]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[2], operands[3]));
+  /* Broadcast x component to all lanes: dest = vf0 + src.x */
+  emit_insn (gen_vu0_vaddx (operands[0], gen_rtx_REG (V4SFmode, COP2_REG_FIRST), operands[2]));
+  DONE;
+}
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "12")])
+
+;; -------------------------------------------------------------------------
+;; VMULx: Vector * Scalar autovectorization
+;; -------------------------------------------------------------------------
+
+;; Vector * Scalar (scalar duplicated first)
+(define_insn_and_split "*mulv4sf3_scalar"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (mult:V4SF (vec_duplicate:V4SF (match_operand:SF 1 "register_operand" "f"))
+                   (match_operand:V4SF 2 "register_operand" "C")))
+   (clobber (match_scratch:V4SF 3 "=&C"))
+   (clobber (match_scratch:SI 4 "=&d"))]
+  "ISA_HAS_VU0"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  emit_insn (gen_mfc1_vu0 (operands[4], operands[1]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[3], operands[4]));
+  emit_insn (gen_vu0_vmulx (operands[0], operands[2], operands[3]));
+  DONE;
+}
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "12")])
+
+;; Scalar * Vector (commutative variant)
+(define_insn_and_split "*mulv4sf3_scalar_alt"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (mult:V4SF (match_operand:V4SF 1 "register_operand" "C")
+                   (vec_duplicate:V4SF (match_operand:SF 2 "register_operand" "f"))))
+   (clobber (match_scratch:V4SF 3 "=&C"))
+   (clobber (match_scratch:SI 4 "=&d"))]
+  "ISA_HAS_VU0"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  emit_insn (gen_mfc1_vu0 (operands[4], operands[2]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[3], operands[4]));
+  emit_insn (gen_vu0_vmulx (operands[0], operands[1], operands[3]));
+  DONE;
+}
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "12")])
+
+;; -------------------------------------------------------------------------
+;; VADDx: Vector + Scalar autovectorization
+;; -------------------------------------------------------------------------
+
+;; Scalar + Vector
+(define_insn_and_split "*addv4sf3_scalar"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (plus:V4SF (vec_duplicate:V4SF (match_operand:SF 1 "register_operand" "f"))
+                   (match_operand:V4SF 2 "register_operand" "C")))
+   (clobber (match_scratch:V4SF 3 "=&C"))
+   (clobber (match_scratch:SI 4 "=&d"))]
+  "ISA_HAS_VU0"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  emit_insn (gen_mfc1_vu0 (operands[4], operands[1]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[3], operands[4]));
+  emit_insn (gen_vu0_vaddx (operands[0], operands[2], operands[3]));
+  DONE;
+}
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "12")])
+
+;; Vector + Scalar (commutative variant)
+(define_insn_and_split "*addv4sf3_scalar_alt"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (plus:V4SF (match_operand:V4SF 1 "register_operand" "C")
+                   (vec_duplicate:V4SF (match_operand:SF 2 "register_operand" "f"))))
+   (clobber (match_scratch:V4SF 3 "=&C"))
+   (clobber (match_scratch:SI 4 "=&d"))]
+  "ISA_HAS_VU0"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  emit_insn (gen_mfc1_vu0 (operands[4], operands[2]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[3], operands[4]));
+  emit_insn (gen_vu0_vaddx (operands[0], operands[1], operands[3]));
+  DONE;
+}
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "12")])
+
+;; -------------------------------------------------------------------------
+;; VSUBx: Vector - Scalar autovectorization (NOT commutative)
+;; -------------------------------------------------------------------------
+
+;; Vector - Scalar
+(define_insn_and_split "*subv4sf3_scalar"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (minus:V4SF (match_operand:V4SF 1 "register_operand" "C")
+                    (vec_duplicate:V4SF (match_operand:SF 2 "register_operand" "f"))))
+   (clobber (match_scratch:V4SF 3 "=&C"))
+   (clobber (match_scratch:SI 4 "=&d"))]
+  "ISA_HAS_VU0"
+  "#"
+  "&& reload_completed"
+  [(const_int 0)]
+{
+  emit_insn (gen_mfc1_vu0 (operands[4], operands[2]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[3], operands[4]));
+  emit_insn (gen_vu0_vsubx (operands[0], operands[1], operands[3]));
+  DONE;
+}
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "12")])
