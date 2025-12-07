@@ -1256,26 +1256,32 @@
 ;; PMULTW - Parallel Multiply Word (signed)
 ;; Multiplies rs[31:0] * rt[31:0] and rs[95:64] * rt[95:64]
 ;; Produces two 64-bit products in rd
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmultw"
   [(set (match_operand:V2DI 0 "register_operand" "=d")
 	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
 		      (match_operand:V4SI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMULTW))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmultw\t%0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "TI")])
 
 ;; PMULTUW - Parallel Multiply Unsigned Word
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmultuw"
   [(set (match_operand:V2DI 0 "register_operand" "=d")
 	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
 		      (match_operand:V4SI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMULTUW))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmultuw\t%0,%1,%2"
   [(set_attr "type" "imul")
@@ -1286,13 +1292,16 @@
 ;; 4 results (even indices) go to rd, 4 (odd indices) to HI/LO
 ;; Uses set instead of clobber for HI/LO to establish data dependency
 ;; with PMFHL instructions.
+;; Sets full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmulth"
   [(set (match_operand:V4SI 0 "register_operand" "=d")
 	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMULTH))
-   (set (reg:TI 64) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
-   (set (reg:TI 65) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))]
+   (set (reg:DI 64) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:DI 65) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:DI 190) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:DI 191) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))]
   "ISA_HAS_MMI"
   "pmulth\t%0,%1,%2"
   [(set_attr "type" "imul")
@@ -1302,14 +1311,17 @@
 ;; Uses PMULTH (widening to 32-bit) + PMFHL.LH (pack low 16-bits)
 ;; Uses match_scratch for temp register which is allocated before reload.
 ;; HI/LO are set (not clobbered) to establish data dependency with PMFHL.
+;; Sets full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn_and_split "mmi_mulv8hi3_internal"
   [(set (match_operand:V8HI 0 "register_operand" "=d")
 	(unspec:V8HI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMULTH))
    (clobber (match_scratch:V4SI 3 "=&d"))
-   (set (reg:TI 64) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
-   (set (reg:TI 65) (unspec:TI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))]
+   (set (reg:DI 64) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:DI 65) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:DI 190) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))
+   (set (reg:DI 191) (unspec:DI [(match_dup 1) (match_dup 2)] UNSPEC_MMI_PMULTH))]
   "ISA_HAS_MMI"
   "#"
   "&& reload_completed"
@@ -1330,65 +1342,80 @@
 ;; (GPR[rd], HI, LO) <- (HI, LO) +/- GPR[rs] * GPR[rt]
 
 ;; PMADDW - Parallel Multiply-Add Word (signed)
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmaddw"
   [(set (match_operand:V2DI 0 "register_operand" "=d")
 	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
 		      (match_operand:V4SI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMADDW))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmaddw\t%0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "TI")])
 
 ;; PMADDUW - Parallel Multiply-Add Unsigned Word
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmadduw"
   [(set (match_operand:V2DI 0 "register_operand" "=d")
 	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
 		      (match_operand:V4SI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMADDUW))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmadduw\t%0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "TI")])
 
 ;; PMADDH - Parallel Multiply-Add Halfword (signed)
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmaddh"
   [(set (match_operand:V4SI 0 "register_operand" "=d")
 	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMADDH))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmaddh\t%0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "TI")])
 
 ;; PMSUBW - Parallel Multiply-Subtract Word (signed)
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmsubw"
   [(set (match_operand:V2DI 0 "register_operand" "=d")
 	(unspec:V2DI [(match_operand:V4SI 1 "register_operand" "d")
 		      (match_operand:V4SI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMSUBW))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmsubw\t%0,%1,%2"
   [(set_attr "type" "imul")
    (set_attr "mode" "TI")])
 
 ;; PMSUBH - Parallel Multiply-Subtract Halfword (signed)
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pmsubh"
   [(set (match_operand:V4SI 0 "register_operand" "=d")
 	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PMSUBH))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pmsubh\t%0,%1,%2"
   [(set_attr "type" "imul")
@@ -1401,13 +1428,16 @@
 
 ;; PHMADH - Parallel Horizontal Multiply-Add Halfword
 ;; Multiplies adjacent pairs, adds results: (a*b + c*d) for each quad
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_phmadh"
   [(set (match_operand:V4SI 0 "register_operand" "=d")
 	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PHMADH))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "phmadh\t%0,%1,%2"
   [(set_attr "type" "imul")
@@ -1415,13 +1445,16 @@
 
 ;; PHMSBH - Parallel Horizontal Multiply-Subtract Halfword
 ;; Multiplies adjacent pairs, subtracts results: (a*b - c*d) for each quad
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_phmsbh"
   [(set (match_operand:V4SI 0 "register_operand" "=d")
 	(unspec:V4SI [(match_operand:V8HI 1 "register_operand" "d")
 		      (match_operand:V8HI 2 "register_operand" "d")]
 		     UNSPEC_MMI_PHMSBH))
-   (clobber (reg:TI 64))
-   (clobber (reg:TI 65))]
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "phmsbh\t%0,%1,%2"
   [(set_attr "type" "imul")
@@ -1437,20 +1470,30 @@
 ;; PDIVW - Parallel Divide Word (signed)
 ;; Divides rs[31:0]/rt[31:0] and rs[95:64]/rt[95:64]
 ;; Quotients in LO, remainders in HI
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pdivw"
   [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")
 		     (match_operand:V4SI 1 "register_operand" "d")]
-		    UNSPEC_MMI_PDIVW)]
+		    UNSPEC_MMI_PDIVW)
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pdivw\t%0,%1"
   [(set_attr "type" "idiv")
    (set_attr "mode" "TI")])
 
 ;; PDIVUW - Parallel Divide Unsigned Word
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pdivuw"
   [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")
 		     (match_operand:V4SI 1 "register_operand" "d")]
-		    UNSPEC_MMI_PDIVUW)]
+		    UNSPEC_MMI_PDIVUW)
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pdivuw\t%0,%1"
   [(set_attr "type" "idiv")
@@ -1459,10 +1502,15 @@
 ;; PDIVBW - Parallel Divide Broadcast Word
 ;; Divides four 32-bit words in rs by the low 16-bit halfword of rt
 ;; Four quotients in LO, four 16-bit remainders in HI
+;; Clobbers full 128-bit HI/LO (both HI0/LO0 and HI1/LO1)
 (define_insn "mmi_pdivbw"
   [(unspec_volatile [(match_operand:V4SI 0 "register_operand" "d")
 		     (match_operand:V8HI 1 "register_operand" "d")]
-		    UNSPEC_MMI_PDIVBW)]
+		    UNSPEC_MMI_PDIVBW)
+   (clobber (reg:DI 64))
+   (clobber (reg:DI 65))
+   (clobber (reg:DI 190))
+   (clobber (reg:DI 191))]
   "ISA_HAS_MMI"
   "pdivbw\t%0,%1"
   [(set_attr "type" "idiv")
