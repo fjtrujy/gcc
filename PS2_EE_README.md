@@ -408,6 +408,32 @@ int mac1_chain(int a, int b, int c, int d) {
 }
 ```
 
+### HI/LO Register Conflicts with MMI
+
+**Warning**: The R5900 has a single 128-bit HI register and a single 128-bit LO register. These are split into two 64-bit halves:
+- **HI0/LO0** (bits 63:0): Used by Pipeline 0 scalar operations (MULT, DIV, MADD)
+- **HI1/LO1** (bits 127:64): Used by Pipeline 1 scalar operations (MULT1, DIV1, MADD1)
+
+**MMI parallel multiply/divide instructions (PMULTW, PMADDW, PDIVW, etc.) update BOTH halves simultaneously.** This means:
+
+1. MMI operations will **clobber Pipeline 1 scalar results** in HI1/LO1
+2. Users must complete MFHI1/MFLO1 **before** any MMI multiply/divide
+3. Mixing Pipeline 1 scalar and MMI operations requires careful scheduling
+
+```c
+// CORRECT: Read Pipeline 1 result before MMI operation
+__builtin_mips_mult1(a, b);
+int result = __builtin_mips_mflo1();  // Save result FIRST
+v2di vec_result = __builtin_mmi_pmultw(x, y);  // Now safe to use MMI
+
+// INCORRECT: MMI will clobber the Pipeline 1 result
+__builtin_mips_mult1(a, b);
+v2di vec_result = __builtin_mmi_pmultw(x, y);  // Clobbers HI1/LO1!
+int result = __builtin_mips_mflo1();  // Wrong value!
+```
+
+GCC models these register conflicts and will schedule instructions correctly when both operations are visible in the same function. However, be careful with inline assembly or across function boundaries.
+
 ---
 
 ## 4. COP1 (FPU) Extensions
