@@ -612,7 +612,7 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
   VU0_ACC_REGS,
   FPU_ACC_REGS,
-  MD1_REGS,	MD1_REGS	/* R5900 Pipeline 1 HI1/LO1 registers */
+  MD1_0_REG,	MD1_1_REG	/* R5900 Pipeline 1 HI1/LO1 registers */
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);

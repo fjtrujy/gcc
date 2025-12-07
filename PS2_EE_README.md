@@ -38,12 +38,12 @@ Standard MIPS uses 64-bit GP registers; R5900 extends these to 128-bit. GCC uses
 
 ### Multiply/Divide Registers (Dual Pipeline)
 
-| Register | Size | Purpose | GCC Status | GCC Regnum |
-|----------|------|---------|------------|------------|
-| `HI` | 64-bit | Upper result of multiply/divide (Pipeline 0) | **Implemented** | 64 |
-| `LO` | 64-bit | Lower result of multiply/divide (Pipeline 0) | **Implemented** | 65 |
-| `HI1` | 64-bit | Upper result of multiply/divide (Pipeline 1) | **Implemented** | 190 |
-| `LO1` | 64-bit | Lower result of multiply/divide (Pipeline 1) | **Implemented** | 191 |
+| Register | Size | Purpose | GCC Status | GCC Regnum | Constraint |
+|----------|------|---------|------------|------------|------------|
+| `HI` | 64-bit | Upper result of multiply/divide (Pipeline 0) | **Implemented** | 64 | `"x"` |
+| `LO` | 64-bit | Lower result of multiply/divide (Pipeline 0) | **Implemented** | 65 | `"l"`, `"x"` |
+| `HI1` | 64-bit | Upper result of multiply/divide (Pipeline 1) | **Implemented** | 190 | `"Ym"` |
+| `LO1` | 64-bit | Lower result of multiply/divide (Pipeline 1) | **Implemented** | 191 | `"Yl"`, `"Ym"` |
 
 The R5900 has dual multiply/divide pipelines (MAC0 and MAC1). MULT1/DIV1/MADD1 use HI1/LO1 and can execute in parallel with Pipeline 0 operations for improved throughput.
 
