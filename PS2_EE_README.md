@@ -352,23 +352,38 @@ the loop must be unconditional (read all values before the conditional select).
 
 ## 3. Dual Pipeline Instructions
 
-R5900 has a second multiply/divide unit (MAC1/Pipeline 1) with dedicated HI1/LO1 registers.
+R5900 has two multiply/divide units (MAC0/Pipeline 0 and MAC1/Pipeline 1) with dedicated HI/LO registers.
 This enables parallel execution of multiply/divide operations on both MAC units for improved throughput.
 
-| Instruction | Description | Intrinsic | Auto-used |
+### Pipeline 0 (MAC0) Intrinsics
+
+| Instruction | Description | Intrinsic | Registers |
 |-------------|-------------|-----------|-----------|
-| `MULT1` | Multiply Word Pipeline 1 | `__builtin_mips_mult1` | - |
-| `MULTU1` | Multiply Unsigned Word Pipeline 1 | `__builtin_mips_multu1` | - |
-| `DIV1` | Divide Word Pipeline 1 | `__builtin_mips_div1` | - |
-| `DIVU1` | Divide Unsigned Word Pipeline 1 | `__builtin_mips_divu1` | - |
-| `MADD` | Multiply-Add Word | - | ✓ |
-| `MADD1` | Multiply-Add Word Pipeline 1 | `__builtin_mips_madd1` | - |
-| `MADDU` | Multiply-Add Unsigned Word | - | ✓ |
-| `MADDU1` | Multiply-Add Unsigned Word Pipeline 1 | `__builtin_mips_maddu1` | - |
-| `MFHI1` | Move From HI1 Register | `__builtin_mips_mfhi1` | - |
-| `MFLO1` | Move From LO1 Register | `__builtin_mips_mflo1` | - |
-| `MTHI1` | Move To HI1 Register | `__builtin_mips_mthi1` | - |
-| `MTLO1` | Move To LO1 Register | `__builtin_mips_mtlo1` | - |
+| `MULT` | Multiply Word (signed) | `__builtin_mips_mult(a, b)` | HI0:LO0 = a × b |
+| `MULTU` | Multiply Word (unsigned) | `__builtin_mips_multu(a, b)` | HI0:LO0 = a × b |
+| `DIV` | Divide Word (signed) | `__builtin_mips_div(a, b)` | LO0 = a / b, HI0 = a % b |
+| `DIVU` | Divide Word (unsigned) | `__builtin_mips_divu(a, b)` | LO0 = a / b, HI0 = a % b |
+| `MADD` | Multiply-Add (signed) | `__builtin_mips_madd(a, b)` | HI0:LO0 += a × b |
+| `MADDU` | Multiply-Add (unsigned) | `__builtin_mips_maddu(a, b)` | HI0:LO0 += a × b |
+| `MFHI` | Move From HI0 | `__builtin_mips_mfhi()` | Returns HI0 |
+| `MFLO` | Move From LO0 | `__builtin_mips_mflo()` | Returns LO0 |
+| `MTHI` | Move To HI0 | `__builtin_mips_mthi(v)` | HI0 = v |
+| `MTLO` | Move To LO0 | `__builtin_mips_mtlo(v)` | LO0 = v |
+
+### Pipeline 1 (MAC1) Intrinsics
+
+| Instruction | Description | Intrinsic | Registers |
+|-------------|-------------|-----------|-----------|
+| `MULT1` | Multiply Word (signed) | `__builtin_mips_mult1(a, b)` | HI1:LO1 = a × b |
+| `MULTU1` | Multiply Word (unsigned) | `__builtin_mips_multu1(a, b)` | HI1:LO1 = a × b |
+| `DIV1` | Divide Word (signed) | `__builtin_mips_div1(a, b)` | LO1 = a / b, HI1 = a % b |
+| `DIVU1` | Divide Word (unsigned) | `__builtin_mips_divu1(a, b)` | LO1 = a / b, HI1 = a % b |
+| `MADD1` | Multiply-Add (signed) | `__builtin_mips_madd1(a, b)` | HI1:LO1 += a × b |
+| `MADDU1` | Multiply-Add (unsigned) | `__builtin_mips_maddu1(a, b)` | HI1:LO1 += a × b |
+| `MFHI1` | Move From HI1 | `__builtin_mips_mfhi1()` | Returns HI1 |
+| `MFLO1` | Move From LO1 | `__builtin_mips_mflo1()` | Returns LO1 |
+| `MTHI1` | Move To HI1 | `__builtin_mips_mthi1(v)` | HI1 = v |
+| `MTLO1` | Move To LO1 | `__builtin_mips_mtlo1(v)` | LO1 = v |
 
 ### Pipeline 1 Usage Example
 
