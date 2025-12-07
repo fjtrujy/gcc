@@ -611,7 +611,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
   ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
   VU0_ACC_REGS,
-  FPU_ACC_REGS
+  FPU_ACC_REGS,
+  MD1_REGS,	MD1_REGS	/* R5900 Pipeline 1 HI1/LO1 registers */
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -13567,6 +13568,12 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
 	  if (size <= UNITS_PER_WORD * 2)
 	    return regno == (size <= UNITS_PER_WORD ? LO_REGNUM : MD_REG_FIRST);
 	}
+      else if (MD1_REG_P (regno))
+	{
+	  /* R5900 Pipeline 1 HI1/LO1 have the same constraints as HI/LO.  */
+	  if (size <= UNITS_PER_WORD * 2)
+	    return regno == (size <= UNITS_PER_WORD ? LO1_REGNUM : MD1_REG_FIRST);
+	}
       else
 	{
 	  /* DSP accumulators do not have the same restrictions as
@@ -16354,9 +16361,32 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     "__builtin_mips_" #INSN "_s",  MIPS_BUILTIN_DIRECT_NO_TARGET,	\
     FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
 
+/* Define an R5900 Pipeline 1 MIPS_BUILTIN_DIRECT pure function
+   __builtin_mips_<INSN> for instruction CODE_FOR_pipe1_<INSN>.
+   FUNCTION_TYPE is a builtin_description field.  */
+#define R5900_PIPE1_BUILTIN_PURE(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_pipe1_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, true }
+
+/* Define an R5900 Pipeline 1 MIPS_BUILTIN_DIRECT_NO_TARGET function.
+   These are for operations with no return value (like divisions that
+   only write to HI1/LO1).  */
+#define R5900_PIPE1_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)		\
+    { CODE_FOR_pipe1_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
+
 /* R5900 FPU min/max aliases - use existing RTL patterns */
 #define CODE_FOR_fpu_min CODE_FOR_sminsf3
 #define CODE_FOR_fpu_max CODE_FOR_smaxsf3
+
+/* R5900 Pipeline 1 instruction aliases - map to 5900.md builtin patterns
+   These use the pipe1_* patterns which use unspec_volatile for proper
+   modeling of implicit HI1/LO1 register state.  */
+/* Note: pipe1_mult1, pipe1_multu1, pipe1_div1, pipe1_divu1,
+   pipe1_mfhi1, pipe1_mflo1, pipe1_mthi1, pipe1_mtlo1 patterns are
+   defined directly in 5900.md with matching names, so no aliases needed. */
 
 /* VU0 basic arithmetic aliases - use existing RTL patterns */
 #define CODE_FOR_vu0_vadd CODE_FOR_addv4sf3
@@ -17666,6 +17696,25 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_NO_TARGET_BUILTIN (pdivw, MIPS_VOID_FTYPE_V4SI_V4SI),
   MMI_NO_TARGET_BUILTIN (pdivuw, MIPS_VOID_FTYPE_V4SI_V4SI),
   MMI_NO_TARGET_BUILTIN (pdivbw, MIPS_VOID_FTYPE_V4SI_V8HI),
+
+  /* R5900 Pipeline 1 multiply/divide builtins.
+     These instructions use the second MAC unit (MAC1) with dedicated
+     HI1/LO1 registers, enabling parallel execution with Pipeline 0.  */
+  /* Multiply operations - write to HI1:LO1 */
+  R5900_PIPE1_NO_TARGET_BUILTIN (mult1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (multu1, MIPS_VOID_FTYPE_SI_SI),
+  /* Multiply-add operations - accumulate to HI1:LO1 */
+  R5900_PIPE1_NO_TARGET_BUILTIN (madd1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (maddu1, MIPS_VOID_FTYPE_SI_SI),
+  /* Divide operations - write quotient to LO1, remainder to HI1 */
+  R5900_PIPE1_NO_TARGET_BUILTIN (div1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (divu1, MIPS_VOID_FTYPE_SI_SI),
+  /* Move from HI1/LO1 registers */
+  R5900_PIPE1_BUILTIN_PURE (mfhi1, MIPS_SI_FTYPE_VOID),
+  R5900_PIPE1_BUILTIN_PURE (mflo1, MIPS_SI_FTYPE_VOID),
+  /* Move to HI1/LO1 registers */
+  R5900_PIPE1_NO_TARGET_BUILTIN (mthi1, MIPS_VOID_FTYPE_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (mtlo1, MIPS_VOID_FTYPE_SI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the

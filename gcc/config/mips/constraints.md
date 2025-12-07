@@ -266,6 +266,10 @@
   "@internal
    FPU (COP1) accumulator register (ACC).")
 
+(define_register_constraint "Ym" "TARGET_MIPS5900 ? MD1_REGS : NO_REGS"
+  "@internal
+   R5900 Pipeline 1 multiply/divide registers (HI1/LO1).")
+
 (define_constraint "YG"
   "@internal
    A vector zero."
