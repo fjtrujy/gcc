@@ -266,9 +266,13 @@
   "@internal
    FPU (COP1) accumulator register (ACC).")
 
+(define_register_constraint "Yl" "TARGET_MIPS5900 ? (TARGET_BIG_ENDIAN ? MD1_1_REG : MD1_0_REG) : NO_REGS"
+  "@internal
+   R5900 Pipeline 1 @code{lo1} register.")
+
 (define_register_constraint "Ym" "TARGET_MIPS5900 ? MD1_REGS : NO_REGS"
   "@internal
-   R5900 Pipeline 1 multiply/divide registers (HI1/LO1).")
+   R5900 Pipeline 1 concatenated @code{hi1} and @code{lo1} registers.")
 
 (define_constraint "YG"
   "@internal

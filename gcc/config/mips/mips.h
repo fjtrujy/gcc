@@ -2187,6 +2187,8 @@ enum reg_class
   COP3_REGS,
   ST_REGS,			/* status registers (fp status) */
   DSP_ACC_REGS,			/* DSP accumulator registers */
+  MD1_0_REG,			/* R5900 Pipeline 1 first register */
+  MD1_1_REG,			/* R5900 Pipeline 1 second register */
   MD1_REGS,			/* R5900 Pipeline 1 HI1/LO1 registers */
   ACC_REGS,			/* Hi/Lo, DSP, and MD1 accumulator registers */
   VU0_ACC_REGS,			/* VU0 accumulator register */
@@ -2231,6 +2233,8 @@ enum reg_class
   "COP3_REGS",								\
   "ST_REGS",								\
   "DSP_ACC_REGS",							\
+  "MD1_0_REG",								\
+  "MD1_1_REG",								\
   "MD1_REGS",								\
   "ACC_REGS",								\
   "VU0_ACC_REGS",							\
@@ -2276,6 +2280,8 @@ enum reg_class
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff },   /* COP3_REGS */		\
   { 0x00000000, 0x00000000, 0x000007f8, 0x00000000, 0x00000000, 0x00000000 },	/* ST_REGS */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x003f0000 },	/* DSP_ACC_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x40000000 },	/* MD1_0_REG */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x80000000 },	/* MD1_1_REG */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xc0000000 },	/* MD1_REGS */		\
   { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0xc03f0000 },	/* ACC_REGS */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000 },	/* VU0_ACC_REGS */	\
