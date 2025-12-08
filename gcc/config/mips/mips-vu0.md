@@ -303,7 +303,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULA))]
   "ISA_HAS_VU0"
-  "vmula.xyzw\tACC,%u0,%u1"
+  "vmula.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -316,7 +316,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDA))]
   "ISA_HAS_VU0"
-  "vmadda.xyzw\tACC,%u0,%u1"
+  "vmadda.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -342,7 +342,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBA))]
   "ISA_HAS_VU0"
-  "vmsuba.xyzw\tACC,%u0,%u1"
+  "vmsuba.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -374,7 +374,7 @@
                   (match_operand:V4SF 2 "register_operand" "C")
                   (match_operand:V4SF 3 "register_operand" "C")))]
   "ISA_HAS_VU0"
-  "vmulaw.xyzw\tACC,%3,$vf0\;vmadd.xyzw\t%0,%1,%2"
+  "vmulaw.xyzw\t$ACC,%3,$vf0\;vmadd.xyzw\t%0,%1,%2"
   [(set_attr "type" "fmadd")
    (set_attr "mode" "V4SF")
    (set_attr "length" "8")])
@@ -449,7 +449,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAX))]
   "ISA_HAS_VU0"
-  "vmulax.xyzw\tACC,%u0,%u1"
+  "vmulax.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -460,7 +460,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAY))]
   "ISA_HAS_VU0"
-  "vmulay.xyzw\tACC,%u0,%u1"
+  "vmulay.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -471,7 +471,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAZ))]
   "ISA_HAS_VU0"
-  "vmulaz.xyzw\tACC,%u0,%u1"
+  "vmulaz.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -482,7 +482,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAW))]
   "ISA_HAS_VU0"
-  "vmulaw.xyzw\tACC,%u0,%u1"
+  "vmulaw.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -499,7 +499,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAX))]
   "ISA_HAS_VU0"
-  "vmaddax.xyzw\tACC,%u0,%u1"
+  "vmaddax.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -511,7 +511,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAY))]
   "ISA_HAS_VU0"
-  "vmadday.xyzw\tACC,%u0,%u1"
+  "vmadday.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -523,7 +523,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAZ))]
   "ISA_HAS_VU0"
-  "vmaddaz.xyzw\tACC,%u0,%u1"
+  "vmaddaz.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -535,7 +535,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAW))]
   "ISA_HAS_VU0"
-  "vmaddaw.xyzw\tACC,%u0,%u1"
+  "vmaddaw.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -605,7 +605,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAX))]
   "ISA_HAS_VU0"
-  "vmsubax.xyzw\tACC,%u0,%u1"
+  "vmsubax.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -617,7 +617,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAY))]
   "ISA_HAS_VU0"
-  "vmsubay.xyzw\tACC,%u0,%u1"
+  "vmsubay.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -629,7 +629,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAZ))]
   "ISA_HAS_VU0"
-  "vmsubaz.xyzw\tACC,%u0,%u1"
+  "vmsubaz.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -641,7 +641,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAW))]
   "ISA_HAS_VU0"
-  "vmsubaw.xyzw\tACC,%u0,%u1"
+  "vmsubaw.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -711,7 +711,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VOPMULA))]
   "ISA_HAS_VU0"
-  "vopmula.xyz\tACC,%u0,%u1"
+  "vopmula.xyz\t$ACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -838,7 +838,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDA))]
   "ISA_HAS_VU0"
-  "vadda.xyzw\tACC,%u0,%u1"
+  "vadda.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -849,7 +849,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBA))]
   "ISA_HAS_VU0"
-  "vsuba.xyzw\tACC,%u0,%u1"
+  "vsuba.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -865,7 +865,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAX))]
   "ISA_HAS_VU0"
-  "vaddax.xyzw\tACC,%u0,%u1"
+  "vaddax.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -876,7 +876,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAY))]
   "ISA_HAS_VU0"
-  "vadday.xyzw\tACC,%u0,%u1"
+  "vadday.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -887,7 +887,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAZ))]
   "ISA_HAS_VU0"
-  "vaddaz.xyzw\tACC,%u0,%u1"
+  "vaddaz.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -898,7 +898,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAW))]
   "ISA_HAS_VU0"
-  "vaddaw.xyzw\tACC,%u0,%u1"
+  "vaddaw.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -914,7 +914,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAX))]
   "ISA_HAS_VU0"
-  "vsubax.xyzw\tACC,%u0,%u1"
+  "vsubax.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -925,7 +925,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAY))]
   "ISA_HAS_VU0"
-  "vsubay.xyzw\tACC,%u0,%u1"
+  "vsubay.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -936,7 +936,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAZ))]
   "ISA_HAS_VU0"
-  "vsubaz.xyzw\tACC,%u0,%u1"
+  "vsubaz.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -947,7 +947,7 @@
                       (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAW))]
   "ISA_HAS_VU0"
-  "vsubaw.xyzw\tACC,%u0,%u1"
+  "vsubaw.xyzw\t$ACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1123,7 +1123,7 @@
   {
     static const char *const bc[] = { "x", "y", "z", "w" };
     static char buf[32];
-    sprintf (buf, "vdiv\tQ,%%u0.%s,%%u2.%s",
+    sprintf (buf, "vdiv\t$Q,%%u0%s,%%u2%s",
              bc[INTVAL (operands[1]) & 3],
              bc[INTVAL (operands[3]) & 3]);
     return buf;
@@ -1143,7 +1143,7 @@
   {
     static const char *const bc[] = { "x", "y", "z", "w" };
     static char buf[32];
-    sprintf (buf, "vsqrt\tQ,%%u0.%s", bc[INTVAL (operands[1]) & 3]);
+    sprintf (buf, "vsqrt\t$Q,%%u0%s", bc[INTVAL (operands[1]) & 3]);
     return buf;
   }
   [(set_attr "type" "fsqrt")
@@ -1163,7 +1163,7 @@
   {
     static const char *const bc[] = { "x", "y", "z", "w" };
     static char buf[32];
-    sprintf (buf, "vrsqrt\tQ,%%u0.%s,%%u2.%s",
+    sprintf (buf, "vrsqrt\t$Q,%%u0%s,%%u2%s",
              bc[INTVAL (operands[1]) & 3],
              bc[INTVAL (operands[3]) & 3]);
     return buf;
@@ -1194,7 +1194,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VADDQ))]
   "ISA_HAS_VU0"
-  "vaddq.xyzw\t%0,%u1,Q"
+  "vaddq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1206,7 +1206,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VSUBQ))]
   "ISA_HAS_VU0"
-  "vsubq.xyzw\t%0,%u1,Q"
+  "vsubq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1218,7 +1218,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMULQ))]
   "ISA_HAS_VU0"
-  "vmulq.xyzw\t%0,%u1,Q"
+  "vmulq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1231,7 +1231,7 @@
                     UNSPEC_VU0_VADDQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vaddaq.xyzw\tACC,%u0,Q"
+  "vaddaq.xyzw\t$ACC,%u0,$Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1244,7 +1244,7 @@
                     UNSPEC_VU0_VSUBQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vsubaq.xyzw\tACC,%u0,Q"
+  "vsubaq.xyzw\t$ACC,%u0,$Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1257,7 +1257,7 @@
                     UNSPEC_VU0_VMULQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmulaq.xyzw\tACC,%u0,Q"
+  "vmulaq.xyzw\t$ACC,%u0,$Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1270,7 +1270,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMADDQ))]
   "ISA_HAS_VU0"
-  "vmaddq.xyzw\t%0,%u1,Q"
+  "vmaddq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1283,7 +1283,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMSUBQ))]
   "ISA_HAS_VU0"
-  "vmsubq.xyzw\t%0,%u1,Q"
+  "vmsubq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1297,7 +1297,7 @@
                     UNSPEC_VU0_VMADDQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmaddaq.xyzw\tACC,%u0,Q"
+  "vmaddaq.xyzw\t$ACC,%u0,$Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1311,7 +1311,7 @@
                     UNSPEC_VU0_VMSUBQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmsubaq.xyzw\tACC,%u0,Q"
+  "vmsubaq.xyzw\t$ACC,%u0,$Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1323,7 +1323,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMAXQ))]
   "ISA_HAS_VU0"
-  "vmaxq.xyzw\t%0,%u1,Q"
+  "vmaxq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1335,7 +1335,7 @@
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMINIQ))]
   "ISA_HAS_VU0"
-  "vminiq.xyzw\t%0,%u1,Q"
+  "vminiq.xyzw\t%0,%u1,$Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1368,7 +1368,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VADDI))]
   "ISA_HAS_VU0"
-  "vaddi.xyzw\t%0,%u1,I"
+  "vaddi.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1380,7 +1380,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VSUBI))]
   "ISA_HAS_VU0"
-  "vsubi.xyzw\t%0,%u1,I"
+  "vsubi.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1392,7 +1392,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMULI))]
   "ISA_HAS_VU0"
-  "vmuli.xyzw\t%0,%u1,I"
+  "vmuli.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1405,7 +1405,7 @@
                     UNSPEC_VU0_VADDAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vaddai.xyzw\tACC,%u0,I"
+  "vaddai.xyzw\t$ACC,%u0,$I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1418,7 +1418,7 @@
                     UNSPEC_VU0_VSUBAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vsubai.xyzw\tACC,%u0,I"
+  "vsubai.xyzw\t$ACC,%u0,$I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1431,7 +1431,7 @@
                     UNSPEC_VU0_VMULAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmulai.xyzw\tACC,%u0,I"
+  "vmulai.xyzw\t$ACC,%u0,$I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1444,7 +1444,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMADDI))]
   "ISA_HAS_VU0"
-  "vmaddi.xyzw\t%0,%u1,I"
+  "vmaddi.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1457,7 +1457,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMSUBI))]
   "ISA_HAS_VU0"
-  "vmsubi.xyzw\t%0,%u1,I"
+  "vmsubi.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1471,7 +1471,7 @@
                     UNSPEC_VU0_VMADDAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmaddai.xyzw\tACC,%u0,I"
+  "vmaddai.xyzw\t$ACC,%u0,$I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1485,7 +1485,7 @@
                     UNSPEC_VU0_VMSUBAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmsubai.xyzw\tACC,%u0,I"
+  "vmsubai.xyzw\t$ACC,%u0,$I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -1497,7 +1497,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMAXI))]
   "ISA_HAS_VU0"
-  "vmaxi.xyzw\t%0,%u1,I"
+  "vmaxi.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1509,7 +1509,7 @@
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMINII))]
   "ISA_HAS_VU0"
-  "vminii.xyzw\t%0,%u1,I"
+  "vminii.xyzw\t%0,%u1,$I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
