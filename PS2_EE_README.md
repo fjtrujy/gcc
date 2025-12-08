@@ -8,7 +8,7 @@ The EE Core is based on MIPS III architecture with significant extensions:
 - **128-bit GP Registers**: All 32 general-purpose registers are 128-bit wide
 - **Dual Pipeline**: Two ALU pipelines (ALU0/ALU1) for parallel integer execution
 - **MMI (Multimedia Instructions)**: 128-bit SIMD integer operations
-- **COP1 (FPU) Extensions**: Single-precision only, with accumulator and extra operations
+- **COP1 (FPU)**: Single-precision only, with accumulator and extra operations
 - **COP2 (VU0)**: 128-bit vector floating-point unit (4x32-bit floats)
 - **No LL/SC**: Load-Linked/Store-Conditional atomics are not available
 - **No CLZ/CLO**: Count Leading Zeros/Ones instructions are not available
@@ -30,9 +30,9 @@ The R5900 has several register extensions and new registers not found in standar
 
 ### General Purpose Registers (128-bit Extended)
 
-| Register | Size | Purpose | GCC Status | GCC Regnum |
-|----------|------|---------|------------|------------|
-| `$0-$31` | 128-bit | Extended GP registers (64-bit lower + 64-bit upper) | **Implemented** | 0-31 |
+| Register | Size | Purpose | GCC Status | GCC Regnum | Constraint |
+|----------|------|---------|------------|------------|------------|
+| `$0-$31` | 128-bit | Extended GP registers (64-bit lower + 64-bit upper) | **Implemented** | 0-31 | `"d"`, `"r"` |
 
 Standard MIPS uses 64-bit GP registers; R5900 extends these to 128-bit. GCC uses TImode (`__int128`) to access the full width.
 
@@ -49,131 +49,68 @@ The R5900 has dual multiply/divide pipelines (MAC0 and MAC1). MULT1/DIV1/MADD1 u
 
 ### Shift Amount Register
 
-| Register | Size | Purpose | GCC Status | GCC Regnum |
-|----------|------|---------|------------|------------|
-| `SA` | 8-bit | Shift amount for QFSRV (funnel shift) | **Implemented** | - |
+| Register | Size | Purpose | GCC Status | GCC Regnum | Constraint |
+|----------|------|---------|------------|------------|------------|
+| `SA` | 8-bit | Shift amount for QFSRV (funnel shift) | **Implemented** | - | - |
 
 Used by MTSAB, MTSAH, and QFSRV instructions for 128-bit funnel shifts. Accessible via intrinsics for unaligned 128-bit memory access.
 
 ### FPU (COP1) Registers
 
-| Register | Size | Purpose | GCC Status | GCC Regnum |
-|----------|------|---------|------------|------------|
-| `$f0-$f31` | 32-bit | FP data registers (single-precision only) | **Implemented** | 32-63 |
-| `FCR0` | 32-bit | FP Implementation/Revision (read-only) | **Implemented** | - |
-| `FCR31` | 32-bit | FP Control/Status | **Implemented** | - |
-| `ACC` | 32-bit | FP Accumulator (for ADDA.S, MULA.S, etc.) | **Implemented** | 189 |
+| Register | Size | Purpose | GCC Status | GCC Regnum | Constraint |
+|----------|------|---------|------------|------------|------------|
+| `$f0-$f31` | 32-bit | FP data registers (single-precision only) | **Implemented** | 32-63 | `"f"` |
+| `FCR0` | 32-bit | FP Implementation/Revision (read-only) | **Implemented** | - | - |
+| `FCR31` | 32-bit | FP Control/Status | **Implemented** | - | - |
+| `ACC` | 32-bit | FP Accumulator (for ADDA.S, MULA.S, etc.) | **Implemented** | 189 | `"YF"` |
 
 Note: R5900 FPU is single-precision only. Double-precision is NOT supported.
 
 ### VU0/COP2 Vector Registers
 
-| Register | Size | Purpose | GCC Status | GCC Regnum |
-|----------|------|---------|------------|------------|
-| `$vf0-$vf31` | 128-bit | Vector FP (4x32-bit floats, xyzw) | **Implemented** | 112-143 |
-| `$vi0-$vi15` | 16-bit | Integer registers (counters, addresses) | Not implemented | - |
-| `ACC` | 128-bit | Vector accumulator (4x32-bit floats) | **Implemented** | 188 |
-| `Q` | 32-bit | Division/sqrt result register | **Implemented** | 192 |
-| `I` | 32-bit | Immediate FP value (loaded via CTC2) | **Implemented** | 193 |
+| Register | Size | Purpose | GCC Status | GCC Regnum | Constraint |
+|----------|------|---------|------------|------------|------------|
+| `$vf0-$vf31` | 128-bit | Vector FP (4x32-bit floats, xyzw) | **Implemented** | 112-143 | `"C"` |
+| `$vi0-$vi15` | 16-bit | Integer registers (counters, addresses) | Not implemented | - | - |
+| `ACC` | 128-bit | Vector accumulator (4x32-bit floats) | **Implemented** | 188 | `"Ya"` |
+| `Q` | 32-bit | Division/sqrt result register | **Implemented** | 192 | `"Yq"` |
+| `I` | 32-bit | Immediate FP value (loaded via CTC2) | **Implemented** | 193 | `"Yi"` |
 
 Special notes:
 - `$vf0` is constant: x=0.0, y=0.0, z=0.0, w=1.0
 - `$vi0` is constant: always 0
-- VF registers use constraint `"C"` in GCC patterns
 
-### Register Summary
+**VF0 Constant Support in Intrinsics:**
+GCC recognizes the constant `{0.0f, 0.0f, 0.0f, 1.0f}` and uses `$vf0` directly without allocating a register:
+```c
+#define VF0 ((v4sf){0.0f, 0.0f, 0.0f, 1.0f})
 
-| Category | Total | Implemented | Coverage |
-|----------|-------|-------------|----------|
-| GP (128-bit) | 32 | 32 | 100% |
-| HI/LO (dual pipeline) | 4 | 4 | 100% |
-| SA | 1 | 1 | 100% |
-| FPU Data | 32 | 32 | 100% |
-| FPU ACC | 1 | 1 | 100% |
-| VU0 VF | 32 | 32 | 100% |
-| VU0 VI | 16 | 0 | 0% |
-| VU0 ACC | 1 | 1 | 100% |
-| VU0 Q/I | 2 | 2 | 100% |
+// Compute 1/x using $vf0.w = 1.0
+__builtin_vu0_vdiv(VF0, 3, x, 0);  // Q = 1.0 / x.x  →  vdiv Q,$vf0.w,$vfX.x
+
+// Multiply by 1.0 (identity)
+__builtin_vu0_vmulw(vec, VF0);     // vec * 1.0      →  vmulw.xyzw $vfY,$vfY,$vf0
+```
 
 ---
 
-## Data Types and Modes
+## Data Types
 
 The R5900 supports various data types through GCC's machine modes.
-
-### Scalar Integer Types
 
 | Mode | Size | C Type | Register | GCC Status |
 |------|------|--------|----------|------------|
 | `QImode` | 8-bit | `char` | GP | **Implemented** |
 | `HImode` | 16-bit | `short` | GP | **Implemented** |
 | `SImode` | 32-bit | `int` | GP | **Implemented** |
+| `SFmode` | 32-bit | `float` | FPU (COP1) | **Implemented** |
 | `DImode` | 64-bit | `long long` | GP | **Implemented** |
-| `TImode` | 128-bit | `__int128` | GP | **Implemented** (R5900 native, no splitting) |
-
-### Scalar Floating-Point Types
-
-| Mode | Size | C Type | Register | GCC Status | Notes |
-|------|------|--------|----------|------------|-------|
-| `SFmode` | 32-bit | `float` | FPU | **Implemented** | Native support |
-| `DFmode` | 64-bit | `double` | FPU | **NOT supported** | R5900 is single-precision only |
-
-**Important**: The R5900 FPU only supports single-precision. Double-precision operations will be emulated in software.
-
-### Vector Types (VU0)
-
-These require `-march=r5900 -mvu0`:
-
-| Mode | Size | Elements | C Type | Register | GCC Status |
-|------|------|----------|--------|----------|------------|
-| `V4SF` | 128-bit | 4 × 32-bit float | `float __attribute__((vector_size(16)))` | VU0 (COP2) | **Implemented** |
-
-**V4SF Operations Implemented:**
-- Move: `movv4sf` (lqc2/sqc2/vmove/por)
-- Arithmetic: `addv4sf3`, `subv4sf3`, `mulv4sf3`
-- FMA: `fmav4sf4` (vmulaw + vmadd)
-- Unary: `absv4sf2`
-- Compare: `smaxv4sf3`, `sminv4sf3`
-
-### Vector Types (MMI - Implemented)
-
-These use the 128-bit GP registers for integer SIMD:
-
-| Mode | Size | Elements | Description | GCC Status |
-|------|------|----------|-------------|------------|
-| `V16QI` | 128-bit | 16 × 8-bit int | Parallel byte operations | **Implemented** (builtins + autovec) |
-| `V8HI` | 128-bit | 8 × 16-bit int | Parallel halfword operations | **Implemented** (builtins + autovec) |
-| `V4SI` | 128-bit | 4 × 32-bit int | Parallel word operations | **Implemented** (builtins + autovec) |
-| `V2DI` | 128-bit | 2 × 64-bit int | Parallel doubleword operations | **Implemented** (builtins) |
-
-These modes map to MMI instructions via `__builtin_mmi_*` intrinsics. Autovectorization is supported for add/sub, min/max, logical, shift, and multiply (V8HI) operations at `-O3`.
-
-### Type Usage Examples
-
-```c
-// 128-bit integer (uses LQ/SQ instructions)
-__int128 quad_value;
-
-// Vector of 4 floats (uses VU0)
-typedef float v4sf __attribute__((vector_size(16)));
-v4sf vec_a, vec_b, vec_c;
-vec_c = vec_a + vec_b;  // Generates: vadd.xyzw
-
-// FMA operation
-vec_c = vec_a * vec_b + vec_c;  // Generates: vmulaw.xyzw + vmadd.xyzw
-```
-
-### Data Type Summary
-
-| Category | Types | Implemented |
-|----------|-------|-------------|
-| Integer Scalar | QI, HI, SI, DI, TI | 5/5 (100%) |
-| Float Scalar | SF | 1/1 (100%) |
-| Double Scalar | DF | 0/1 (0% - not supported by HW) |
-| VU0 Vector (float) | V4SF | 1/1 (100%) |
-| MMI Vector (int) | V16QI, V8HI, V4SI, V2DI | 4/4 (100%, builtins) |
-
-**TImode (128-bit scalar) optimizations:** Logical operations (`&`, `|`, `^`, `~`) on `__int128` use single MMI instructions (pand, por, pxor, pnor).
+| `TImode` | 128-bit | `__int128` | GP | **Implemented** |
+| `V4SF` | 128-bit | 4 × 32-bit float | VU0 (COP2) | **Implemented** (builtins + autovec) |
+| `V16QI` | 128-bit | 16 × 8-bit int | GP (MMI) | **Implemented** (builtins + autovec) |
+| `V8HI` | 128-bit | 8 × 16-bit int | GP (MMI) | **Implemented** (builtins + autovec) |
+| `V4SI` | 128-bit | 4 × 32-bit int | GP (MMI) | **Implemented** (builtins + autovec) |
+| `V2DI` | 128-bit | 2 × 64-bit int | GP (MMI) | **Implemented** (builtins) |
 
 ---
 
@@ -181,23 +118,14 @@ vec_c = vec_a * vec_b + vec_c;  // Generates: vmulaw.xyzw + vmadd.xyzw
 
 These instructions operate on the full 128-bit width of GP registers.
 
-| Instruction | Description | Intrinsic | Auto-used |
-|-------------|-------------|-----------|-----------|
-| `LQ` | Load Quadword (128-bit) | - | ✓ |
-| `SQ` | Store Quadword (128-bit) | - | ✓ |
+| Instruction | Description |
+|-------------|-------------|
+| `LQ` | Load Quadword (128-bit) |
+| `SQ` | Store Quadword (128-bit) |
 
 **Callee-saved register preservation**: Function prologues/epilogues use LQ/SQ to save and restore callee-saved registers (s0-s7, gp, fp, ra), preserving the full 128-bit width. This ensures that 128-bit values (`__int128`, vectors) in callee-saved registers are correctly preserved across function calls.
 
 **Automatic Unaligned 128-bit Access**: GCC automatically uses QFSRV for unaligned 128-bit loads when the type has `__attribute__((aligned(1)))`. This applies to all 128-bit types: `__int128` (TI), and vector types V16QI, V8HI, V4SI, V4SF. For stores, regular moves are used (which may trap on truly misaligned access on PS2 hardware).
-
-```c
-typedef __int128 ti;
-typedef ti unaligned_ti __attribute__((aligned(1)));  // Tell GCC this is misaligned
-
-ti load_unaligned(unaligned_ti *ptr) {
-    return *ptr;  // Generates: LQ + LQ + MTSAB + QFSRV
-}
-```
 
 ---
 
@@ -385,73 +313,9 @@ This enables parallel execution of multiply/divide operations on both MAC units 
 | `MTHI1` | Move To HI1 | `__builtin_mips_mthi1(v)` | HI1 = v |
 | `MTLO1` | Move To LO1 | `__builtin_mips_mtlo1(v)` | LO1 = v |
 
-### Pipeline 1 Usage Example
-
-```c
-// Dual pipeline multiply - both MAC units work in parallel
-void dual_multiply(int a, int b, int c, int d, int *result0, int *result1) {
-    // Pipeline 1 starts first
-    __builtin_mips_mult1(c, d);
-
-    // Pipeline 0 can execute while Pipeline 1 is busy
-    *result0 = a * b;
-
-    // Retrieve Pipeline 1 result
-    *result1 = __builtin_mips_mflo1();
-}
-
-// Full 64-bit multiply using Pipeline 1
-long long mult1_64(int a, int b) {
-    __builtin_mips_mult1(a, b);
-    int hi = __builtin_mips_mfhi1();
-    int lo = __builtin_mips_mflo1();
-    return ((long long)hi << 32) | (unsigned int)lo;
-}
-
-// Division with quotient and remainder via Pipeline 1
-void div1_full(int a, int b, int *quot, int *rem) {
-    __builtin_mips_div1(a, b);
-    *quot = __builtin_mips_mflo1();  // quotient in LO1
-    *rem = __builtin_mips_mfhi1();   // remainder in HI1
-}
-
-// Multiply-accumulate chain on Pipeline 1
-int mac1_chain(int a, int b, int c, int d) {
-    __builtin_mips_mult1(a, b);      // HI1:LO1 = a * b
-    __builtin_mips_madd1(c, d);      // HI1:LO1 += c * d
-    return __builtin_mips_mflo1();   // return low 32 bits
-}
-```
-
-### HI/LO Register Conflicts with MMI
-
-**Warning**: The R5900 has a single 128-bit HI register and a single 128-bit LO register. These are split into two 64-bit halves:
-- **HI0/LO0** (bits 63:0): Used by Pipeline 0 scalar operations (MULT, DIV, MADD)
-- **HI1/LO1** (bits 127:64): Used by Pipeline 1 scalar operations (MULT1, DIV1, MADD1)
-
-**MMI parallel multiply/divide instructions (PMULTW, PMADDW, PDIVW, etc.) update BOTH halves simultaneously.** This means:
-
-1. MMI operations will **clobber Pipeline 1 scalar results** in HI1/LO1
-2. Users must complete MFHI1/MFLO1 **before** any MMI multiply/divide
-3. Mixing Pipeline 1 scalar and MMI operations requires careful scheduling
-
-```c
-// CORRECT: Read Pipeline 1 result before MMI operation
-__builtin_mips_mult1(a, b);
-int result = __builtin_mips_mflo1();  // Save result FIRST
-v2di vec_result = __builtin_mmi_pmultw(x, y);  // Now safe to use MMI
-
-// INCORRECT: MMI will clobber the Pipeline 1 result
-__builtin_mips_mult1(a, b);
-v2di vec_result = __builtin_mmi_pmultw(x, y);  // Clobbers HI1/LO1!
-int result = __builtin_mips_mflo1();  // Wrong value!
-```
-
-GCC models these register conflicts and will schedule instructions correctly when both operations are visible in the same function. However, be careful with inline assembly or across function boundaries.
-
 ---
 
-## 4. COP1 (FPU) Extensions
+## 4. COP1 (FPU) - Floating-Point Unit
 
 R5900 FPU is single-precision only with additional operations. Note: Double precision is NOT supported.
 
@@ -601,12 +465,6 @@ v4sf scale_by_constant(v4sf v, float scale) {
 }
 ```
 
-**Autovectorization Note:** Vector-by-scalar operations (`v * scalar`) are autovectorized using **VMULx/VADDx/VSUBx** (broadcast component) instructions instead of the I register. This approach fits GCC's register model better since the scalar is placed in a normal VU0 register:
-```c
-v4sf v = ...; float s = ...;
-v4sf result = v * s;  // Generates: mfc1, qmtc2, vmulx.xyzw
-```
-
 ### 5.10 Q Register Operations
 
 The Q register holds the result of division and square root operations. These operations have multi-cycle latency; use `VWAITQ` or check status flags before reading Q.
@@ -651,240 +509,7 @@ v4sf divide_broadcast(v4sf a, v4sf b) {
 
 ---
 
-## 6. Fused Multiply-Add (FMA) Autovectorization
-
-GCC can automatically vectorize FMA patterns to VU0. Enable with:
-```
--march=r5900 -mvu0 -O2 -ftree-vectorize -ffast-math
-```
-
-The compiler generates:
-```asm
-vmulaw.xyzw  ACC, c, $vf0    ; ACC = c (via multiply by vf0.w=1.0)
-vmadd.xyzw   result, a, b    ; result = ACC + a*b = c + a*b
-```
-
----
-
-## 7. Implementation Summary
-
-| Feature Category | Total Instructions | Implemented | Coverage |
-|-----------------|-------------------|-------------|----------|
-| 128-bit Load/Store | 2 | 2 | 100% |
-| MMI Arithmetic | 27 | 20 | 74% |
-| MMI Comparison | 6 | 6 | 100% |
-| MMI Min/Max | 4 | 4 | 100% |
-| MMI Logical | 4 | 4 | 100% |
-| MMI Shift | 9 | 9 | 100% |
-| MMI Multiply/Divide | 13 | 13 | 100% |
-| MMI Data Rearrangement | 22 | 22 | 100% |
-| MMI Format Convert | 2 | 2 | 100% |
-| MMI Other | 2 | 0 | 0% |
-| MMI HI/LO | 10 | 10 | 100% |
-| Dual Pipeline | 12 | 12 | 100% |
-| SA Register | 5 | 5 | 100% |
-| FPU Extensions | 11 | 11 | 100% |
-| VU0 Data Transfer | 6 | 4 | 67% |
-| VU0 Basic Arithmetic | 7 | 7 | 100% |
-| VU0 Broadcast Arithmetic | 12 | 12 | 100% |
-| VU0 Multiply-Accumulate | 30 | 30 | 100% |
-| VU0 Add/Sub Accumulator | 10 | 10 | 100% |
-| VU0 Outer Product | 2 | 2 | 100% |
-| VU0 Conversions | 8 | 8 | 100% |
-| VU0 Data Movement | 1 | 1 | 100% |
-| VU0 I Register | 12 | 12 | 100% |
-| VU0 Q Register | 14 | 14 | 100% |
-| VU0 VI/Other | ~10 | 0 | 0% |
-
----
-
-## 8. Usage Examples
-
-### 128-bit Integer
-
-```c
-typedef __int128 int128_t;
-
-int128_t add128(int128_t a, int128_t b) {
-    return a + b;  // Uses lq/sq for load/store
-}
-
-// Logical operations use MMI instructions
-int128_t and128(int128_t a, int128_t b) {
-    return a & b;  // Generates: pand
-}
-
-int128_t or128(int128_t a, int128_t b) {
-    return a | b;  // Generates: por
-}
-
-int128_t xor128(int128_t a, int128_t b) {
-    return a ^ b;  // Generates: pxor
-}
-
-int128_t not128(int128_t a) {
-    return ~a;     // Generates: pnor
-}
-```
-
-### MMI Vector Operations (Integer SIMD)
-
-```c
-typedef signed char v16qi __attribute__((vector_size(16)));
-typedef short v8hi __attribute__((vector_size(16)));
-typedef int v4si __attribute__((vector_size(16)));
-typedef long long v2di __attribute__((vector_size(16)));
-
-// Explicit builtins
-v4si add_words(v4si a, v4si b) {
-    return __builtin_mmi_paddw(a, b);  // Generates: paddw
-}
-
-v2di and_128bit(v2di a, v2di b) {
-    return __builtin_mmi_pand(a, b);   // Generates: pand
-}
-
-// Shift operations (immediate and variable)
-v8hi shift_left_h(v8hi a) {
-    return __builtin_mmi_psllh(a, 4);  // Generates: psllh (shift by 4)
-}
-
-v4si shift_right_arith(v4si a) {
-    return __builtin_mmi_psraw(a, 8);  // Generates: psraw (shift by 8)
-}
-
-v4si shift_variable(v4si a, v4si amounts) {
-    return __builtin_mmi_psllvw(a, amounts);  // Generates: psllvw (per-element shift)
-}
-
-// Vector comparisons (all operators work)
-v4si vec_equal(v4si a, v4si b) {
-    return a == b;  // Generates: pceqw (result: -1 if equal, 0 otherwise)
-}
-
-v4si vec_greater(v4si a, v4si b) {
-    return a > b;   // Generates: pcgtw
-}
-
-v4si vec_less(v4si a, v4si b) {
-    return a < b;   // Generates: pcgtw with swapped operands
-}
-
-v4si vec_not_equal(v4si a, v4si b) {
-    return a != b;  // Generates: pceqw + pnor
-}
-
-v4si vec_less_equal(v4si a, v4si b) {
-    return a <= b;  // Generates: pcgtw + pnor
-}
-
-v4si vec_greater_equal(v4si a, v4si b) {
-    return a >= b;  // Generates: pcgtw + pceqw + por
-}
-```
-
-### MMI Autovectorization
-
-With `-O3 -ftree-vectorize`, GCC auto-vectorizes integer loops:
-
-```c
-// Compile with: -march=r5900 -O3 -ftree-vectorize
-
-// Arithmetic operations
-void add_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = a[i] + b[i];  // Auto-vectorized to: paddw
-}
-
-// Min/max operations
-void max_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = a[i] > b[i] ? a[i] : b[i];  // Auto-vectorized to: pmaxw
-}
-
-// Logical operations
-void and_arrays(int *__restrict a, int *__restrict b, int *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = a[i] & b[i];  // Auto-vectorized to: pand
-}
-
-void not_arrays(int *__restrict a, int *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = ~a[i];  // Auto-vectorized to: pnor
-}
-
-// Shift operations (constant shift amounts)
-void shl_arrays(short *__restrict a, short *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = a[i] << 4;  // Auto-vectorized to: psllh
-}
-
-void shr_arrays(int *__restrict a, int *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = a[i] >> 8;  // Auto-vectorized to: psraw (arithmetic)
-}
-
-void shr_logical(unsigned int *__restrict a, unsigned int *__restrict c, int n) {
-    for (int i = 0; i < n; i++)
-        c[i] = a[i] >> 8;  // Auto-vectorized to: psrlw (logical)
-}
-```
-
-### VU0 Vector Operations
-
-```c
-typedef float v4sf __attribute__((vector_size(16)));
-
-v4sf add_vectors(v4sf a, v4sf b) {
-    return a + b;  // Generates: vadd.xyzw
-}
-
-v4sf mul_vectors(v4sf a, v4sf b) {
-    return a * b;  // Generates: vmul.xyzw
-}
-
-v4sf fma_vectors(v4sf a, v4sf b, v4sf c) {
-    return a * b + c;  // Generates: vmulaw.xyzw + vmadd.xyzw
-}
-```
-
-### VU0 Builtins (Matrix Multiply)
-
-```c
-typedef float v4sf __attribute__((vector_size(16)));
-
-v4sf matrix_vector_multiply(v4sf row0, v4sf row1, v4sf row2, v4sf row3, v4sf vec) {
-    __builtin_vu0_vmulax(row0, vec);      // ACC = row0 * vec.x
-    __builtin_vu0_vmadday(row1, vec);     // ACC += row1 * vec.y
-    __builtin_vu0_vmaddaz(row2, vec);     // ACC += row2 * vec.z
-    return __builtin_vu0_vmaddw(row3, vec); // result = ACC + row3 * vec.w
-}
-```
-
-### Cross Product
-
-```c
-typedef float v4sf __attribute__((vector_size(16)));
-
-v4sf cross_product(v4sf a, v4sf b) {
-    __builtin_vu0_vopmula(a, b);       // ACC.xyz = a.yzx * b.zxy
-    return __builtin_vu0_vopmsub(a, b); // result.xyz = ACC - a.zxy * b.yzx
-}
-```
-
----
-
-## 9. Known Limitations
-
-1. **No Double Precision**: R5900 FPU is single-precision only
-2. **No Atomics**: LL/SC instructions are not available
-3. **No CLZ/CLO**: Count leading zeros/ones not available
-4. **VU0 Constraints**: Some VU0 features require careful register management
-5. **Accumulator Clobber**: VU0 ACC is implicit; intrinsic sequences must be ordered correctly
-
----
-
-## 10. References
+## 6. References
 
 - EE Core Instruction Set Manual (Sony)
 - EE Core Users Manual (Sony)
