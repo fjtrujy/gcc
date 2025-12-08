@@ -351,6 +351,27 @@ Use `-mvu0` flag to enable. Registers: `$vf0`-`$vf31` (32 x 128-bit).
 
 **Note**: `$vf0` is special - `$vf0.w` is always 1.0.
 
+**Component Masking:** All VU0 operations support selective component updates via masked variants.
+Add `_m` suffix and a mask parameter to operate on specific components only:
+
+| Mask Constant | Value | Components |
+|---------------|-------|------------|
+| `VU0_DEST_X` | 0x8 | x only |
+| `VU0_DEST_Y` | 0x4 | y only |
+| `VU0_DEST_Z` | 0x2 | z only |
+| `VU0_DEST_W` | 0x1 | w only |
+| `VU0_DEST_XYZ` | 0xE | xyz |
+| `VU0_DEST_XYZW` | 0xF | all (default) |
+
+Example:
+```c
+// Simple form - operates on all components (.xyzw)
+v4sf result = __builtin_vu0_vadd(a, b);      // vadd.xyzw
+
+// Masked form - operates on xyz only
+v4sf result = __builtin_vu0_vadd_m(a, b, VU0_DEST_XYZ);  // vadd.xyz
+```
+
 ### 5.1 Data Transfer
 
 | Instruction | Description | Intrinsic | Auto-used |
