@@ -471,9 +471,9 @@ The Q register holds the result of division and square root operations. These op
 
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `VDIV` | Q = fs.bc / ft.bc | `__builtin_vu0_vdiv(v4sf fs, v4sf ft)` | - | - |
-| `VSQRT` | Q = sqrt(ft.bc) | `__builtin_vu0_vsqrt(v4sf ft)` | - | - |
-| `VRSQRT` | Q = fs.bc / sqrt(ft.bc) | `__builtin_vu0_vrsqrt(v4sf fs, v4sf ft)` | - | - |
+| `VDIV` | Q = fs.bc / ft.bc | `__builtin_vu0_vdiv(v4sf fs, int fs_bc, v4sf ft, int ft_bc)` | - | - |
+| `VSQRT` | Q = sqrt(ft.bc) | `__builtin_vu0_vsqrt(v4sf ft, int ft_bc)` | - | - |
+| `VRSQRT` | Q = fs.bc / sqrt(ft.bc) | `__builtin_vu0_vrsqrt(v4sf fs, int fs_bc, v4sf ft, int ft_bc)` | - | - |
 | `VWAITQ` | Wait for Q register ready | `__builtin_vu0_vwaitq()` | - | - |
 | `VADDq.xyzw` | dest = a + Q | `__builtin_vu0_vaddq(a)` | - | - |
 | `VSUBq.xyzw` | dest = a - Q | `__builtin_vu0_vsubq(a)` | - | - |
@@ -492,7 +492,7 @@ typedef float v4sf __attribute__((vector_size(16)));
 
 // Divide and broadcast result to all lanes
 v4sf divide_broadcast(v4sf a, v4sf b) {
-    __builtin_vu0_vdiv(a, b);   // Q = a.x / b.x
+    __builtin_vu0_vdiv(a, 0, b, 0);  // Q = a.x / b.x (bc: 0=x, 1=y, 2=z, 3=w)
     __builtin_vu0_vwaitq();     // Wait for division to complete
     return __builtin_vu0_vmulq(/* ones vector */);  // Multiply by Q to broadcast
 }
