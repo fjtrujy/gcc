@@ -534,7 +534,11 @@ find_decomposable_subregs (rtx *loc, enum classify_move_insn *pcmi)
 		 sized integral pseudo which is not allowed by
 		 validate_subreg.  */
 	      && (!FLOAT_MODE_P (GET_MODE (x))
-		  || outer_size == UNITS_PER_WORD))
+		  || outer_size == UNITS_PER_WORD)
+	      /* Only decompose if the inner and outer modes are tieable.
+		 Otherwise the target doesn't support accessing the inner
+		 register in smaller pieces.  */
+	      && targetm.modes_tieable_p (GET_MODE (inner), word_mode))
 	    {
 	      bitmap_set_bit (decomposable_context, regno);
 	      iter.skip_subrtxes ();
