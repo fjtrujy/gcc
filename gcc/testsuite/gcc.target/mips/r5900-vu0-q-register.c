@@ -36,7 +36,7 @@ test_vrsqrt (v4sf fs, v4sf ft)
 NOMIPS16 void
 test_vwaitq (void)
 {
-  __builtin_vu0_vwaitq (0);
+  __builtin_vu0_vwaitq ();
 }
 /* { dg-final { scan-assembler "\\tvwaitq" } } */
 

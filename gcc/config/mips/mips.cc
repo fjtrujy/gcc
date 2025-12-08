@@ -211,6 +211,7 @@ enum mips_ucbranch_type
 };
 
 /* Macros to create an enumeration identifier for a function prototype.  */
+#define MIPS_FTYPE_NAME0(A) MIPS_##A##_FTYPE
 #define MIPS_FTYPE_NAME1(A, B) MIPS_##A##_FTYPE_##B
 #define MIPS_FTYPE_NAME2(A, B, C) MIPS_##A##_FTYPE_##B##_##C
 #define MIPS_FTYPE_NAME3(A, B, C, D) MIPS_##A##_FTYPE_##B##_##C##_##D
@@ -17628,7 +17629,7 @@ static const struct mips_builtin_description mips_builtins[] = {
   VU0_NO_TARGET_BUILTIN (vdiv, MIPS_VOID_FTYPE_V4SF_SI_V4SF_SI),
   VU0_NO_TARGET_BUILTIN (vsqrt, MIPS_VOID_FTYPE_V4SF_SI),
   VU0_NO_TARGET_BUILTIN (vrsqrt, MIPS_VOID_FTYPE_V4SF_SI_V4SF_SI),
-  VU0_NO_TARGET_BUILTIN (vwaitq, MIPS_VOID_FTYPE_SI),
+  VU0_NO_TARGET_BUILTIN (vwaitq, MIPS_VOID_FTYPE),
 
   /* Q broadcast operations: dest = src op Q */
   VU0_BUILTIN_PURE (vaddq, MIPS_V4SF_FTYPE_V4SF),
@@ -17947,6 +17948,9 @@ mips_build_cvpointer_type (void)
 
 /* MIPS_FTYPE_ATYPESN takes N MIPS_FTYPES-like type codes and lists
    their associated MIPS_ATYPEs.  */
+#define MIPS_FTYPE_ATYPES0(A) \
+  MIPS_ATYPE_##A
+
 #define MIPS_FTYPE_ATYPES1(A, B) \
   MIPS_ATYPE_##A, MIPS_ATYPE_##B
 

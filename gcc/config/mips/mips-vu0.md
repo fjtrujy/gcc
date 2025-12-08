@@ -1172,10 +1172,8 @@
    (set_attr "mode" "SF")])
 
 ;; vwaitq: Wait for Q register to be ready
-;; Takes a dummy SI argument for builtin compatibility (ignored)
 (define_insn "vu0_vwaitq"
-  [(unspec_volatile [(match_operand:SI 0 "register_operand" "d")
-                     (reg:SF VU0_Q_REGNUM)] UNSPEC_VU0_WAITQ)]
+  [(unspec_volatile [(reg:SF VU0_Q_REGNUM)] UNSPEC_VU0_WAITQ)]
   "ISA_HAS_VU0"
   "vwaitq"
   [(set_attr "type" "nop")
