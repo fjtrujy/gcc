@@ -74,6 +74,7 @@
   UNSPEC_VU0_VADDY
   UNSPEC_VU0_VADDZ
   UNSPEC_VU0_VADDW
+  UNSPEC_VU0_VADDW_XYZ  ;; vaddw.xyz - only affects xyz, w unchanged
   ;; Broadcast subtract operations
   UNSPEC_VU0_VSUBX
   UNSPEC_VU0_VSUBY
@@ -147,6 +148,100 @@
   ;; Helper for autovectorization
   UNSPEC_MFC1_VU0          ;; Move FP bits to GP for CTC2
   UNSPEC_VU0_QMTC2_SCALAR  ;; Transfer scalar (SI) to VU0 reg x component
+  ;; Masked operations (arbitrary dest field)
+  UNSPEC_VU0_VADD_M        ;; vadd with dest mask
+  UNSPEC_VU0_VSUB_M        ;; vsub with dest mask
+  UNSPEC_VU0_VMUL_M        ;; vmul with dest mask
+  UNSPEC_VU0_VABS_M        ;; vabs with dest mask
+  UNSPEC_VU0_VMAX_M        ;; vmax with dest mask
+  UNSPEC_VU0_VMINI_M       ;; vmini with dest mask
+  UNSPEC_VU0_VMOVE_M       ;; vmove with dest mask
+  UNSPEC_VU0_VMADD_M       ;; vmadd with dest mask
+  UNSPEC_VU0_VMSUB_M       ;; vmsub with dest mask
+  UNSPEC_VU0_VMULA_M       ;; vmula with dest mask
+  UNSPEC_VU0_VMADDA_M      ;; vmadda with dest mask
+  UNSPEC_VU0_VMSUBA_M      ;; vmsuba with dest mask
+  UNSPEC_VU0_VADDA_M       ;; vadda with dest mask
+  UNSPEC_VU0_VSUBA_M       ;; vsuba with dest mask
+  ;; Broadcast masked operations (BC variants)
+  UNSPEC_VU0_VADDX_M       ;; vaddx with dest mask
+  UNSPEC_VU0_VADDY_M       ;; vaddy with dest mask
+  UNSPEC_VU0_VADDZ_M       ;; vaddz with dest mask
+  UNSPEC_VU0_VADDW_M       ;; vaddw with dest mask
+  UNSPEC_VU0_VSUBX_M       ;; vsubx with dest mask
+  UNSPEC_VU0_VSUBY_M       ;; vsuby with dest mask
+  UNSPEC_VU0_VSUBZ_M       ;; vsubz with dest mask
+  UNSPEC_VU0_VSUBW_M       ;; vsubw with dest mask
+  UNSPEC_VU0_VMULX_M       ;; vmulx with dest mask
+  UNSPEC_VU0_VMULY_M       ;; vmuly with dest mask
+  UNSPEC_VU0_VMULZ_M       ;; vmulz with dest mask
+  UNSPEC_VU0_VMULW_M       ;; vmulw with dest mask
+  UNSPEC_VU0_VMADDX_M      ;; vmaddx with dest mask
+  UNSPEC_VU0_VMADDY_M      ;; vmaddy with dest mask
+  UNSPEC_VU0_VMADDZ_M      ;; vmaddz with dest mask
+  UNSPEC_VU0_VMADDW_M      ;; vmaddw with dest mask
+  UNSPEC_VU0_VMSUBX_M      ;; vmsubx with dest mask
+  UNSPEC_VU0_VMSUBY_M      ;; vmsuby with dest mask
+  UNSPEC_VU0_VMSUBZ_M      ;; vmsubz with dest mask
+  UNSPEC_VU0_VMSUBW_M      ;; vmsubw with dest mask
+  ;; Broadcast ACC masked operations
+  UNSPEC_VU0_VMULAX_M      ;; vmulax with dest mask
+  UNSPEC_VU0_VMULAY_M      ;; vmulay with dest mask
+  UNSPEC_VU0_VMULAZ_M      ;; vmulaz with dest mask
+  UNSPEC_VU0_VMULAW_M      ;; vmulaw with dest mask
+  UNSPEC_VU0_VMADDAX_M     ;; vmaddax with dest mask
+  UNSPEC_VU0_VMADDAY_M     ;; vmadday with dest mask
+  UNSPEC_VU0_VMADDAZ_M     ;; vmaddaz with dest mask
+  UNSPEC_VU0_VMADDAW_M     ;; vmaddaw with dest mask
+  UNSPEC_VU0_VMSUBAX_M     ;; vmsubax with dest mask
+  UNSPEC_VU0_VMSUBAY_M     ;; vmsubay with dest mask
+  UNSPEC_VU0_VMSUBAZ_M     ;; vmsubaz with dest mask
+  UNSPEC_VU0_VMSUBAW_M     ;; vmsubaw with dest mask
+  UNSPEC_VU0_VADDAX_M      ;; vaddax with dest mask
+  UNSPEC_VU0_VADDAY_M      ;; vadday with dest mask
+  UNSPEC_VU0_VADDAZ_M      ;; vaddaz with dest mask
+  UNSPEC_VU0_VADDAW_M      ;; vaddaw with dest mask
+  UNSPEC_VU0_VSUBAX_M      ;; vsubax with dest mask
+  UNSPEC_VU0_VSUBAY_M      ;; vsubay with dest mask
+  UNSPEC_VU0_VSUBAZ_M      ;; vsubaz with dest mask
+  UNSPEC_VU0_VSUBAW_M      ;; vsubaw with dest mask
+  ;; Q register masked operations
+  UNSPEC_VU0_VADDQ_M       ;; vaddq with dest mask
+  UNSPEC_VU0_VSUBQ_M       ;; vsubq with dest mask
+  UNSPEC_VU0_VMULQ_M       ;; vmulq with dest mask
+  UNSPEC_VU0_VMAXQ_M       ;; vmaxq with dest mask (not valid, but for completeness)
+  UNSPEC_VU0_VMINIQ_M      ;; vminiq with dest mask (not valid, but for completeness)
+  UNSPEC_VU0_VMADDQ_M      ;; vmaddq with dest mask
+  UNSPEC_VU0_VMSUBQ_M      ;; vmsubq with dest mask
+  UNSPEC_VU0_VADDAQ_M      ;; vaddaq with dest mask
+  UNSPEC_VU0_VSUBAQ_M      ;; vsubaq with dest mask
+  UNSPEC_VU0_VMULAQ_M      ;; vmulaq with dest mask
+  UNSPEC_VU0_VMADDAQ_M     ;; vmaddaq with dest mask
+  UNSPEC_VU0_VMSUBAQ_M     ;; vmsubaq with dest mask
+  ;; I register masked operations
+  UNSPEC_VU0_VADDI_M       ;; vaddi with dest mask
+  UNSPEC_VU0_VSUBI_M       ;; vsubi with dest mask
+  UNSPEC_VU0_VMULI_M       ;; vmuli with dest mask
+  UNSPEC_VU0_VMAXI_M       ;; vmaxi with dest mask (not valid, but for completeness)
+  UNSPEC_VU0_VMINII_M      ;; vminii with dest mask (not valid, but for completeness)
+  UNSPEC_VU0_VMADDI_M      ;; vmaddi with dest mask
+  UNSPEC_VU0_VMSUBI_M      ;; vmsubi with dest mask
+  UNSPEC_VU0_VADDAI_M      ;; vaddai with dest mask
+  UNSPEC_VU0_VSUBAI_M      ;; vsubai with dest mask
+  UNSPEC_VU0_VMULAI_M      ;; vmulai with dest mask
+  UNSPEC_VU0_VMADDAI_M     ;; vmaddai with dest mask
+  UNSPEC_VU0_VMSUBAI_M     ;; vmsubai with dest mask
+  ;; Conversion masked operations
+  UNSPEC_VU0_VFTOI0_M      ;; vftoi0 with dest mask
+  UNSPEC_VU0_VFTOI4_M      ;; vftoi4 with dest mask
+  UNSPEC_VU0_VFTOI12_M     ;; vftoi12 with dest mask
+  UNSPEC_VU0_VFTOI15_M     ;; vftoi15 with dest mask
+  UNSPEC_VU0_VITOF0_M      ;; vitof0 with dest mask
+  UNSPEC_VU0_VITOF4_M      ;; vitof4 with dest mask
+  UNSPEC_VU0_VITOF12_M     ;; vitof12 with dest mask
+  UNSPEC_VU0_VITOF15_M     ;; vitof15 with dest mask
+  ;; Data movement masked operations
+  UNSPEC_VU0_VMR32_M       ;; vmr32 with dest mask
 ])
 
 ;; -------------------------------------------------------------------------
@@ -773,6 +868,18 @@
                      UNSPEC_VU0_VADDW))]
   "ISA_HAS_VU0"
   "vaddw.xyzw\t%0,%u1,%u2"
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddw.xyz: Same as vaddw but only affects xyz components, leaves w unchanged.
+;; Used for scalar broadcast to avoid vf0.w=1 corruption on w component.
+(define_insn "vu0_vaddw_xyz"
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
+                      (match_operand:V4SF 2 "register_operand" "0,0")]
+                     UNSPEC_VU0_VADDW_XYZ))]
+  "ISA_HAS_VU0"
+  "vaddw.xyz\t%0,%u1,%2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1567,28 +1674,34 @@
    (set_attr "mode" "V4SF")])
 
 ;; vec_duplicate fallback: Creates a broadcast vector when not combined
-;; with a vector operation. Uses mfc1 + qmtc2 to load scalar into VU0 reg,
-;; then vaddx to broadcast the x component to all lanes.
+;; with a vector operation. Uses vmulx + vaddw.xyz to broadcast scalar to all lanes.
+;; NOTE: We cannot use "vaddx $dest,$vf0,$src" because vf0 = (0,0,0,1) on R5900,
+;; which would corrupt the w component with +1. Instead we use:
+;;   1. qmtc2 $dest, $gpr     - load scalar to dest.x (garbage in yzw)
+;;   2. vmulx.xyzw $dest,$vf0,$dest - dest = vf0 * dest.x = (0,0,0,X)
+;;   3. vaddw.xyz $dest,$vf0,$dest  - dest.xyz = 0 + X, w unchanged = (X,X,X,X)
 (define_insn_and_split "vec_duplicatev4sf"
   [(set (match_operand:V4SF 0 "register_operand" "=C")
         (vec_duplicate:V4SF (match_operand:SF 1 "register_operand" "f")))
-   (clobber (match_scratch:V4SF 2 "=&C"))
-   (clobber (match_scratch:SI 3 "=&d"))]
+   (clobber (match_scratch:SI 2 "=&d"))]
   "ISA_HAS_VU0"
   "#"
   "&& reload_completed"
   [(const_int 0)]
 {
+  rtx vf0 = gen_rtx_REG (V4SFmode, COP2_REG_FIRST);
   /* Load scalar into VU0 register x component */
-  emit_insn (gen_mfc1_vu0 (operands[3], operands[1]));
-  emit_insn (gen_vu0_qmtc2_scalar (operands[2], operands[3]));
-  /* Broadcast x component to all lanes: dest = vf0 + src.x */
-  emit_insn (gen_vu0_vaddx (operands[0], gen_rtx_REG (V4SFmode, COP2_REG_FIRST), operands[2]));
+  emit_insn (gen_mfc1_vu0 (operands[2], operands[1]));
+  emit_insn (gen_vu0_qmtc2_scalar (operands[0], operands[2]));
+  /* vmulx: dest = vf0 * dest.x = (0,0,0,1) * X = (0,0,0,X) */
+  emit_insn (gen_vu0_vmulx (operands[0], vf0, operands[0]));
+  /* vaddw.xyz: dest.xyz = vf0.xyz + dest.w = 0 + X, w unchanged */
+  emit_insn (gen_vu0_vaddw_xyz (operands[0], vf0, operands[0]));
   DONE;
 }
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")
-   (set_attr "length" "12")])
+   (set_attr "length" "16")])
 
 ;; -------------------------------------------------------------------------
 ;; VMULx: Vector * Scalar autovectorization
@@ -1706,3 +1819,1970 @@
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")
    (set_attr "length" "12")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Masked Operations (arbitrary dest field)
+;; These intrinsics allow specifying which components (xyzw) to operate on.
+;; The mask is a 4-bit immediate: x=8, y=4, z=2, w=1
+;; -------------------------------------------------------------------------
+
+;; vadd with dest mask
+(define_insn "vu0_vadd_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADD_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vadd.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsub with dest mask
+(define_insn "vu0_vsub_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUB_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsub.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmul with dest mask
+(define_insn "vu0_vmul_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMUL_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmul.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vabs with dest mask
+(define_insn "vu0_vabs_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VABS_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vabs.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fabs")
+   (set_attr "mode" "V4SF")])
+
+;; vmax with dest mask
+(define_insn "vu0_vmax_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMAX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmax.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmini with dest mask
+(define_insn "vu0_vmini_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMINI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmini.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmove with dest mask
+(define_insn "vu0_vmove_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMOVE_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmove.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "simd_move")
+   (set_attr "mode" "V4SF")])
+
+;; vmadd with dest mask (ACC read)
+(define_insn "vu0_vmadd_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")
+                      (reg:V4SF VU0_ACC_REGNUM)]
+                     UNSPEC_VU0_VMADD_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmadd.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsub with dest mask (ACC read)
+(define_insn "vu0_vmsub_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")
+                      (reg:V4SF VU0_ACC_REGNUM)]
+                     UNSPEC_VU0_VMSUB_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsub.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmula with dest mask (ACC write)
+(define_insn "vu0_vmula_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULA_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmula.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmadda with dest mask (ACC read/write)
+(define_insn "vu0_vmadda_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")
+                      (reg:V4SF VU0_ACC_REGNUM)]
+                     UNSPEC_VU0_VMADDA_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmadda.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsuba with dest mask (ACC read/write)
+(define_insn "vu0_vmsuba_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")
+                      (reg:V4SF VU0_ACC_REGNUM)]
+                     UNSPEC_VU0_VMSUBA_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsuba.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vadda with dest mask (ACC write)
+(define_insn "vu0_vadda_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDA_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vadda.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsuba with dest mask (ACC write)
+(define_insn "vu0_vsuba_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBA_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsuba.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Broadcast Masked Operations
+;; vaddx/y/z/w etc with arbitrary dest mask
+;; -------------------------------------------------------------------------
+
+;; vaddx with dest mask
+(define_insn "vu0_vaddx_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddx.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddy with dest mask
+(define_insn "vu0_vaddy_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddy.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddz with dest mask
+(define_insn "vu0_vaddz_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddz.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddw with dest mask
+(define_insn "vu0_vaddw_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddw.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubx with dest mask
+(define_insn "vu0_vsubx_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubx.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsuby with dest mask
+(define_insn "vu0_vsuby_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsuby.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubz with dest mask
+(define_insn "vu0_vsubz_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubz.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubw with dest mask
+(define_insn "vu0_vsubw_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubw.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulx with dest mask
+(define_insn "vu0_vmulx_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulx.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmuly with dest mask
+(define_insn "vu0_vmuly_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmuly.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmulz with dest mask
+(define_insn "vu0_vmulz_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulz.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmulw with dest mask
+(define_insn "vu0_vmulw_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulw.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddx with dest mask (reads ACC)
+(define_insn "vu0_vmaddx_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddx.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddy with dest mask (reads ACC)
+(define_insn "vu0_vmaddy_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddy.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddz with dest mask (reads ACC)
+(define_insn "vu0_vmaddz_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddz.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddw with dest mask (reads ACC)
+(define_insn "vu0_vmaddw_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddw.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubx with dest mask (reads ACC)
+(define_insn "vu0_vmsubx_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubx.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsuby with dest mask (reads ACC)
+(define_insn "vu0_vmsuby_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsuby.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubz with dest mask (reads ACC)
+(define_insn "vu0_vmsubz_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubz.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubw with dest mask (reads ACC)
+(define_insn "vu0_vmsubw_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 2 "register_operand" "C")
+                      (match_operand:SI 3 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[3]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubw.%s\t%%0,%%1,%%2", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Broadcast ACC Masked Operations
+;; vmulax/y/z/w etc with arbitrary dest mask (writes ACC)
+;; -------------------------------------------------------------------------
+
+;; vmulax with dest mask (writes ACC)
+(define_insn "vu0_vmulax_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULAX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulax.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmulay with dest mask (writes ACC)
+(define_insn "vu0_vmulay_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULAY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulay.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmulaz with dest mask (writes ACC)
+(define_insn "vu0_vmulaz_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULAZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulaz.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmulaw with dest mask (writes ACC)
+(define_insn "vu0_vmulaw_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULAW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulaw.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddax with dest mask (reads/writes ACC)
+(define_insn "vu0_vmaddax_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDAX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddax.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmadday with dest mask (reads/writes ACC)
+(define_insn "vu0_vmadday_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDAY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmadday.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddaz with dest mask (reads/writes ACC)
+(define_insn "vu0_vmaddaz_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDAZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddaz.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddaw with dest mask (reads/writes ACC)
+(define_insn "vu0_vmaddaw_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDAW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddaw.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubax with dest mask (reads/writes ACC)
+(define_insn "vu0_vmsubax_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBAX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubax.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubay with dest mask (reads/writes ACC)
+(define_insn "vu0_vmsubay_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBAY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubay.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubaz with dest mask (reads/writes ACC)
+(define_insn "vu0_vmsubaz_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBAZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubaz.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubaw with dest mask (reads/writes ACC)
+(define_insn "vu0_vmsubaw_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBAW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubaw.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddax with dest mask (writes ACC)
+(define_insn "vu0_vaddax_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDAX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddax.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vadday with dest mask (writes ACC)
+(define_insn "vu0_vadday_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDAY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vadday.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddaz with dest mask (writes ACC)
+(define_insn "vu0_vaddaz_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDAZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddaz.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddaw with dest mask (writes ACC)
+(define_insn "vu0_vaddaw_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDAW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddaw.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubax with dest mask (writes ACC)
+(define_insn "vu0_vsubax_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBAX_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubax.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubay with dest mask (writes ACC)
+(define_insn "vu0_vsubay_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBAY_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubay.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubaz with dest mask (writes ACC)
+(define_insn "vu0_vsubaz_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBAZ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubaz.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubaw with dest mask (writes ACC)
+(define_insn "vu0_vsubaw_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBAW_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubaw.%s\t$ACC,%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Q Register Masked Operations
+;; vaddq etc with arbitrary dest mask (reads Q register)
+;; -------------------------------------------------------------------------
+
+;; vaddq with dest mask
+(define_insn "vu0_vaddq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubq with dest mask
+(define_insn "vu0_vsubq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulq with dest mask
+(define_insn "vu0_vmulq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaxq with dest mask (note: hardware may not support this)
+(define_insn "vu0_vmaxq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMAXQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaxq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vminiq with dest mask (note: hardware may not support this)
+(define_insn "vu0_vminiq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMINIQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vminiq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddq with dest mask (reads ACC)
+(define_insn "vu0_vmaddq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubq with dest mask (reads ACC)
+(define_insn "vu0_vmsubq_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubq.%s\t%%0,%%1,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddaq with dest mask (writes ACC)
+(define_insn "vu0_vaddaq_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDAQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddaq.%s\t$ACC,%%0,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubaq with dest mask (writes ACC)
+(define_insn "vu0_vsubaq_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBAQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubaq.%s\t$ACC,%%0,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulaq with dest mask (writes ACC)
+(define_insn "vu0_vmulaq_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULAQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulaq.%s\t$ACC,%%0,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddaq with dest mask (reads/writes ACC)
+(define_insn "vu0_vmaddaq_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDAQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddaq.%s\t$ACC,%%0,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubaq with dest mask (reads/writes ACC)
+(define_insn "vu0_vmsubaq_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_Q_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBAQ_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubaq.%s\t$ACC,%%0,$Q", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 I Register Masked Operations
+;; vaddi etc with arbitrary dest mask (reads I register)
+;; -------------------------------------------------------------------------
+
+;; vaddi with dest mask
+(define_insn "vu0_vaddi_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddi.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubi with dest mask
+(define_insn "vu0_vsubi_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubi.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmuli with dest mask
+(define_insn "vu0_vmuli_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmuli.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaxi with dest mask
+(define_insn "vu0_vmaxi_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMAXI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaxi.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vminii with dest mask
+(define_insn "vu0_vminii_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMINII_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vminii.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddi with dest mask (reads ACC)
+(define_insn "vu0_vmaddi_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddi.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubi with dest mask (reads ACC)
+(define_insn "vu0_vmsubi_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 1 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubi.%s\t%%0,%%1,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vaddai with dest mask (writes ACC)
+(define_insn "vu0_vaddai_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VADDAI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vaddai.%s\t$ACC,%%0,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vsubai with dest mask (writes ACC)
+(define_insn "vu0_vsubai_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VSUBAI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vsubai.%s\t$ACC,%%0,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmulai with dest mask (writes ACC)
+(define_insn "vu0_vmulai_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMULAI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmulai.%s\t$ACC,%%0,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmul")
+   (set_attr "mode" "V4SF")])
+
+;; vmaddai with dest mask (reads/writes ACC)
+(define_insn "vu0_vmaddai_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMADDAI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmaddai.%s\t$ACC,%%0,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; vmsubai with dest mask (reads/writes ACC)
+(define_insn "vu0_vmsubai_m"
+  [(set (reg:V4SF VU0_ACC_REGNUM)
+        (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
+                      (match_operand:V4SF 0 "register_operand" "C")
+                      (reg:SF VU0_I_REGNUM)
+                      (match_operand:SI 1 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMSUBAI_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[1]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmsubai.%s\t$ACC,%%0,$I", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmadd")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Conversion Masked Operations
+;; vftoi0/4/12/15 and vitof0/4/12/15 with arbitrary dest mask
+;; -------------------------------------------------------------------------
+
+;; vftoi0 with dest mask
+(define_insn "vu0_vftoi0_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VFTOI0_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vftoi0.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vftoi4 with dest mask
+(define_insn "vu0_vftoi4_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VFTOI4_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vftoi4.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vftoi12 with dest mask
+(define_insn "vu0_vftoi12_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VFTOI12_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vftoi12.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vftoi15 with dest mask
+(define_insn "vu0_vftoi15_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VFTOI15_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vftoi15.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vitof0 with dest mask
+(define_insn "vu0_vitof0_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VITOF0_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vitof0.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vitof4 with dest mask
+(define_insn "vu0_vitof4_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VITOF4_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vitof4.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vitof12 with dest mask
+(define_insn "vu0_vitof12_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VITOF12_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vitof12.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; vitof15 with dest mask
+(define_insn "vu0_vitof15_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VITOF15_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vitof15.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Data Movement Masked Operations
+;; vmr32 with arbitrary dest mask
+;; -------------------------------------------------------------------------
+
+;; vmr32 with dest mask
+(define_insn "vu0_vmr32_m"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:SI 2 "const_int_operand" "n")]
+                     UNSPEC_VU0_VMR32_M))]
+  "ISA_HAS_VU0"
+  {
+    static const char *const dest_suffix[] = {
+      "xyzw", "w", "z", "zw", "y", "yw", "yz", "yzw",
+      "x", "xw", "xz", "xzw", "xy", "xyw", "xyz", "xyzw"
+    };
+    static char buf[32];
+    int mask = INTVAL (operands[2]) & 0xf;
+    if (mask == 0) mask = 0xf;
+    sprintf (buf, "vmr32.%s\t%%0,%%1", dest_suffix[mask]);
+    return buf;
+  }
+  [(set_attr "type" "fmove")
+   (set_attr "mode" "V4SF")])
