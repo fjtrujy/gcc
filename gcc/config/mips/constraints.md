@@ -288,6 +288,12 @@
   (and (match_code "const_vector")
        (match_test "op == CONST0_RTX (mode)")))
 
+(define_constraint "Yv"
+  "@internal
+   VU0 $vf0 constant @code{{0.0, 0.0, 0.0, 1.0}}."
+  (and (match_code "const_vector")
+       (match_test "mips_const_vector_vf0_p (op)")))
+
 (define_constraint "Yz"
   "@internal"
   (match_operand 0 "bit_clear_operand"))
