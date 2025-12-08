@@ -13769,6 +13769,16 @@ static bool
 mips_can_change_mode_class (machine_mode from,
 			    machine_mode to, reg_class_t rclass)
 {
+  /* R5900 has 128-bit GPRs.  TImode values fit in a single register and
+     should not be decomposed into smaller modes, as lower-subreg cannot
+     handle this properly.  Disallow mode changes from TImode to smaller
+     modes for GPRs on R5900.  */
+  if (TARGET_MIPS5900
+      && from == TImode
+      && GET_MODE_SIZE (to) < GET_MODE_SIZE (from)
+      && reg_classes_intersect_p (GR_REGS, rclass))
+    return false;
+
   /* Allow conversions between different Loongson integer vectors,
      and between those vectors and DImode.  */
   if (GET_MODE_SIZE (from) == 8 && GET_MODE_SIZE (to) == 8
@@ -13842,6 +13852,14 @@ mips_mode_ok_for_mov_fmt_p (machine_mode mode)
 static bool
 mips_modes_tieable_p (machine_mode mode1, machine_mode mode2)
 {
+  /* R5900 has 128-bit GPRs.  TImode values fit in a single register and
+     should not be decomposed into smaller modes, as lower-subreg cannot
+     handle this properly.  */
+  if (TARGET_MIPS5900
+      && ((mode1 == TImode && GET_MODE_SIZE (mode2) < 16)
+	  || (mode2 == TImode && GET_MODE_SIZE (mode1) < 16)))
+    return false;
+
   /* FPRs allow no mode punning, so it's not worth tying modes if we'd
      prefer to put one of them in FPRs.  */
   return (mode1 == mode2
