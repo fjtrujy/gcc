@@ -165,19 +165,21 @@
 
 ;; VU0/R5900: Combined V4SF move pattern with all alternatives
 ;; Alternatives:
-;;   0: C,C  -> vmove.xyzw (COP2 to COP2)
-;;   1: C,m  -> lqc2 (memory to COP2)
-;;   2: m,C  -> sqc2 (COP2 to memory)
-;;   3: C,d  -> qmtc2 (GP to COP2)
-;;   4: d,C  -> qmfc2 (COP2 to GP)
-;;   5: d,d  -> por (GP to GP, 128-bit register copy)
-;;   6: d,m  -> lq (memory to GP)
-;;   7: m,d  -> sq (GP to memory)
+;;   0: C,YG -> vmove.xyzw from $vf0 (vector zero constant)
+;;   1: C,C  -> vmove.xyzw (COP2 to COP2)
+;;   2: C,m  -> lqc2 (memory to COP2)
+;;   3: m,C  -> sqc2 (COP2 to memory)
+;;   4: C,d  -> qmtc2 (GP to COP2)
+;;   5: d,C  -> qmfc2 (COP2 to GP)
+;;   6: d,d  -> por (GP to GP, 128-bit register copy)
+;;   7: d,m  -> lq (memory to GP)
+;;   8: m,d  -> sq (GP to memory)
 (define_insn "*movv4sf_vu0"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,m,C,d,d,d,m")
-        (match_operand:V4SF 1 "move_operand"          "C,m,C,d,C,d,m,d"))]
+  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,C,m,C,d,d,d,m")
+        (match_operand:V4SF 1 "move_operand"          "YG,C,m,C,d,C,d,m,d"))]
   "ISA_HAS_VU0"
   "@
+   vmove.xyzw\t%0,$vf0
    vmove.xyzw\t%0,%1
    lqc2\t%0,%1
    sqc2\t%1,%0
@@ -186,7 +188,7 @@
    por\t%0,$0,%1
    lq\t%0,%1
    sq\t%1,%0"
-  [(set_attr "type" "fmove,fpload,fpstore,mtc,mfc,move,load,store")
+  [(set_attr "type" "fmove,fmove,fpload,fpstore,mtc,mfc,move,load,store")
    (set_attr "mode" "V4SF")])
 
 ;; MSA: V4SF move using FP registers
