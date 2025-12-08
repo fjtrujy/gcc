@@ -294,6 +294,7 @@ extern bool mips_const_vector_same_int_p (rtx, machine_mode, HOST_WIDE_INT,
 extern bool mips_const_vector_shuffle_set_p (rtx, machine_mode);
 extern bool mips_const_vector_bitimm_set_p (rtx, machine_mode);
 extern bool mips_const_vector_bitimm_clr_p (rtx, machine_mode);
+extern bool mips_const_vector_vf0_p (rtx);
 extern rtx mips_msa_vec_parallel_const_half (machine_mode, bool);
 extern rtx mips_gen_const_int_vector (machine_mode, HOST_WIDE_INT);
 extern bool mips_dangerous_for_la25_p (rtx);

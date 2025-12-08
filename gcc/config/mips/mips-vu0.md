@@ -206,39 +206,51 @@
 ;; -------------------------------------------------------------------------
 
 ;; Vector addition
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for VU0 operands.
 (define_insn "addv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=C,f")
-        (plus:V4SF (match_operand:V4SF 1 "register_operand" "C,f")
-                   (match_operand:V4SF 2 "register_operand" "C,f")))]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C,f")
+        (plus:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv,f")
+                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv,f")))]
   "ISA_HAS_VU0 || ISA_HAS_MSA"
   "@
-   vadd.xyzw\t%0,%1,%2
+   vadd.xyzw\t%0,%u1,%u2
+   vadd.xyzw\t%0,%u1,%u2
+   vadd.xyzw\t%0,%u1,%u2
+   vadd.xyzw\t%0,%u1,%u2
    fadd.w\t%w0,%w1,%w2"
-  [(set_attr "type" "fadd,simd_fadd")
+  [(set_attr "type" "fadd,fadd,fadd,fadd,simd_fadd")
    (set_attr "mode" "V4SF")])
 
 ;; Vector subtraction
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for VU0 operands.
 (define_insn "subv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=C,f")
-        (minus:V4SF (match_operand:V4SF 1 "register_operand" "C,f")
-                    (match_operand:V4SF 2 "register_operand" "C,f")))]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C,f")
+        (minus:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv,f")
+                    (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv,f")))]
   "ISA_HAS_VU0 || ISA_HAS_MSA"
   "@
-   vsub.xyzw\t%0,%1,%2
+   vsub.xyzw\t%0,%u1,%u2
+   vsub.xyzw\t%0,%u1,%u2
+   vsub.xyzw\t%0,%u1,%u2
+   vsub.xyzw\t%0,%u1,%u2
    fsub.w\t%w0,%w1,%w2"
-  [(set_attr "type" "fadd,simd_fadd")
+  [(set_attr "type" "fadd,fadd,fadd,fadd,simd_fadd")
    (set_attr "mode" "V4SF")])
 
 ;; Vector multiplication
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for VU0 operands.
 (define_insn "mulv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=C,f")
-        (mult:V4SF (match_operand:V4SF 1 "register_operand" "C,f")
-                   (match_operand:V4SF 2 "register_operand" "C,f")))]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C,f")
+        (mult:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv,f")
+                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv,f")))]
   "ISA_HAS_VU0 || ISA_HAS_MSA"
   "@
-   vmul.xyzw\t%0,%1,%2
+   vmul.xyzw\t%0,%u1,%u2
+   vmul.xyzw\t%0,%u1,%u2
+   vmul.xyzw\t%0,%u1,%u2
+   vmul.xyzw\t%0,%u1,%u2
    fmul.w\t%w0,%w1,%w2"
-  [(set_attr "type" "fmul,simd_fmul")
+  [(set_attr "type" "fmul,fmul,fmul,fmul,simd_fmul")
    (set_attr "mode" "V4SF")])
 
 ;; -------------------------------------------------------------------------
@@ -246,31 +258,34 @@
 ;; -------------------------------------------------------------------------
 
 ;; Vector absolute value
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "absv4sf2"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (abs:V4SF (match_operand:V4SF 1 "register_operand" "C")))]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (abs:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")))]
   "ISA_HAS_VU0"
-  "vabs.xyzw\t%0,%1"
+  "vabs.xyzw\t%0,%u1"
   [(set_attr "type" "fabs")
    (set_attr "mode" "V4SF")])
 
 ;; Vector maximum - VU0 only (MSA provides its own smaxv4sf3)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "*smaxv4sf3_vu0"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (smax:V4SF (match_operand:V4SF 1 "register_operand" "C")
-                   (match_operand:V4SF 2 "register_operand" "C")))]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (smax:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")))]
   "ISA_HAS_VU0"
-  "vmax.xyzw\t%0,%1,%2"
+  "vmax.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; Vector minimum - VU0 only (VU0 uses vmini, MSA provides its own sminv4sf3)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "*sminv4sf3_vu0"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (smin:V4SF (match_operand:V4SF 1 "register_operand" "C")
-                   (match_operand:V4SF 2 "register_operand" "C")))]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (smin:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")))]
   "ISA_HAS_VU0"
-  "vmini.xyzw\t%0,%1,%2"
+  "vmini.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -281,61 +296,66 @@
 ;; -------------------------------------------------------------------------
 
 ;; vmula: ACC = src1 * src2 (stores to implicit accumulator)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmula"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULA))]
   "ISA_HAS_VU0"
-  "vmula.xyzw\tACC,%0,%1"
+  "vmula.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmadda: ACC = ACC + src1 * src2 (accumulates to accumulator)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmadda"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDA))]
   "ISA_HAS_VU0"
-  "vmadda.xyzw\tACC,%0,%1"
+  "vmadda.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmadd: dest = ACC + src1 * src2 (reads from accumulator)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmadd"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADD))]
   "ISA_HAS_VU0"
-  "vmadd.xyzw\t%0,%1,%2"
+  "vmadd.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmsuba: ACC = ACC - src1 * src2 (subtracts from accumulator)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsuba"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBA))]
   "ISA_HAS_VU0"
-  "vmsuba.xyzw\tACC,%0,%1"
+  "vmsuba.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmsub: dest = ACC - src1 * src2 (reads from accumulator)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsub"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUB))]
   "ISA_HAS_VU0"
-  "vmsub.xyzw\t%0,%1,%2"
+  "vmsub.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -366,46 +386,54 @@
 ;; -------------------------------------------------------------------------
 
 ;; vmulx: dest = src1 * src2.x (broadcast x component)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
+;; Note: vmulx with $vf0 multiplies by 0.0 (zeroing).
 (define_insn "vu0_vmulx"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULX))]
   "ISA_HAS_VU0"
-  "vmulx.xyzw\t%0,%1,%2"
+  "vmulx.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmuly: dest = src1 * src2.y
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
+;; Note: vmuly with $vf0 multiplies by 0.0 (zeroing).
 (define_insn "vu0_vmuly"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULY))]
   "ISA_HAS_VU0"
-  "vmuly.xyzw\t%0,%1,%2"
+  "vmuly.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmulz: dest = src1 * src2.z
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
+;; Note: vmulz with $vf0 multiplies by 0.0 (zeroing).
 (define_insn "vu0_vmulz"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULZ))]
   "ISA_HAS_VU0"
-  "vmulz.xyzw\t%0,%1,%2"
+  "vmulz.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmulw: dest = src1 * src2.w
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
+;; Note: vmulw with $vf0 multiplies by 1.0 (identity) - useful for move/copy!
 (define_insn "vu0_vmulw"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULW))]
   "ISA_HAS_VU0"
-  "vmulw.xyzw\t%0,%1,%2"
+  "vmulw.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -414,43 +442,47 @@
 ;; vmulax/y/z/w: ACC = src1 * src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmulax"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAX))]
   "ISA_HAS_VU0"
-  "vmulax.xyzw\tACC,%0,%1"
+  "vmulax.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmulay"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAY))]
   "ISA_HAS_VU0"
-  "vmulay.xyzw\tACC,%0,%1"
+  "vmulay.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmulaz"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAZ))]
   "ISA_HAS_VU0"
-  "vmulaz.xyzw\tACC,%0,%1"
+  "vmulaz.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmulaw"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMULAW))]
   "ISA_HAS_VU0"
-  "vmulaw.xyzw\tACC,%0,%1"
+  "vmulaw.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -459,47 +491,51 @@
 ;; vmaddax/y/z/w: ACC = ACC + src1 * src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddax"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAX))]
   "ISA_HAS_VU0"
-  "vmaddax.xyzw\tACC,%0,%1"
+  "vmaddax.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmadday"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAY))]
   "ISA_HAS_VU0"
-  "vmadday.xyzw\tACC,%0,%1"
+  "vmadday.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddaz"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAZ))]
   "ISA_HAS_VU0"
-  "vmaddaz.xyzw\tACC,%0,%1"
+  "vmaddaz.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddaw"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDAW))]
   "ISA_HAS_VU0"
-  "vmaddaw.xyzw\tACC,%0,%1"
+  "vmaddaw.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -508,47 +544,51 @@
 ;; vmaddx/y/z/w: dest = ACC + src1 * src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddx"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDX))]
   "ISA_HAS_VU0"
-  "vmaddx.xyzw\t%0,%1,%2"
+  "vmaddx.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddy"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDY))]
   "ISA_HAS_VU0"
-  "vmaddy.xyzw\t%0,%1,%2"
+  "vmaddy.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddz"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDZ))]
   "ISA_HAS_VU0"
-  "vmaddz.xyzw\t%0,%1,%2"
+  "vmaddz.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmaddw"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMADDW))]
   "ISA_HAS_VU0"
-  "vmaddw.xyzw\t%0,%1,%2"
+  "vmaddw.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -557,47 +597,51 @@
 ;; vmsubax/y/z/w: ACC = ACC - src1 * src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubax"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAX))]
   "ISA_HAS_VU0"
-  "vmsubax.xyzw\tACC,%0,%1"
+  "vmsubax.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubay"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAY))]
   "ISA_HAS_VU0"
-  "vmsubay.xyzw\tACC,%0,%1"
+  "vmsubay.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubaz"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAZ))]
   "ISA_HAS_VU0"
-  "vmsubaz.xyzw\tACC,%0,%1"
+  "vmsubaz.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubaw"
   [(set (reg:V4SF VU0_ACC_REGNUM)
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+                      (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBAW))]
   "ISA_HAS_VU0"
-  "vmsubaw.xyzw\tACC,%0,%1"
+  "vmsubaw.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -606,47 +650,51 @@
 ;; vmsubx/y/z/w: dest = ACC - src1 * src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubx"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBX))]
   "ISA_HAS_VU0"
-  "vmsubx.xyzw\t%0,%1,%2"
+  "vmsubx.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsuby"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBY))]
   "ISA_HAS_VU0"
-  "vmsuby.xyzw\t%0,%1,%2"
+  "vmsuby.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubz"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBZ))]
   "ISA_HAS_VU0"
-  "vmsubz.xyzw\t%0,%1,%2"
+  "vmsubz.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmsubw"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMSUBW))]
   "ISA_HAS_VU0"
-  "vmsubw.xyzw\t%0,%1,%2"
+  "vmsubw.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -656,24 +704,26 @@
 ;; vopmsub: dest.xyz = ACC.xyz - src1.yzx * src2.zxy (cross product complete)
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vopmula"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VOPMULA))]
   "ISA_HAS_VU0"
-  "vopmula.xyz\tACC,%0,%1"
+  "vopmula.xyz\tACC,%u0,%u1"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vopmsub"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VOPMSUB))]
   "ISA_HAS_VU0"
-  "vopmsub.xyz\t%0,%1,%2"
+  "vopmsub.xyz\t%0,%u1,%u2"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
@@ -682,43 +732,47 @@
 ;; vaddx/y/z/w: dest = src1 + src2.x/y/z/w (broadcast component add)
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddx"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDX))]
   "ISA_HAS_VU0"
-  "vaddx.xyzw\t%0,%1,%2"
+  "vaddx.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddy"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDY))]
   "ISA_HAS_VU0"
-  "vaddy.xyzw\t%0,%1,%2"
+  "vaddy.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddz"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDZ))]
   "ISA_HAS_VU0"
-  "vaddz.xyzw\t%0,%1,%2"
+  "vaddz.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddw"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDW))]
   "ISA_HAS_VU0"
-  "vaddw.xyzw\t%0,%1,%2"
+  "vaddw.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -727,43 +781,47 @@
 ;; vsubx/y/z/w: dest = src1 - src2.x/y/z/w (broadcast component subtract)
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubx"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBX))]
   "ISA_HAS_VU0"
-  "vsubx.xyzw\t%0,%1,%2"
+  "vsubx.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsuby"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBY))]
   "ISA_HAS_VU0"
-  "vsuby.xyzw\t%0,%1,%2"
+  "vsuby.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubz"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBZ))]
   "ISA_HAS_VU0"
-  "vsubz.xyzw\t%0,%1,%2"
+  "vsubz.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubw"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBW))]
   "ISA_HAS_VU0"
-  "vsubw.xyzw\t%0,%1,%2"
+  "vsubw.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -773,23 +831,25 @@
 ;; vsuba: ACC = src1 - src2 (vector subtract to accumulator)
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vadda"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDA))]
   "ISA_HAS_VU0"
-  "vadda.xyzw\tACC,%0,%1"
+  "vadda.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsuba"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBA))]
   "ISA_HAS_VU0"
-  "vsuba.xyzw\tACC,%0,%1"
+  "vsuba.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -798,43 +858,47 @@
 ;; vaddax/y/z/w: ACC = src1 + src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddax"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAX))]
   "ISA_HAS_VU0"
-  "vaddax.xyzw\tACC,%0,%1"
+  "vaddax.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vadday"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAY))]
   "ISA_HAS_VU0"
-  "vadday.xyzw\tACC,%0,%1"
+  "vadday.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddaz"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAZ))]
   "ISA_HAS_VU0"
-  "vaddaz.xyzw\tACC,%0,%1"
+  "vaddaz.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vaddaw"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VADDAW))]
   "ISA_HAS_VU0"
-  "vaddaw.xyzw\tACC,%0,%1"
+  "vaddaw.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -843,43 +907,47 @@
 ;; vsubax/y/z/w: ACC = src1 - src2.x/y/z/w
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubax"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAX))]
   "ISA_HAS_VU0"
-  "vsubax.xyzw\tACC,%0,%1"
+  "vsubax.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubay"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAY))]
   "ISA_HAS_VU0"
-  "vsubay.xyzw\tACC,%0,%1"
+  "vsubay.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubaz"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAZ))]
   "ISA_HAS_VU0"
-  "vsubaz.xyzw\tACC,%0,%1"
+  "vsubaz.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vsubaw"
   [(set (reg:V4SF VU0_ACC_REGNUM)
-        (unspec:V4SF [(match_operand:V4SF 0 "register_operand" "C")
-                      (match_operand:V4SF 1 "register_operand" "C")]
+        (unspec:V4SF [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VSUBAW))]
   "ISA_HAS_VU0"
-  "vsubaw.xyzw\tACC,%0,%1"
+  "vsubaw.xyzw\tACC,%u0,%u1"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -891,39 +959,43 @@
 ;; vftoi15: Convert float to 17.15 fixed-point (15 fractional bits)
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vftoi0"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VFTOI0))]
   "ISA_HAS_VU0"
-  "vftoi0.xyzw\t%0,%1"
+  "vftoi0.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vftoi4"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VFTOI4))]
   "ISA_HAS_VU0"
-  "vftoi4.xyzw\t%0,%1"
+  "vftoi4.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vftoi12"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VFTOI12))]
   "ISA_HAS_VU0"
-  "vftoi12.xyzw\t%0,%1"
+  "vftoi12.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vftoi15"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VFTOI15))]
   "ISA_HAS_VU0"
-  "vftoi15.xyzw\t%0,%1"
+  "vftoi15.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
@@ -935,39 +1007,43 @@
 ;; vitof15: Convert 17.15 fixed-point to float (15 fractional bits)
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vitof0"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VITOF0))]
   "ISA_HAS_VU0"
-  "vitof0.xyzw\t%0,%1"
+  "vitof0.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vitof4"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VITOF4))]
   "ISA_HAS_VU0"
-  "vitof4.xyzw\t%0,%1"
+  "vitof4.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vitof12"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VITOF12))]
   "ISA_HAS_VU0"
-  "vitof12.xyzw\t%0,%1"
+  "vitof12.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vitof15"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VITOF15))]
   "ISA_HAS_VU0"
-  "vitof15.xyzw\t%0,%1"
+  "vitof15.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
 
@@ -977,12 +1053,13 @@
 ;;        dest.xyzw = src.yzwx
 ;; -------------------------------------------------------------------------
 
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmr32"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VMR32))]
   "ISA_HAS_VU0"
-  "vmr32.xyzw\t%0,%1"
+  "vmr32.xyzw\t%0,%u1"
   [(set_attr "type" "fmove")
    (set_attr "mode" "V4SF")])
 
@@ -992,34 +1069,37 @@
 ;; -------------------------------------------------------------------------
 
 ;; vu0_vmax: Explicit max intrinsic
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmax"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMAX))]
   "ISA_HAS_VU0"
-  "vmax.xyzw\t%0,%1,%2"
+  "vmax.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vu0_vmini: Explicit min intrinsic
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vmini"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
-                      (match_operand:V4SF 2 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                      (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")]
                      UNSPEC_VU0_VMINI))]
   "ISA_HAS_VU0"
-  "vmini.xyzw\t%0,%1,%2"
+  "vmini.xyzw\t%0,%u1,%u2"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vu0_vmove: Explicit move intrinsic
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmove"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")]
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")]
                      UNSPEC_VU0_VMOVE))]
   "ISA_HAS_VU0"
-  "vmove.xyzw\t%0,%1"
+  "vmove.xyzw\t%0,%u1"
   [(set_attr "type" "fmove")
    (set_attr "mode" "V4SF")])
 
@@ -1031,18 +1111,19 @@
 
 ;; vdiv: Q = fs.bc / ft.bc
 ;; Uses unspec_volatile to prevent elimination (starts async division)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vdiv"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
-                     (match_operand:SI 1 "const_int_operand" "n")
-                     (match_operand:V4SF 2 "register_operand" "C")
-                     (match_operand:SI 3 "const_int_operand" "n")]
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                     (match_operand:SI 1 "const_int_operand" "n,n,n,n")
+                     (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")
+                     (match_operand:SI 3 "const_int_operand" "n,n,n,n")]
                     UNSPEC_VU0_VDIV)
    (clobber (reg:SF VU0_Q_REGNUM))]
   "ISA_HAS_VU0"
   {
     static const char *const bc[] = { "x", "y", "z", "w" };
     static char buf[32];
-    sprintf (buf, "vdiv\tQ,%%0.%s,%%2.%s",
+    sprintf (buf, "vdiv\tQ,%%u0.%s,%%u2.%s",
              bc[INTVAL (operands[1]) & 3],
              bc[INTVAL (operands[3]) & 3]);
     return buf;
@@ -1052,16 +1133,17 @@
 
 ;; vsqrt: Q = sqrt(ft.bc)
 ;; Uses unspec_volatile to prevent elimination (starts async sqrt)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vsqrt"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
-                     (match_operand:SI 1 "const_int_operand" "n")]
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
+                     (match_operand:SI 1 "const_int_operand" "n,n")]
                     UNSPEC_VU0_VSQRT)
    (clobber (reg:SF VU0_Q_REGNUM))]
   "ISA_HAS_VU0"
   {
     static const char *const bc[] = { "x", "y", "z", "w" };
     static char buf[32];
-    sprintf (buf, "vsqrt\tQ,%%0.%s", bc[INTVAL (operands[1]) & 3]);
+    sprintf (buf, "vsqrt\tQ,%%u0.%s", bc[INTVAL (operands[1]) & 3]);
     return buf;
   }
   [(set_attr "type" "fsqrt")
@@ -1069,18 +1151,19 @@
 
 ;; vrsqrt: Q = fs.bc / sqrt(ft.bc)
 ;; Uses unspec_volatile to prevent elimination (starts async division)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "vu0_vrsqrt"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
-                     (match_operand:SI 1 "const_int_operand" "n")
-                     (match_operand:V4SF 2 "register_operand" "C")
-                     (match_operand:SI 3 "const_int_operand" "n")]
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                     (match_operand:SI 1 "const_int_operand" "n,n,n,n")
+                     (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")
+                     (match_operand:SI 3 "const_int_operand" "n,n,n,n")]
                     UNSPEC_VU0_VRSQRT)
    (clobber (reg:SF VU0_Q_REGNUM))]
   "ISA_HAS_VU0"
   {
     static const char *const bc[] = { "x", "y", "z", "w" };
     static char buf[32];
-    sprintf (buf, "vrsqrt\tQ,%%0.%s,%%2.%s",
+    sprintf (buf, "vrsqrt\tQ,%%u0.%s,%%u2.%s",
              bc[INTVAL (operands[1]) & 3],
              bc[INTVAL (operands[3]) & 3]);
     return buf;
@@ -1104,143 +1187,155 @@
 ;; -------------------------------------------------------------------------
 
 ;; vaddq: dest = src + Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vaddq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VADDQ))]
   "ISA_HAS_VU0"
-  "vaddq.xyzw\t%0,%1,Q"
+  "vaddq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vsubq: dest = src - Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vsubq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VSUBQ))]
   "ISA_HAS_VU0"
-  "vsubq.xyzw\t%0,%1,Q"
+  "vsubq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vmulq: dest = src * Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmulq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMULQ))]
   "ISA_HAS_VU0"
-  "vmulq.xyzw\t%0,%1,Q"
+  "vmulq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vaddaQ: ACC = src + Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vaddaq"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_Q_REGNUM)]
                     UNSPEC_VU0_VADDQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vaddaq.xyzw\tACC,%0,Q"
+  "vaddaq.xyzw\tACC,%u0,Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vsubaQ: ACC = src - Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vsubaq"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_Q_REGNUM)]
                     UNSPEC_VU0_VSUBQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vsubaq.xyzw\tACC,%0,Q"
+  "vsubaq.xyzw\tACC,%u0,Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vmulaQ: ACC = src * Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vmulaq"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_Q_REGNUM)]
                     UNSPEC_VU0_VMULQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmulaq.xyzw\tACC,%0,Q"
+  "vmulaq.xyzw\tACC,%u0,Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmaddq: dest = ACC + src * Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmaddq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMADDQ))]
   "ISA_HAS_VU0"
-  "vmaddq.xyzw\t%0,%1,Q"
+  "vmaddq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmsubq: dest = ACC - src * Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmsubq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMSUBQ))]
   "ISA_HAS_VU0"
-  "vmsubq.xyzw\t%0,%1,Q"
+  "vmsubq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmaddaQ: ACC = ACC + src * Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vmaddaq"
   [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
-                     (match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_Q_REGNUM)]
                     UNSPEC_VU0_VMADDQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmaddaq.xyzw\tACC,%0,Q"
+  "vmaddaq.xyzw\tACC,%u0,Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmsubaQ: ACC = ACC - src * Q
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vmsubaq"
   [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
-                     (match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_Q_REGNUM)]
                     UNSPEC_VU0_VMSUBQA)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmsubaq.xyzw\tACC,%0,Q"
+  "vmsubaq.xyzw\tACC,%u0,Q"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmaxQ: dest = max(src, Q)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmaxq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMAXQ))]
   "ISA_HAS_VU0"
-  "vmaxq.xyzw\t%0,%1,Q"
+  "vmaxq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vminiQ: dest = min(src, Q)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vminiq"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_Q_REGNUM)]
                      UNSPEC_VU0_VMINIQ))]
   "ISA_HAS_VU0"
-  "vminiq.xyzw\t%0,%1,Q"
+  "vminiq.xyzw\t%0,%u1,Q"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
@@ -1266,143 +1361,155 @@
 ;; -------------------------------------------------------------------------
 
 ;; vaddi: dest = src + I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vaddi"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VADDI))]
   "ISA_HAS_VU0"
-  "vaddi.xyzw\t%0,%1,I"
+  "vaddi.xyzw\t%0,%u1,I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vsubi: dest = src - I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vsubi"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VSUBI))]
   "ISA_HAS_VU0"
-  "vsubi.xyzw\t%0,%1,I"
+  "vsubi.xyzw\t%0,%u1,I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vmuli: dest = src * I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmuli"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMULI))]
   "ISA_HAS_VU0"
-  "vmuli.xyzw\t%0,%1,I"
+  "vmuli.xyzw\t%0,%u1,I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vaddaI: ACC = src + I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vaddai"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_I_REGNUM)]
                     UNSPEC_VU0_VADDAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vaddai.xyzw\tACC,%0,I"
+  "vaddai.xyzw\tACC,%u0,I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vsubaI: ACC = src - I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vsubai"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_I_REGNUM)]
                     UNSPEC_VU0_VSUBAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vsubai.xyzw\tACC,%0,I"
+  "vsubai.xyzw\tACC,%u0,I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vmulaI: ACC = src * I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vmulai"
-  [(unspec_volatile [(match_operand:V4SF 0 "register_operand" "C")
+  [(unspec_volatile [(match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_I_REGNUM)]
                     UNSPEC_VU0_VMULAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmulai.xyzw\tACC,%0,I"
+  "vmulai.xyzw\tACC,%u0,I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmaddi: dest = ACC + src * I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmaddi"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMADDI))]
   "ISA_HAS_VU0"
-  "vmaddi.xyzw\t%0,%1,I"
+  "vmaddi.xyzw\t%0,%u1,I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmsubi: dest = ACC - src * I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmsubi"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
         (unspec:V4SF [(reg:V4SF VU0_ACC_REGNUM)
-                      (match_operand:V4SF 1 "register_operand" "C")
+                      (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMSUBI))]
   "ISA_HAS_VU0"
-  "vmsubi.xyzw\t%0,%1,I"
+  "vmsubi.xyzw\t%0,%u1,I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmaddaI: ACC = ACC + src * I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vmaddai"
   [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
-                     (match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_I_REGNUM)]
                     UNSPEC_VU0_VMADDAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmaddai.xyzw\tACC,%0,I"
+  "vmaddai.xyzw\tACC,%u0,I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmsubaI: ACC = ACC - src * I
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 ;; Uses unspec_volatile to prevent elimination
 (define_insn "vu0_vmsubai"
   [(unspec_volatile [(reg:V4SF VU0_ACC_REGNUM)
-                     (match_operand:V4SF 0 "register_operand" "C")
+                     (match_operand:V4SF 0 "vu0_reg_or_vf0_operand" "C,Yv")
                      (reg:SF VU0_I_REGNUM)]
                     UNSPEC_VU0_VMSUBAI)
    (clobber (reg:V4SF VU0_ACC_REGNUM))]
   "ISA_HAS_VU0"
-  "vmsubai.xyzw\tACC,%0,I"
+  "vmsubai.xyzw\tACC,%u0,I"
   [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; vmaxI: dest = max(src, I)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vmaxi"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMAXI))]
   "ISA_HAS_VU0"
-  "vmaxi.xyzw\t%0,%1,I"
+  "vmaxi.xyzw\t%0,%u1,I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
 ;; vminiI: dest = min(src, I)
+;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0}.
 (define_insn "vu0_vminii"
-  [(set (match_operand:V4SF 0 "register_operand" "=C")
-        (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "C")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C")
+        (unspec:V4SF [(match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv")
                       (reg:SF VU0_I_REGNUM)]
                      UNSPEC_VU0_VMINII))]
   "ISA_HAS_VU0"
-  "vminii.xyzw\t%0,%1,I"
+  "vminii.xyzw\t%0,%u1,I"
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 

@@ -2080,6 +2080,30 @@ mips_const_vector_same_int_p (rtx op, machine_mode mode, HOST_WIDE_INT low,
   return (value >= low && value <= high);
 }
 
+/* Return true if OP is the VU0 $vf0 constant {0.0, 0.0, 0.0, 1.0}.
+   This is the read-only value of the VU0 $vf0 register.  */
+
+bool
+mips_const_vector_vf0_p (rtx op)
+{
+  if (GET_CODE (op) != CONST_VECTOR || GET_MODE (op) != V4SFmode)
+    return false;
+
+  /* Check: x=0.0, y=0.0, z=0.0 */
+  for (int i = 0; i < 3; i++)
+    {
+      rtx elt = CONST_VECTOR_ELT (op, i);
+      if (GET_CODE (elt) != CONST_DOUBLE
+	  || !real_equal (CONST_DOUBLE_REAL_VALUE (elt), &dconst0))
+	return false;
+    }
+
+  /* Check: w=1.0 */
+  rtx w_elt = CONST_VECTOR_ELT (op, 3);
+  return (GET_CODE (w_elt) == CONST_DOUBLE
+	  && real_equal (CONST_DOUBLE_REAL_VALUE (w_elt), &dconst1));
+}
+
 /* Return true if OP is a constant vector with repeated 4-element sets
    in mode MODE.  */
 
@@ -9844,6 +9868,16 @@ mips_print_operand (FILE *file, rtx op, int letter)
 	default:
 	  output_operand_lossage ("invalid use of '%%%c'", letter);
 	}
+      break;
+
+    case 'u':
+      /* VU0 operand: print $vf0 for VF0 constant, otherwise print register.  */
+      if (GET_CODE (op) == CONST_VECTOR && mips_const_vector_vf0_p (op))
+	fputs ("$vf0", file);
+      else if (code == REG)
+	fprintf (file, "%s", reg_names[REGNO (op)]);
+      else
+	output_operand_lossage ("invalid use of '%%u'");
       break;
 
     default:

@@ -668,3 +668,15 @@
 (define_predicate "reg_or_vector_same_uimm6_operand"
   (ior (match_operand 0 "register_operand")
        (match_operand 0 "const_vector_same_uimm6_operand")))
+
+;; VU0 $vf0 constant {0.0, 0.0, 0.0, 1.0}
+(define_predicate "const_vector_vf0_operand"
+  (match_code "const_vector")
+{
+  return mips_const_vector_vf0_p (op);
+})
+
+;; Matches COP2/VU0 register or the VF0 constant {0.0, 0.0, 0.0, 1.0}
+(define_predicate "vu0_reg_or_vf0_operand"
+  (ior (match_operand 0 "register_operand")
+       (match_operand 0 "const_vector_vf0_operand")))
