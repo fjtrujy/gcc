@@ -2543,12 +2543,30 @@ enum reg_class
 #define FP_ARG_FIRST (FP_REG_FIRST + 12)
 #define FP_ARG_LAST  (FP_ARG_FIRST + MAX_ARGS_IN_REGISTERS - 1)
 
+/* R5900 VU0 (COP2) argument/return registers for V4SF vectors.
+   $vf0 is special (contains 0,0,0,1), so we use $vf1 for returns.
+   Arguments use $vf12-$vf19 (like FP arguments use $f12-$f19).  */
+#define VU0_RETURN    (COP2_REG_FIRST + 1)
+#define VU0_ARG_FIRST (COP2_REG_FIRST + 12)
+#define VU0_ARG_LAST  (VU0_ARG_FIRST + MAX_ARGS_IN_REGISTERS - 1)
+
 /* True if MODE is vector and supported in a MSA vector register.  */
 #define MSA_SUPPORTED_MODE_P(MODE)			\
   (ISA_HAS_MSA						\
    && GET_MODE_SIZE (MODE) == UNITS_PER_MSA_REG		\
    && (GET_MODE_CLASS (MODE) == MODE_VECTOR_INT		\
        || GET_MODE_CLASS (MODE) == MODE_VECTOR_FLOAT))
+
+/* R5900 MMI 128-bit modes (integer vectors in GP registers).  */
+#define R5900_MMI_MODE_P(MODE)				\
+  (TARGET_MIPS5900					\
+   && ((MODE) == E_TImode || (MODE) == E_V4SImode	\
+       || (MODE) == E_V8HImode || (MODE) == E_V16QImode	\
+       || (MODE) == E_V2DImode))
+
+/* R5900 VU0 128-bit mode (float vector in COP2 registers only).  */
+#define R5900_VU0_MODE_P(MODE)				\
+  (TARGET_MIPS5900 && (MODE) == E_V4SFmode)
 
 /* Temporary register that is used when restoring $gp after a call.  $4 and $5
    are used for returning complex double values in soft-float code, so $6 is the
@@ -2567,7 +2585,8 @@ enum reg_class
     || (IN_RANGE((N), FP_ARG_FIRST, FP_ARG_LAST) 		\
         && (mips_abi != ABI_32 					\
             || TARGET_FLOAT32 					\
-            || ((N) % 2 == 0))))				\
+            || ((N) % 2 == 0)))					\
+    || (ISA_HAS_VU0 && IN_RANGE((N), VU0_ARG_FIRST, VU0_ARG_LAST))) \
    && !fixed_regs[N])
 
 /* This structure has to cope with two different argument allocation
@@ -2610,6 +2629,9 @@ typedef struct mips_args {
 
   /* For EABI, the number of floating-point registers used so far.  */
   unsigned int num_fprs;
+
+  /* For R5900 VU0, the number of VU0 registers used so far for V4SF args.  */
+  unsigned int num_vu0rs;
 
   /* The number of words passed on the stack.  */
   unsigned int stack_words;

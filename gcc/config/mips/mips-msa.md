@@ -1944,18 +1944,20 @@
   [(V4SF "S2I")
    (V2DF "D2I")])
 
-(define_insn "float<fint><FMSA:mode>2"
-  [(set (match_operand:FMSA 0 "register_operand" "=f")
-	(float:FMSA (match_operand:<VIMODE> 1 "register_operand" "f")))]
+;; Use FMSA_NO_V4SF to avoid conflict with VU0's floatv4siv4sf2 pattern.
+(define_insn "float<fint><FMSA_NO_V4SF:mode>2"
+  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
+	(float:FMSA_NO_V4SF (match_operand:<VIMODE> 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ffint_s.<msafmt>\t%w0,%w1"
   [(set_attr "type" "simd_fcvt")
    (set_attr "cnv_mode" "<FINTCNV>")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "floatuns<fint><FMSA:mode>2"
-  [(set (match_operand:FMSA 0 "register_operand" "=f")
-	(unsigned_float:FMSA
+;; Use FMSA_NO_V4SF for consistency (VU0 doesn't support unsigned conversions).
+(define_insn "floatuns<fint><FMSA_NO_V4SF:mode>2"
+  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
+	(unsigned_float:FMSA_NO_V4SF
 	  (match_operand:<VIMODE> 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ffint_u.<msafmt>\t%w0,%w1"
@@ -2113,23 +2115,45 @@
    (set_attr "cnv_mode" "<FINTCNV_2>")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "fix_trunc<FMSA:mode><mode_i>2"
+;; Use FMSA_NO_V4SF to avoid conflict with VU0's fix_truncv4sfv4si2 pattern.
+(define_insn "fix_trunc<FMSA_NO_V4SF:mode><mode_i>2"
   [(set (match_operand:<VIMODE> 0 "register_operand" "=f")
-	(fix:<VIMODE> (match_operand:FMSA 1 "register_operand" "f")))]
+	(fix:<VIMODE> (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ftrunc_s.<msafmt>\t%w0,%w1"
   [(set_attr "type" "simd_fcvt")
    (set_attr "cnv_mode" "<FINTCNV_2>")
    (set_attr "mode" "<MODE>")])
 
-(define_insn "fixuns_trunc<FMSA:mode><mode_i>2"
+;; Use FMSA_NO_V4SF for consistency (VU0 doesn't support unsigned conversions).
+(define_insn "fixuns_trunc<FMSA_NO_V4SF:mode><mode_i>2"
   [(set (match_operand:<VIMODE> 0 "register_operand" "=f")
-	(unsigned_fix:<VIMODE> (match_operand:FMSA 1 "register_operand" "f")))]
+	(unsigned_fix:<VIMODE> (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ftrunc_u.<msafmt>\t%w0,%w1"
   [(set_attr "type" "simd_fcvt")
    (set_attr "cnv_mode" "<FINTCNV_2>")
    (set_attr "mode" "<MODE>")])
+
+;; Explicit V4SF unsigned conversion patterns for MSA builtins.
+;; VU0 doesn't support unsigned conversions, so these are MSA-only.
+(define_insn "fixuns_truncv4sfv4si2"
+  [(set (match_operand:V4SI 0 "register_operand" "=f")
+	(unsigned_fix:V4SI (match_operand:V4SF 1 "register_operand" "f")))]
+  "ISA_HAS_MSA"
+  "ftrunc_u.w\t%w0,%w1"
+  [(set_attr "type" "simd_fcvt")
+   (set_attr "cnv_mode" "S2I")
+   (set_attr "mode" "V4SF")])
+
+(define_insn "floatunsv4siv4sf2"
+  [(set (match_operand:V4SF 0 "register_operand" "=f")
+	(unsigned_float:V4SF (match_operand:V4SI 1 "register_operand" "f")))]
+  "ISA_HAS_MSA"
+  "ffint_u.w\t%w0,%w1"
+  [(set_attr "type" "simd_fcvt")
+   (set_attr "cnv_mode" "I2S")
+   (set_attr "mode" "V4SF")])
 
 (define_insn "msa_ftq_h"
   [(set (match_operand:V8HI 0 "register_operand" "=f")

@@ -258,20 +258,18 @@
     DONE;
 })
 
-;; VU0/R5900: Combined V4SF move pattern with all alternatives
+;; VU0/R5900: V4SF move pattern using COP2 registers
+;; V4SF prefers COP2 registers. GP registers used for ABI transfers only.
 ;; Alternatives:
 ;;   0: C,YG -> vmove.xyzw from $vf0 (vector zero constant)
 ;;   1: C,C  -> vmove.xyzw (COP2 to COP2)
 ;;   2: C,m  -> lqc2 (memory to COP2)
 ;;   3: m,C  -> sqc2 (COP2 to memory)
-;;   4: C,d  -> qmtc2 (GP to COP2)
-;;   5: d,C  -> qmfc2 (COP2 to GP)
-;;   6: d,d  -> por (GP to GP, 128-bit register copy)
-;;   7: d,m  -> lq (memory to GP)
-;;   8: m,d  -> sq (GP to memory)
+;;   4: C,d  -> qmtc2 (GP to COP2 - for argument loading)
+;;   5: d,C  -> qmfc2 (COP2 to GP - for return values)
 (define_insn "*movv4sf_vu0"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,C,m,C,d,d,d,m")
-        (match_operand:V4SF 1 "move_operand"          "YG,C,m,C,d,C,d,m,d"))]
+  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,C,m,C,d")
+        (match_operand:V4SF 1 "move_operand"          "YG,C,m,C,d,C"))]
   "ISA_HAS_VU0"
   "@
    vmove.xyzw\t%0,$vf0
@@ -279,11 +277,8 @@
    lqc2\t%0,%1
    sqc2\t%1,%0
    qmtc2\t%1,%0
-   qmfc2\t%0,%1
-   por\t%0,$0,%1
-   lq\t%0,%1
-   sq\t%1,%0"
-  [(set_attr "type" "fmove,fmove,fpload,fpstore,mtc,mfc,move,load,store")
+   qmfc2\t%0,%1"
+  [(set_attr "type" "fmove,fmove,fpload,fpstore,mtc,mfc")
    (set_attr "mode" "V4SF")])
 
 ;; MSA: V4SF move using FP registers
@@ -1153,6 +1148,40 @@
   "vitof15.xyzw\t%0,%u1"
   [(set_attr "type" "fcvt")
    (set_attr "mode" "V4SF")])
+
+;; -------------------------------------------------------------------------
+;; VU0 Standard Type Conversion Patterns
+;; These patterns enable autovectorization of float<->int conversions.
+;; V4SF lives in COP2, V4SI lives in GPR, transfers via qmtc2/qmfc2.
+;; -------------------------------------------------------------------------
+
+;; fix_truncv4sfv4si2: V4SF (COP2) -> V4SI (GPR)
+;; Uses vftoi0 to convert floats to integers in COP2, then qmfc2 to GPR.
+;; Two instructions that must stay together - use can_delay=no.
+(define_insn "fix_truncv4sfv4si2"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+        (fix:V4SI (match_operand:V4SF 1 "register_operand" "C")))
+   (clobber (match_scratch:V4SF 2 "=&C"))]
+  "ISA_HAS_VU0"
+  "vftoi0.xyzw\t%2,%u1\;qmfc2\t%0,%2"
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SI")
+   (set_attr "length" "8")
+   (set_attr "can_delay" "no")])
+
+;; floatv4siv4sf2: V4SI (GPR) -> V4SF (COP2)
+;; Uses qmtc2 to transfer integers to COP2, then vitof0 to convert to floats.
+;; Two instructions that must stay together - use can_delay=no.
+(define_insn "floatv4siv4sf2"
+  [(set (match_operand:V4SF 0 "register_operand" "=C")
+        (float:V4SF (match_operand:V4SI 1 "register_operand" "d")))
+   (clobber (match_scratch:V4SF 2 "=&C"))]
+  "ISA_HAS_VU0"
+  "qmtc2\t%1,%2\;vitof0.xyzw\t%0,%2"
+  [(set_attr "type" "fcvt")
+   (set_attr "mode" "V4SF")
+   (set_attr "length" "8")
+   (set_attr "can_delay" "no")])
 
 ;; -------------------------------------------------------------------------
 ;; VU0 Vector Rotate
