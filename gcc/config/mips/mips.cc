@@ -5896,6 +5896,11 @@ mips_emit_compare (enum rtx_code *code, rtx *op0, rtx *op1, bool need_eq_ne_p)
   rtx cmp_op0 = *op0;
   rtx cmp_op1 = *op1;
 
+  /* Vector comparisons should use separate comparison instructions
+     and vcond_mask patterns, not go through mov<mode>cc expander. */
+  gcc_assert (!VECTOR_MODE_P (GET_MODE (*op0)));
+  gcc_assert (!VECTOR_MODE_P (GET_MODE (*op1)));
+
   if (GET_MODE_CLASS (GET_MODE (*op0)) == MODE_INT)
     {
       if (!need_eq_ne_p && *op1 == const0_rtx)
@@ -6119,6 +6124,27 @@ void
 mips_expand_conditional_move (rtx *operands)
 {
   rtx cond;
+
+  /* R5900: Vector modes should not reach here. MMI uses vcond_mask patterns
+     with PAND/PNOR/POR bit-select. VU0 has no conditional moves.
+     Reject vector modes to prevent ICE. */
+  machine_mode mode = GET_MODE (operands[0]);
+  if (VECTOR_MODE_P (mode))
+    {
+      /* This should not happen. If it does, the mov<mode>cc pattern
+         incorrectly matched a vector mode, or the expander needs to use
+         vcond_mask instead. */
+      error ("internal compiler error: vector conditional move not supported");
+      gcc_unreachable ();
+    }
+
+  /* Safety check: ensure operands[1] is a valid comparison expression */
+  if (operands[1] == NULL_RTX || !COMPARISON_P (operands[1]))
+    {
+      error ("internal compiler error: invalid comparison operand");
+      gcc_unreachable ();
+    }
+
   enum rtx_code code = GET_CODE (operands[1]);
   rtx op0 = XEXP (operands[1], 0);
   rtx op1 = XEXP (operands[1], 1);
@@ -24192,10 +24218,21 @@ mips_expand_vec_cond_expr (machine_mode mode, machine_mode vimode,
       rtx cmp_op1 = operands[5];
       cmp_res = gen_reg_rtx (vimode);
 
+      enum rtx_code code = GET_CODE (cond);
+
       if (ISA_HAS_MSA)
-	mips_expand_msa_cmp (cmp_res, GET_CODE (cond), cmp_op0, cmp_op1);
+	mips_expand_msa_cmp (cmp_res, code, cmp_op0, cmp_op1);
       else if (ISA_HAS_MMI)
-	mips_expand_mmi_cmp (cmp_res, GET_CODE (cond), cmp_op0, cmp_op1);
+	{
+	  /* MMI doesn't support unsigned comparisons (no PCGTU instruction).
+	     Reject unsigned comparison operators to prevent crash. */
+	  if (code == GTU || code == LTU || code == GEU || code == LEU)
+	    {
+	      error ("R5900 MMI does not support unsigned vector comparisons");
+	      return;
+	    }
+	  mips_expand_mmi_cmp (cmp_res, code, cmp_op0, cmp_op1);
+	}
       else
 	gcc_unreachable ();
     }
