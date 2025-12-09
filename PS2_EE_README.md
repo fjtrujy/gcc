@@ -106,11 +106,36 @@ The R5900 supports various data types through GCC's machine modes.
 | `SFmode` | 32-bit | `float` | FPU (COP1) | **Implemented** |
 | `DImode` | 64-bit | `long long` | GP | **Implemented** |
 | `TImode` | 128-bit | `__int128` | GP | **Implemented** |
-| `V4SF` | 128-bit | 4 × 32-bit float | VU0 (COP2) | **Implemented** (builtins + autovec) |
+| `V4SF` | 128-bit | 4 × 32-bit float | VU0 (COP2) only | **Implemented** (builtins + autovec + VU0 ABI) |
 | `V16QI` | 128-bit | 16 × 8-bit int | GP (MMI) | **Implemented** (builtins + autovec) |
 | `V8HI` | 128-bit | 8 × 16-bit int | GP (MMI) | **Implemented** (builtins + autovec) |
 | `V4SI` | 128-bit | 4 × 32-bit int | GP (MMI) | **Implemented** (builtins + autovec) |
 | `V2DI` | 128-bit | 2 × 64-bit int | GP (MMI) | **Implemented** (builtins) |
+
+### VU0 ABI for V4SF Arguments and Return Values
+
+When `-mvu0` is enabled, V4SF (128-bit float vectors) are passed and returned using VU0 (COP2) registers:
+
+| Purpose | Registers | Notes |
+|---------|-----------|-------|
+| Arguments | `$vf12`-`$vf19` | Up to 8 V4SF arguments |
+| Return value | `$vf1` | Not `$vf0` (which is constant) |
+| Memory transfers | `lqc2`/`sqc2` | Direct VU0↔memory |
+| GP transfers | `qmtc2`/`qmfc2` | GP↔VU0 (128-bit) |
+
+**Example:**
+```c
+typedef float v4sf __attribute__((vector_size(16)));
+
+// a arrives in $vf12, b in $vf13, return in $vf1
+v4sf add_vectors(v4sf a, v4sf b) {
+    return a + b;  // vadd.xyzw $vf1,$vf12,$vf13
+}
+```
+
+**Type Conversions:** V4SF↔V4SI conversions are supported with autovectorization:
+- `V4SF → V4SI`: `vftoi0` (in VU0) + `qmfc2` (to GPR)
+- `V4SI → V4SF`: `qmtc2` (to VU0) + `vitof0` (convert)
 
 ---
 
@@ -447,14 +472,16 @@ VU0 has an implicit ACC register for efficient FMA chains.
 
 | Instruction | Description | Intrinsic | Vector | Autovectorize |
 |-------------|-------------|-----------|--------|---------------|
-| `VFTOI0.xyzw` | Float to 32-bit integer | `__builtin_vu0_vftoi0(a)` | - | - |
+| `VFTOI0.xyzw` | Float to 32-bit integer | `__builtin_vu0_vftoi0(a)` | V4SF→V4SI | ✓ |
 | `VFTOI4.xyzw` | Float to 28.4 fixed-point | `__builtin_vu0_vftoi4(a)` | - | - |
 | `VFTOI12.xyzw` | Float to 20.12 fixed-point | `__builtin_vu0_vftoi12(a)` | - | - |
 | `VFTOI15.xyzw` | Float to 17.15 fixed-point | `__builtin_vu0_vftoi15(a)` | - | - |
-| `VITOF0.xyzw` | 32-bit integer to float | `__builtin_vu0_vitof0(a)` | - | - |
+| `VITOF0.xyzw` | 32-bit integer to float | `__builtin_vu0_vitof0(a)` | V4SI→V4SF | ✓ |
 | `VITOF4.xyzw` | 28.4 fixed-point to float | `__builtin_vu0_vitof4(a)` | - | - |
 | `VITOF12.xyzw` | 20.12 fixed-point to float | `__builtin_vu0_vitof12(a)` | - | - |
 | `VITOF15.xyzw` | 17.15 fixed-point to float | `__builtin_vu0_vitof15(a)` | - | - |
+
+**Note:** VFTOI0/VITOF0 autovectorization uses `__builtin_convertvector()` or C casts between V4SF and V4SI types. Unsigned conversions are not supported (VU0 only has signed conversion instructions).
 
 ### 5.8 Data Movement
 

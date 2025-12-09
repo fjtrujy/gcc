@@ -346,6 +346,9 @@ struct mips_arg_info {
      would have been if we hadn't run out of registers.  */
   bool fpr_p;
 
+  /* True if the argument is passed in a VU0 (COP2) register for V4SF.  */
+  bool vu0_p;
+
   /* The number of words passed in registers, rounded up.  */
   unsigned int reg_words;
 
@@ -5080,14 +5083,9 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
-  /* R5900 TImode and 128-bit vector moves don't need splitting - GP registers are 128-bit.  */
-  if (TARGET_MIPS5900)
-    {
-      machine_mode mode = GET_MODE (dest);
-      if (mode == E_TImode || mode == E_V4SImode || mode == E_V8HImode
-	  || mode == E_V16QImode || mode == E_V2DImode)
-	return false;
-    }
+  /* R5900 MMI 128-bit integer vector moves don't need splitting - GP registers are 128-bit.  */
+  if (R5900_MMI_MODE_P (GET_MODE (dest)))
+    return false;
 
   /* Otherwise split all multiword moves.  */
   return size > UNITS_PER_WORD;
@@ -5439,11 +5437,10 @@ mips_output_move (rtx dest, rtx src)
       return "ldi.%v0\t%w0,%E1";
     }
 
-  /* R5900 TImode (128-bit integer) and 128-bit vector modes using lq/sq/por.
-     R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.  */
-  if (TARGET_MIPS5900
-      && (mode == E_TImode || mode == E_V4SImode || mode == E_V8HImode
-	  || mode == E_V16QImode || mode == E_V2DImode))
+  /* R5900 MMI 128-bit integer modes (TImode, V4SI, V8HI, V16QI, V2DI) using lq/sq/por.
+     R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.
+     Note: V4SF uses COP2 registers (lqc2/sqc2), not GP registers.  */
+  if (R5900_MMI_MODE_P (mode))
     {
       if (dest_code == REG && GP_REG_P (REGNO (dest)))
 	{
@@ -5451,8 +5448,9 @@ mips_output_move (rtx dest, rtx src)
 	    return "por\t%0,$0,%1";
 	  if (src_code == MEM)
 	    return "lq\t%0,%1";
+	  /* Use por for zero constant to clear all 128 bits (move only clears 64).  */
 	  if (src == CONST0_RTX (mode))
-	    return "move\t%0,$0";
+	    return "por\t%0,$0,$0";
 	}
       if (dest_code == MEM)
 	{
@@ -6255,8 +6253,9 @@ mips_get_arg_info (struct mips_arg_info *info, const CUMULATIVE_ARGS *cum,
   num_bytes = type ? int_size_in_bytes (type) : GET_MODE_SIZE (mode);
   num_words = (num_bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 
-  /* R5900 with n32 ABI: TImode fits in a single 128-bit GP register.  */
-  if (TARGET_MIPS5900 && TARGET_NEWABI && mode == E_TImode)
+  /* R5900 with n32 ABI: 128-bit MMI modes fit in a single 128-bit GP register.
+     Note: V4SF uses VU0 registers (handled separately).  */
+  if (TARGET_NEWABI && R5900_MMI_MODE_P (mode))
     num_words = 1;
 
   /* Decide whether it should go in a floating-point register, assuming
@@ -6333,19 +6332,32 @@ mips_get_arg_info (struct mips_arg_info *info, const CUMULATIVE_ARGS *cum,
       gcc_unreachable ();
     }
 
+  /* R5900 VU0: V4SF mode uses VU0 (COP2) registers instead of FP or GP.  */
+  info->vu0_p = false;
+  if (ISA_HAS_VU0 && named && mode == E_V4SFmode)
+    {
+      info->vu0_p = true;
+      info->fpr_p = false;  /* Not using FP registers for V4SF */
+      num_words = 1;        /* Single VU0 register per V4SF argument */
+    }
+
   /* See whether the argument has doubleword alignment.  */
   doubleword_aligned_p = (mips_function_arg_boundary (mode, type)
 			  > BITS_PER_WORD);
 
   /* Set REG_OFFSET to the register count we're interested in.
      The EABI allocates the floating-point registers separately,
-     but the other ABIs allocate them like integer registers.  */
-  info->reg_offset = (mips_abi == ABI_EABI && info->fpr_p
-		      ? cum->num_fprs
-		      : cum->num_gprs);
+     VU0 allocates separately for V4SF, other ABIs allocate like integer regs.  */
+  if (info->vu0_p)
+    info->reg_offset = cum->num_vu0rs;
+  else if (mips_abi == ABI_EABI && info->fpr_p)
+    info->reg_offset = cum->num_fprs;
+  else
+    info->reg_offset = cum->num_gprs;
 
-  /* Advance to an even register if the argument is doubleword-aligned.  */
-  if (doubleword_aligned_p)
+  /* Advance to an even register if the argument is doubleword-aligned.
+     Skip this for VU0 registers which are 128-bit and don't need alignment.  */
+  if (doubleword_aligned_p && !info->vu0_p)
     info->reg_offset += info->reg_offset & 1;
 
   /* Work out the offset of a stack argument.  */
@@ -6367,6 +6379,10 @@ mips_get_arg_info (struct mips_arg_info *info, const CUMULATIVE_ARGS *cum,
 static unsigned int
 mips_arg_regno (const struct mips_arg_info *info, bool hard_float_p)
 {
+  /* R5900 VU0: V4SF arguments go in VU0 registers.  */
+  if (info->vu0_p)
+    return VU0_ARG_FIRST + info->reg_offset;
+
   if (!info->fpr_p || !hard_float_p)
     return GP_ARG_FIRST + info->reg_offset;
   else if (mips_abi == ABI_32 && TARGET_DOUBLE_FLOAT && info->reg_offset > 0)
@@ -6576,7 +6592,9 @@ mips_function_arg_advance (cumulative_args_t cum_v,
      num_gprs to MAX_ARGS_IN_REGISTERS if a doubleword-aligned
      argument required us to skip the final GPR and pass the whole
      argument on the stack.  */
-  if (mips_abi != ABI_EABI || !info.fpr_p)
+  if (info.vu0_p && info.reg_words > 0)
+    cum->num_vu0rs++;
+  else if (mips_abi != ABI_EABI || !info.fpr_p)
     cum->num_gprs = info.reg_offset + info.reg_words;
   else if (info.reg_words > 0)
     cum->num_fprs += MAX_FPRS_PER_FMT;
@@ -7029,6 +7047,10 @@ mips_function_value_1 (const_tree valtype, const_tree fn_decl_or_type,
 	}
     }
 
+  /* Return V4SF in VU0 register ($vf1) when VU0 is available.  */
+  if (ISA_HAS_VU0 && mode == E_V4SFmode)
+    return gen_rtx_REG (mode, VU0_RETURN);
+
   return gen_rtx_REG (mode, GP_RETURN);
 }
 
@@ -7088,8 +7110,10 @@ mips_function_value_regno_p (const unsigned int regno)
 static bool
 mips_return_in_memory (const_tree type, const_tree fndecl ATTRIBUTE_UNUSED)
 {
-  /* R5900 with n32 ABI: TImode fits in a single 128-bit GP register.  */
-  if (TARGET_MIPS5900 && TARGET_NEWABI && TYPE_MODE (type) == E_TImode)
+  /* R5900 with n32 ABI: 128-bit MMI modes return via 128-bit GP register.
+     V4SF returns via VU0 register (handled by mips_function_value_1).  */
+  if (TARGET_NEWABI && (R5900_MMI_MODE_P (TYPE_MODE (type))
+			|| R5900_VU0_MODE_P (TYPE_MODE (type))))
     return false;
 
   if (TARGET_OLDABI)
@@ -13754,8 +13778,9 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
   if (FPU_ACC_REG_P (regno) && TARGET_MIPS5900 && mode == E_SFmode)
     return 1;
 
-  /* R5900 GP registers are 128-bit wide and can hold TImode in one register.  */
-  if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
+  /* R5900 GP registers are 128-bit wide and can hold 128-bit MMI modes in one register.
+     Note: V4SF uses COP2 registers, not GP registers.  */
+  if (GP_REG_P (regno) && R5900_MMI_MODE_P (mode))
     return 1;
 
   /* All other registers are word-sized.  */
@@ -13817,7 +13842,13 @@ mips_class_max_nregs (enum reg_class rclass, machine_mode mode)
       left &= ~reg_class_contents[FP_REGS];
     }
   if (!hard_reg_set_empty_p (left))
-    size = MIN (size, UNITS_PER_WORD);
+    {
+      /* R5900 GP registers are 128-bit wide for 128-bit MMI modes.  */
+      if (R5900_MMI_MODE_P (mode))
+	size = MIN (size, 16);
+      else
+	size = MIN (size, UNITS_PER_WORD);
+    }
   return (GET_MODE_SIZE (mode) + size - 1) / size;
 }
 
@@ -13827,12 +13858,11 @@ static bool
 mips_can_change_mode_class (machine_mode from,
 			    machine_mode to, reg_class_t rclass)
 {
-  /* R5900 has 128-bit GPRs.  TImode values fit in a single register and
+  /* R5900 has 128-bit GPRs.  128-bit MMI modes fit in a single register and
      should not be decomposed into smaller modes, as lower-subreg cannot
-     handle this properly.  Disallow mode changes from TImode to smaller
-     modes for GPRs on R5900.  */
-  if (TARGET_MIPS5900
-      && from == TImode
+     handle this properly.  Disallow mode changes from 128-bit MMI modes to
+     smaller modes for GPRs on R5900.  */
+  if (R5900_MMI_MODE_P (from)
       && GET_MODE_SIZE (to) < GET_MODE_SIZE (from)
       && reg_classes_intersect_p (GR_REGS, rclass))
     return false;
@@ -13845,6 +13875,10 @@ mips_can_change_mode_class (machine_mode from,
 
   /* Allow conversions between different MSA vector modes.  */
   if (MSA_SUPPORTED_MODE_P (from) && MSA_SUPPORTED_MODE_P (to))
+    return true;
+
+  /* Allow conversions between different R5900 128-bit MMI modes.  */
+  if (R5900_MMI_MODE_P (from) && R5900_MMI_MODE_P (to))
     return true;
 
   /* Otherwise, there are several problems with changing the modes of

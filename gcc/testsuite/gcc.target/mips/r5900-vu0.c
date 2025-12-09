@@ -44,13 +44,14 @@ test_copy (v4sf *dst, v4sf *src)
   *dst = *src;
 }
 
-/* Test GP to GP register copy (por) - when V4SF passed/returned via GP regs */
+/* Test VU0 register copy - with VU0 ABI, V4SF passed/returned in VU0 regs.
+   Argument arrives in $vf12, return in $vf1, so vmove copies between them.  */
 NOMIPS16 v4sf
 test_return_param (v4sf a)
 {
   return a;
 }
-/* { dg-final { scan-assembler "\tpor\t" } } */
+/* { dg-final { scan-assembler "\tvmove\\.xyzw\t" } } */
 
 /* Test VU0 vector*scalar autovectorization (vmulx.xyzw) */
 NOMIPS16 v4sf
