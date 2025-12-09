@@ -14,7 +14,7 @@ test_vdiv (v4sf fs, v4sf ft)
 {
   __builtin_vu0_vdiv (fs, 0, ft, 1);  /* Q = fs.x / ft.y */
 }
-/* { dg-final { scan-assembler "\\tvdiv\\tQ,.*\\.x,.*\\.y" } } */
+/* { dg-final { scan-assembler "\\tvdiv\\t\\\$Q,.*x,.*y" } } */
 
 /* Test __builtin_vu0_vsqrt: Q = sqrt(ft.bc) */
 NOMIPS16 void
@@ -22,7 +22,7 @@ test_vsqrt (v4sf ft)
 {
   __builtin_vu0_vsqrt (ft, 2);  /* Q = sqrt(ft.z) */
 }
-/* { dg-final { scan-assembler "\\tvsqrt\\tQ,.*\\.z" } } */
+/* { dg-final { scan-assembler "\\tvsqrt\\t\\\$Q,.*z" } } */
 
 /* Test __builtin_vu0_vrsqrt: Q = fs.bc / sqrt(ft.bc) */
 NOMIPS16 void
@@ -30,7 +30,7 @@ test_vrsqrt (v4sf fs, v4sf ft)
 {
   __builtin_vu0_vrsqrt (fs, 3, ft, 0);  /* Q = fs.w / sqrt(ft.x) */
 }
-/* { dg-final { scan-assembler "\\tvrsqrt\\tQ,.*\\.w,.*\\.x" } } */
+/* { dg-final { scan-assembler "\\tvrsqrt\\t\\\$Q,.*w,.*x" } } */
 
 /* Test __builtin_vu0_vwaitq */
 NOMIPS16 void
@@ -86,7 +86,7 @@ test_vaddaq (v4sf a)
 {
   __builtin_vu0_vaddaq (a);
 }
-/* { dg-final { scan-assembler "\\tvaddaq\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvaddaq\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vsubaq: ACC = src - Q */
 NOMIPS16 void
@@ -94,7 +94,7 @@ test_vsubaq (v4sf a)
 {
   __builtin_vu0_vsubaq (a);
 }
-/* { dg-final { scan-assembler "\\tvsubaq\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvsubaq\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vmulaq: ACC = src * Q */
 NOMIPS16 void
@@ -102,7 +102,7 @@ test_vmulaq (v4sf a)
 {
   __builtin_vu0_vmulaq (a);
 }
-/* { dg-final { scan-assembler "\\tvmulaq\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvmulaq\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vmaddq: dest = ACC + src * Q */
 NOMIPS16 v4sf
@@ -126,7 +126,7 @@ test_vmaddaq (v4sf a)
 {
   __builtin_vu0_vmaddaq (a);
 }
-/* { dg-final { scan-assembler "\\tvmaddaq\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvmaddaq\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vmsubaq: ACC = ACC - src * Q */
 NOMIPS16 void
@@ -134,4 +134,4 @@ test_vmsubaq (v4sf a)
 {
   __builtin_vu0_vmsubaq (a);
 }
-/* { dg-final { scan-assembler "\\tvmsubaq\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvmsubaq\\.xyzw\\t\\\$ACC," } } */

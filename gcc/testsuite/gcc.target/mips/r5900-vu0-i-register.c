@@ -62,7 +62,7 @@ test_vaddai (v4sf a)
 {
   __builtin_vu0_vaddai (a);
 }
-/* { dg-final { scan-assembler "\\tvaddai\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvaddai\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vsubai: ACC = src - I */
 NOMIPS16 void
@@ -70,7 +70,7 @@ test_vsubai (v4sf a)
 {
   __builtin_vu0_vsubai (a);
 }
-/* { dg-final { scan-assembler "\\tvsubai\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvsubai\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vmulai: ACC = src * I */
 NOMIPS16 void
@@ -78,7 +78,7 @@ test_vmulai (v4sf a)
 {
   __builtin_vu0_vmulai (a);
 }
-/* { dg-final { scan-assembler "\\tvmulai\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvmulai\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vmaddi: dest = ACC + src * I */
 NOMIPS16 v4sf
@@ -102,7 +102,7 @@ test_vmaddai (v4sf a)
 {
   __builtin_vu0_vmaddai (a);
 }
-/* { dg-final { scan-assembler "\\tvmaddai\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvmaddai\\.xyzw\\t\\\$ACC," } } */
 
 /* Test __builtin_vu0_vmsubai: ACC = ACC - src * I */
 NOMIPS16 void
@@ -110,4 +110,4 @@ test_vmsubai (v4sf a)
 {
   __builtin_vu0_vmsubai (a);
 }
-/* { dg-final { scan-assembler "\\tvmsubai\\.xyzw\\tACC," } } */
+/* { dg-final { scan-assembler "\\tvmsubai\\.xyzw\\t\\\$ACC," } } */

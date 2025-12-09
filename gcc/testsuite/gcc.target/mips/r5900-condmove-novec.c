@@ -1,6 +1,7 @@
 /* Test that vector modes don't crash the conditional move expander */
 /* { dg-do compile } */
-/* { dg-options "-march=r5900 -O2" } */
+/* { dg-options "-march=r5900" } */
+/* { dg-skip-if "requires optimization" { *-*-* } { "-O0" } { "" } } */
 
 typedef int v4si __attribute__((vector_size(16)));
 typedef unsigned int uint32_t;
