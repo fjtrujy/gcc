@@ -239,10 +239,17 @@ These instructions operate on the full 128-bit width of GP registers.
 **Vector Comparison Support**: All six comparison operators (==, !=, <, <=, >, >=) work with vector types.
 Synthesized operations: NE uses PCEQ+PNOR, LT uses PCGT(swapped), LE uses PCGT+PNOR, GE uses PCGT+PCEQ+POR.
 
-**Loop Autovectorization**: The `vcond` pattern supports MMI, enabling autovectorization of
-conditional select operations like `e[i] = (a[i] > b[i]) ? c[i] : d[i]`. The bit select is
-implemented using PAND/PNOR/POR sequence. Note: For autovectorization to work, all loads in
-the loop must be unconditional (read all values before the conditional select).
+**Vector Conditional Moves**: MMI supports vector conditional moves for SIGNED comparisons only.
+Loops with signed conditionals like `e[i] = (a[i] > b[i]) ? c[i] : d[i]` where types are SIGNED
+int/short will autovectorize using PCGTW/PCGTH (comparison) + PAND/POR (bit-select).
+Unsigned vector comparisons are NOT supported (no PCGTU instruction) - loops with unsigned
+conditionals will use scalar code with MOVN/MOVZ. Scalar conditional moves are available for
+all integer and floating-point scalar types. VU0 vectors (V4SF) have no conditional move support.
+
+**Loop Autovectorization**: Loops with SIGNED conditional selection patterns like
+`e[i] = (a[i] > b[i]) ? c[i] : d[i]` where a and b are signed int/short will autovectorize
+with MMI using PCGTW/PCGTH + PAND/POR. Unsigned conditional loops will use scalar MOVN/MOVZ.
+For best performance, min/max operations DO vectorize to PMINW/PMAXW instructions.
 
 ### 2.6 Data Rearrangement
 
