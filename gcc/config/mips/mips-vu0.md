@@ -261,7 +261,7 @@
 ;; VU0/R5900: V4SF move pattern using COP2 registers
 ;; V4SF prefers COP2 registers. GP registers used for ABI transfers only.
 ;; Alternatives:
-;;   0: C,YG -> vmove.xyzw from $vf0 (vector zero constant)
+;;   0: C,YG -> vsub $vf0,$vf0 (vector zero constant: vf0={0,0,0,1} so vf0-vf0={0,0,0,0})
 ;;   1: C,C  -> vmove.xyzw (COP2 to COP2)
 ;;   2: C,m  -> lqc2 (memory to COP2)
 ;;   3: m,C  -> sqc2 (COP2 to memory)
@@ -272,13 +272,13 @@
         (match_operand:V4SF 1 "move_operand"          "YG,C,m,C,d,C"))]
   "ISA_HAS_VU0"
   "@
-   vmove.xyzw\t%0,$vf0
+   vsub.xyzw\t%0,$vf0,$vf0
    vmove.xyzw\t%0,%1
    lqc2\t%0,%1
    sqc2\t%1,%0
    qmtc2\t%1,%0
    qmfc2\t%0,%1"
-  [(set_attr "type" "fmove,fmove,fpload,fpstore,mtc,mfc")
+  [(set_attr "type" "fadd,fmove,fpload,fpstore,mtc,mfc")
    (set_attr "mode" "V4SF")])
 
 ;; MSA: V4SF move using FP registers
