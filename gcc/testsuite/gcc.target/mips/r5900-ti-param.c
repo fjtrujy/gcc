@@ -27,10 +27,10 @@ test_return (int128_t *p)
 }
 /* { dg-final { scan-assembler "\tlq\t" } } */
 
-/* Test returning 128-bit parameter - uses move to copy from $4 to $2 */
+/* Test returning 128-bit parameter - requires por to copy from $4 to $2 */
 NOMIPS16 int128_t
 test_return_param (int128_t val)
 {
   return val;
 }
-/* { dg-final { scan-assembler "\tmove\t" } } */
+/* { dg-final { scan-assembler "\tpor\t" } } */

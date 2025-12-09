@@ -5080,8 +5080,7 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
-  /* R5900 TImode and 128-bit vector moves don't need splitting.
-     GP registers are 128-bit wide, and move operates on full width.  */
+  /* R5900 TImode and 128-bit vector moves don't need splitting - GP registers are 128-bit.  */
   if (TARGET_MIPS5900)
     {
       machine_mode mode = GET_MODE (dest);
@@ -5440,10 +5439,8 @@ mips_output_move (rtx dest, rtx src)
       return "ldi.%v0\t%w0,%E1";
     }
 
-  /* R5900 TImode (128-bit integer) and 128-bit vector modes using lq/sq.
-     R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.
-     Register moves use the standard move instruction which operates on
-     the full 128-bit register width.  */
+  /* R5900 TImode (128-bit integer) and 128-bit vector modes using lq/sq/por.
+     R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.  */
   if (TARGET_MIPS5900
       && (mode == E_TImode || mode == E_V4SImode || mode == E_V8HImode
 	  || mode == E_V16QImode || mode == E_V2DImode))
@@ -5451,7 +5448,7 @@ mips_output_move (rtx dest, rtx src)
       if (dest_code == REG && GP_REG_P (REGNO (dest)))
 	{
 	  if (src_code == REG && GP_REG_P (REGNO (src)))
-	    return "move\t%0,%1";
+	    return "por\t%0,$0,%1";
 	  if (src_code == MEM)
 	    return "lq\t%0,%1";
 	  if (src == CONST0_RTX (mode))
