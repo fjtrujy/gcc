@@ -2589,10 +2589,11 @@ mips_cannot_force_const_mem (machine_mode mode, rtx x)
   if (GET_CODE (x) == HIGH)
     return true;
 
-  /* R5900 TImode: always allow forcing non-zero constants to memory
+  /* R5900 128-bit modes: always allow forcing non-zero constants to memory
      since there's no way to synthesize 128-bit immediates.  Zero is
-     handled directly by the pattern using $0.  */
-  if (TARGET_MIPS5900 && mode == E_TImode && !const_0_operand (x, mode))
+     handled directly by the patterns using $0.  This applies to TImode
+     and all 128-bit vector modes (V4SI, V8HI, V16QI, V2DI).  */
+  if (TARGET_MIPS5900 && GET_MODE_SIZE (mode) == 16 && !const_0_operand (x, mode))
     return false;
 
   /* As an optimization, reject constants that mips_legitimize_move
@@ -3923,7 +3924,41 @@ mips_legitimize_const_move (machine_mode mode, rtx dest, rtx src)
       return;
     }
 
-  src = force_const_mem (mode, src);
+  /* Save the original source before force_const_mem may fail.  */
+  rtx orig_src = src;
+  src = force_const_mem (mode, orig_src);
+
+  /* force_const_mem can fail for certain modes.  For R5900 128-bit modes,
+     synthesize the constant by storing elements to a stack slot.  */
+  if (!src)
+    {
+      if (TARGET_MIPS5900 && GET_MODE_SIZE (mode) == 16
+	  && GET_CODE (orig_src) == CONST_VECTOR && can_create_pseudo_p ())
+	{
+	  rtx stack_slot = assign_stack_temp (mode, 16);
+	  int nunits = GET_MODE_NUNITS (mode);
+	  machine_mode inner_mode = GET_MODE_INNER (mode);
+
+	  for (int i = 0; i < nunits; i++)
+	    {
+	      rtx elt = CONST_VECTOR_ELT (orig_src, i);
+	      rtx slot = adjust_address (stack_slot, inner_mode,
+					 i * GET_MODE_SIZE (inner_mode));
+	      if (CONST_INT_P (elt))
+		{
+		  rtx tmp = gen_reg_rtx (inner_mode);
+		  emit_move_insn (tmp, elt);
+		  emit_move_insn (slot, tmp);
+		}
+	      else
+		emit_move_insn (slot, elt);
+	    }
+	  emit_move_insn (dest, stack_slot);
+	  return;
+	}
+      sorry ("cannot load constant into register for this mode");
+      return;
+    }
 
   /* When using explicit relocs, constant pool references are sometimes
      not legitimate addresses.  */
@@ -3950,22 +3985,67 @@ mips_legitimize_move (machine_mode mode, rtx dest, rtx src)
       return true;
     }
 
-  /* R5900 TImode: force constants to memory since there are no instructions
-     to load 128-bit immediates directly.  The *movti_r5900 pattern only
-     supports register and memory operands.  For zero, we can skip this since
-     the movti pattern handles it (qmtc2 $0).  Also skip for MD registers since
-     they don't use TImode on R5900.  */
-  if (TARGET_MIPS5900 && mode == E_TImode && CONSTANT_P (src)
-      && !const_0_operand (src, mode)
+  /* R5900 128-bit modes: force constants to memory since there are no
+     instructions to load 128-bit immediates directly.  This applies to
+     TImode and all 128-bit vector modes (V4SI, V8HI, V16QI, V2DI).
+     For zero, we can skip this since the patterns handle it using $0.
+     Also skip for MD registers since they don't use TImode on R5900.  */
+  if (TARGET_MIPS5900 && GET_MODE_SIZE (mode) == 16 && CONSTANT_P (src)
       && !(REG_P (dest) && MD_REG_P (REGNO (dest))))
     {
-      src = force_const_mem (mode, src);
-      if (src)
+      /* Handle const_int 0 in 128-bit vector modes by converting to proper zero.
+	 This happens when vectorizer generates (set (reg:V4SI) (const_int 0)).
+	 The patterns use $0 for zero, but need the correct mode's zero RTX.
+	 Skip TImode because CONST0_RTX(TImode) returns const0_rtx itself,
+	 which would cause infinite recursion.  */
+      if (src == const0_rtx && VECTOR_MODE_P (mode))
 	{
-	  mips_split_symbol (dest, XEXP (src, 0), mode, &XEXP (src, 0));
-	  mips_emit_move (dest, src);
+	  rtx zero_rtx = CONST0_RTX (mode);
+	  if (zero_rtx && zero_rtx != const0_rtx)
+	    {
+	      mips_emit_move (dest, zero_rtx);
+	      return true;
+	    }
+	  /* Fall through to normal handling.  */
+	}
+      /* Skip proper zero constants - let patterns handle using $0.  */
+      if (const_0_operand (src, mode))
+	return false;
+      /* Non-zero constants need memory load.  */
+      rtx mem = force_const_mem (mode, src);
+      if (mem)
+	{
+	  mips_split_symbol (dest, XEXP (mem, 0), mode, &XEXP (mem, 0));
+	  mips_emit_move (dest, mem);
 	  return true;
 	}
+      /* force_const_mem failed.  Synthesize the constant by storing
+	 its elements to a stack slot and loading back.  */
+      if (GET_CODE (src) == CONST_VECTOR && can_create_pseudo_p ())
+	{
+	  rtx stack_slot = assign_stack_temp (mode, 16);
+	  int nunits = GET_MODE_NUNITS (mode);
+	  machine_mode inner_mode = GET_MODE_INNER (mode);
+
+	  for (int i = 0; i < nunits; i++)
+	    {
+	      rtx elt = CONST_VECTOR_ELT (src, i);
+	      rtx slot = adjust_address (stack_slot, inner_mode,
+					 i * GET_MODE_SIZE (inner_mode));
+	      if (CONST_INT_P (elt))
+		{
+		  rtx tmp = gen_reg_rtx (inner_mode);
+		  emit_move_insn (tmp, elt);
+		  emit_move_insn (slot, tmp);
+		}
+	      else
+		emit_move_insn (slot, elt);
+	    }
+	  emit_move_insn (dest, stack_slot);
+	  return true;
+	}
+      /* Can't handle this constant.  */
+      return false;
     }
 
   /* We need to deal with constants that would be legitimate
@@ -13589,11 +13669,8 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
     return true;
 
   /* R5900 MMI uses 128-bit vector modes in GPRs.
-     V4SF is also allowed in GPRs for unaligned access via QFSRV.  */
-  if (GP_REG_P (regno) && ISA_HAS_MMI
-      && (mode == E_V16QImode || mode == E_V8HImode
-	  || mode == E_V4SImode || mode == E_V2DImode
-	  || mode == E_V4SFmode))
+     Note: V4SF uses VU0 (COP2) registers only, not GPRs.  */
+  if (GP_REG_P (regno) && R5900_MMI_MODE_P (mode))
     return true;
 
   if (FP_REG_P (regno)
@@ -13865,6 +13942,12 @@ mips_can_change_mode_class (machine_mode from,
   if (R5900_MMI_MODE_P (from)
       && GET_MODE_SIZE (to) < GET_MODE_SIZE (from)
       && reg_classes_intersect_p (GR_REGS, rclass))
+    return false;
+
+  /* R5900 VU0: V4SF uses COP2 registers only and should not be decomposed
+     into smaller modes.  Spills must go through memory, not GPR subregs.  */
+  if (R5900_VU0_MODE_P (from)
+      && GET_MODE_SIZE (to) < GET_MODE_SIZE (from))
     return false;
 
   /* Allow conversions between different Loongson integer vectors,
@@ -24298,11 +24381,15 @@ mips_expand_vec_cond_expr (machine_mode mode, machine_mode vimode,
 	    }
 	  emit_move_insn (src1, xop1);
 	}
-      else
+      else if (operands[1] == CONSTM1_RTX (vimode))
 	{
-	  gcc_assert (operands[1] == CONSTM1_RTX (vimode));
 	  /* Case (2) if the below doesn't move the mask to src2.  */
 	  emit_move_insn (src1, mask);
+	}
+      else
+	{
+	  /* Arbitrary constant - force to register.  */
+	  emit_move_insn (src1, force_reg (vimode, operands[1]));
 	}
 
       if (register_operand (operands[2], mode))
@@ -24315,11 +24402,15 @@ mips_expand_vec_cond_expr (machine_mode mode, machine_mode vimode,
 	    }
 	  emit_move_insn (src2, xop2);
 	}
-      else
+      else if (operands[2] == CONST0_RTX (mode))
 	{
-	  gcc_assert (operands[2] == CONST0_RTX (mode));
 	  /* Case (3) if the above didn't move the mask to src1.  */
 	  emit_move_insn (src2, mask);
+	}
+      else
+	{
+	  /* Arbitrary constant - force to register.  */
+	  emit_move_insn (src2, force_reg (vimode, operands[2]));
 	}
 
       /* We deal with case (4) if the mask wasn't moved to either src1 or src2.
