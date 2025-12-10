@@ -11934,6 +11934,23 @@ mips_compute_frame_info (void)
       frame->fp_sp_offset = offset - UNITS_PER_HWFPVALUE;
     }
 
+  /* Find out which VU0 registers we need to save.  This loop must iterate over
+     the same space as its companion in mips_for_each_saved_gpr_and_fpr.  */
+  if (ISA_HAS_VU0)
+    for (regno = COP2_REG_FIRST + 1; regno <= COP2_REG_LAST; regno++)
+      if (mips_save_reg_p (regno))
+	{
+	  frame->num_vu0++;
+	  frame->vu0_mask |= 1 << (regno - COP2_REG_FIRST);
+	}
+
+  /* Move above the VU0 save area.  VU0 registers are 16 bytes each.  */
+  if (frame->num_vu0 > 0)
+    {
+      offset += MIPS_STACK_ALIGN (frame->num_vu0 * 16);
+      frame->vu0_sp_offset = offset - 16;
+    }
+
   /* Add in space for the interrupt context information.  */
   if (cfun->machine->interrupt_handler_p)
     {
@@ -12017,6 +12034,8 @@ mips_compute_frame_info (void)
     frame->gp_save_offset = frame->gp_sp_offset - offset;
   if (frame->fp_sp_offset > 0)
     frame->fp_save_offset = frame->fp_sp_offset - offset;
+  if (frame->vu0_sp_offset > 0)
+    frame->vu0_save_offset = frame->vu0_sp_offset - offset;
   if (frame->acc_sp_offset > 0)
     frame->acc_save_offset = frame->acc_sp_offset - offset;
   if (frame->num_cop0_regs > 0)
@@ -12507,6 +12526,19 @@ mips_for_each_saved_gpr_and_fpr (HOST_WIDE_INT sp_offset,
 	  mips_save_restore_reg (fpr_mode, regno, offset, fn);
 	offset -= GET_MODE_SIZE (fpr_mode);
       }
+
+  /* This loop must iterate over the same space as its companion in
+     mips_compute_frame_info.  VU0 registers are 16 bytes each.  */
+  if (ISA_HAS_VU0 && cfun->machine->frame.num_vu0 > 0)
+    {
+      offset = cfun->machine->frame.vu0_sp_offset - sp_offset;
+      for (regno = COP2_REG_LAST; regno > COP2_REG_FIRST; regno--)
+	if (BITSET_P (cfun->machine->frame.vu0_mask, regno - COP2_REG_FIRST))
+	  {
+	    mips_save_restore_reg (V4SFmode, regno, offset, fn);
+	    offset -= 16;
+	  }
+    }
 }
 
 /* Return true if a move between register REGNO and its save slot (MEM)
@@ -12991,7 +13023,7 @@ mips_expand_prologue (void)
   /* Save the registers.  Allocate up to MIPS_MAX_FIRST_STACK_STEP
      bytes beforehand; this is enough to cover the register save area
      without going out of range.  */
-  if (((frame->mask | frame->fmask | frame->acc_mask) != 0)
+  if (((frame->mask | frame->fmask | frame->acc_mask | frame->vu0_mask) != 0)
       || frame->num_cop0_regs > 0)
     {
       HOST_WIDE_INT step1;
@@ -13423,7 +13455,7 @@ mips_expand_epilogue (bool sibcall_p)
 
   /* If we need to restore registers, deallocate as much stack as
      possible in the second step without going out of range.  */
-  if ((frame->mask | frame->fmask | frame->acc_mask) != 0
+  if ((frame->mask | frame->fmask | frame->acc_mask | frame->vu0_mask) != 0
       || frame->num_cop0_regs > 0)
     {
       step2 = MIN (step1, MIPS_MAX_FIRST_STACK_STEP);
@@ -22163,16 +22195,40 @@ static void
 mips_conditional_register_usage (void)
 {
   /* Enable VU0 COP2 registers ($vf1-$vf31) for allocation when VU0 is enabled.
-     $vf0 is kept fixed since it always reads as zero in VU0.  */
+     $vf0 is kept fixed since it always contains {0,0,0,1}.
+     Following the FPR convention ($f0-$f19 caller-saved, $f20-$f31 callee-saved):
+       $vf0        - Fixed (constant register)
+       $vf1        - Caller-saved (return value)
+       $vf2-$vf11  - Callee-saved
+       $vf12-$vf19 - Caller-saved (argument registers)
+       $vf20-$vf31 - Callee-saved  */
   if (ISA_HAS_VU0)
     {
       int regno;
-      /* Enable $vf1-$vf31 (COP2_REG_FIRST+1 to COP2_REG_LAST) for allocation.
-	 Keep $vf0 fixed since it always reads as zero.  */
-      for (regno = COP2_REG_FIRST + 1; regno <= COP2_REG_LAST; regno++)
+
+      /* $vf1 - return value register, caller-saved.  */
+      fixed_regs[COP2_REG_FIRST + 1] = 0;
+      call_used_regs[COP2_REG_FIRST + 1] = 1;
+
+      /* $vf2-$vf11 - callee-saved.  */
+      for (regno = COP2_REG_FIRST + 2; regno <= COP2_REG_FIRST + 11; regno++)
+	{
+	  fixed_regs[regno] = 0;
+	  call_used_regs[regno] = 0;
+	}
+
+      /* $vf12-$vf19 - argument registers, caller-saved.  */
+      for (regno = COP2_REG_FIRST + 12; regno <= COP2_REG_FIRST + 19; regno++)
 	{
 	  fixed_regs[regno] = 0;
 	  call_used_regs[regno] = 1;
+	}
+
+      /* $vf20-$vf31 - callee-saved.  */
+      for (regno = COP2_REG_FIRST + 20; regno <= COP2_REG_LAST; regno++)
+	{
+	  fixed_regs[regno] = 0;
+	  call_used_regs[regno] = 0;
 	}
     }
 
