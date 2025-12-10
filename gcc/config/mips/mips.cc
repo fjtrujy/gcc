@@ -24301,7 +24301,14 @@ mips_expand_msa_cmp (rtx dest, enum rtx_code cond, rtx op0, rtx op1)
 /* Generate RTL for comparing CMP_OP0 and CMP_OP1 using condition COND and
    store the result -1 or 0 in DEST using R5900 MMI instructions.
    MMI only has PCEQ (equal) and PCGT (greater than, signed), so we
-   synthesize other comparisons from these.  */
+   synthesize other comparisons from these.
+
+   For unsigned comparisons (GTU, LTU, GEU, LEU), we use the bias technique:
+   XOR both operands with the sign bit (0x80, 0x8000, or 0x80000000 depending
+   on element size) to convert to signed range, then use signed comparison.
+   This works because XORing with the sign bit maps:
+     unsigned [0, MAX_UNSIGNED] -> signed [MIN_SIGNED, MAX_SIGNED]
+   preserving the ordering.  */
 
 static void
 mips_expand_mmi_cmp (rtx dest, enum rtx_code cond, rtx op0, rtx op1)
@@ -24346,9 +24353,65 @@ mips_expand_mmi_cmp (rtx dest, enum rtx_code cond, rtx op0, rtx op1)
       emit_move_insn (dest, gen_rtx_NOT (mode, dest));
       break;
 
+    case GTU:
+    case LTU:
+    case GEU:
+    case LEU:
+      {
+	/* Unsigned comparisons: XOR both operands with sign bit mask,
+	   then use corresponding signed comparison.  */
+	machine_mode inner_mode = GET_MODE_INNER (mode);
+	HOST_WIDE_INT sign_bit = HOST_WIDE_INT_1U
+				 << (GET_MODE_BITSIZE (inner_mode) - 1);
+	rtx sign_mask = gen_const_vec_duplicate (mode, GEN_INT (sign_bit));
+	rtx bias_reg = gen_reg_rtx (mode);
+	rtx biased_op0 = gen_reg_rtx (mode);
+	rtx biased_op1 = gen_reg_rtx (mode);
+
+	/* Load the sign bit mask into a register.  */
+	emit_move_insn (bias_reg, sign_mask);
+
+	/* XOR both operands with the sign bit mask.  */
+	emit_insn (gen_rtx_SET (biased_op0,
+				gen_rtx_XOR (mode, op0, bias_reg)));
+	emit_insn (gen_rtx_SET (biased_op1,
+				gen_rtx_XOR (mode, op1, bias_reg)));
+
+	/* Now use signed comparison on the biased operands.  */
+	switch (cond)
+	  {
+	  case GTU:
+	    /* a >u b  =>  (a ^ sign) >s (b ^ sign) */
+	    mips_emit_binary (GT, dest, biased_op0, biased_op1);
+	    break;
+
+	  case LTU:
+	    /* a <u b  =>  (b ^ sign) >s (a ^ sign) */
+	    mips_emit_binary (GT, dest, biased_op1, biased_op0);
+	    break;
+
+	  case GEU:
+	    /* a >=u b  =>  ((a ^ sign) >s (b ^ sign)) | ((a ^ sign) == (b ^ sign))
+	       Note: (a ^ sign) == (b ^ sign) is equivalent to a == b */
+	    temp = gen_reg_rtx (mode);
+	    mips_emit_binary (GT, dest, biased_op0, biased_op1);
+	    mips_emit_binary (EQ, temp, op0, op1);
+	    emit_insn (gen_rtx_SET (dest, gen_rtx_IOR (mode, dest, temp)));
+	    break;
+
+	  case LEU:
+	    /* a <=u b  =>  ~((a ^ sign) >s (b ^ sign)) */
+	    mips_emit_binary (GT, dest, biased_op0, biased_op1);
+	    emit_move_insn (dest, gen_rtx_NOT (mode, dest));
+	    break;
+
+	  default:
+	    gcc_unreachable ();
+	  }
+      }
+      break;
+
     default:
-      /* Unsigned comparisons (GTU, LTU, GEU, LEU) are not supported
-	 by MMI - there's no PCGTU instruction.  */
       gcc_unreachable ();
     }
 }
