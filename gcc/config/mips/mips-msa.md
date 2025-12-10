@@ -362,9 +362,11 @@
   DONE;
 })
 
+;; For V4SF vec_extract when both MSA and VU0 are available, VU0 handles it.
+;; Use FMSA_NO_V4SF here; V4SF is handled in mips-vu0.md.
 (define_expand "vec_extract<mode><unitmode>"
   [(match_operand:<UNITMODE> 0 "register_operand")
-   (match_operand:FMSA 1 "register_operand")
+   (match_operand:FMSA_NO_V4SF 1 "register_operand")
    (match_operand 2 "const_<indeximm>_operand")]
   "ISA_HAS_MSA"
 {
@@ -445,7 +447,11 @@
    (match_operand:MSA 1 "reg_or_m1_operand")
    (match_operand:MSA 2 "reg_or_0_operand")
    (match_operand:IMSA 3 "register_operand")]
-  "ISA_HAS_MSA
+  "(ISA_HAS_MSA
+    || (ISA_HAS_MMI
+        && <MSA:MODE>mode != E_V2DImode
+        && <MSA:MODE>mode != E_V2DFmode
+        && <MSA:MODE>mode != E_V4SFmode))
    && (GET_MODE_NUNITS (<MSA:MODE>mode) == GET_MODE_NUNITS (<IMSA:MODE>mode))"
 {
   mips_expand_vec_cond_expr (<MSA:MODE>mode, <MSA:VIMODE>mode, operands, true);
@@ -484,14 +490,19 @@
 (define_expand "vec_cmp<MSA:mode><mode_i>"
   [(match_operand:<VIMODE> 0 "register_operand")
    (match_operator 1 ""
-     [(match_operand:MSA 2 "register_operand")
-      (match_operand:MSA 3 "register_operand")])]
+     [(match_operand:MSA 2 "nonmemory_operand")
+      (match_operand:MSA 3 "nonmemory_operand")])]
   "ISA_HAS_MSA
    || (ISA_HAS_MMI
        && <MSA:MODE>mode != E_V2DImode
        && <MSA:MODE>mode != E_V2DFmode
        && <MSA:MODE>mode != E_V4SFmode)"
 {
+  /* Force constant operands to registers for MMI.  */
+  if (!register_operand (operands[2], <MSA:MODE>mode))
+    operands[2] = force_reg (<MSA:MODE>mode, operands[2]);
+  if (!register_operand (operands[3], <MSA:MODE>mode))
+    operands[3] = force_reg (<MSA:MODE>mode, operands[3]);
   mips_expand_vec_cmp_expr (operands);
   DONE;
 })
@@ -499,10 +510,17 @@
 (define_expand "vec_cmpu<IMSA:mode><mode_i>"
   [(match_operand:<VIMODE> 0 "register_operand")
    (match_operator 1 ""
-     [(match_operand:IMSA 2 "register_operand")
-      (match_operand:IMSA 3 "register_operand")])]
-  "ISA_HAS_MSA"
+     [(match_operand:IMSA 2 "nonmemory_operand")
+      (match_operand:IMSA 3 "nonmemory_operand")])]
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI
+       && <IMSA:MODE>mode != E_V2DImode)"
 {
+  /* Force constant operands to registers for MMI.  */
+  if (!register_operand (operands[2], <IMSA:MODE>mode))
+    operands[2] = force_reg (<IMSA:MODE>mode, operands[2]);
+  if (!register_operand (operands[3], <IMSA:MODE>mode))
+    operands[3] = force_reg (<IMSA:MODE>mode, operands[3]);
   mips_expand_vec_cmp_expr (operands);
   DONE;
 })

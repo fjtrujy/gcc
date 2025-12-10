@@ -258,28 +258,40 @@
     DONE;
 })
 
-;; VU0/R5900: V4SF move pattern using COP2 registers
-;; V4SF prefers COP2 registers. GP registers used for ABI transfers only.
+;; VU0/R5900: V4SF move pattern using COP2 registers and memory only.
+;; V4SF does not use GPRs - spills go to memory via sqc2/lqc2.
 ;; Alternatives:
 ;;   0: C,YG -> vsub $vf0,$vf0 (vector zero constant: vf0={0,0,0,1} so vf0-vf0={0,0,0,0})
 ;;   1: C,C  -> vmove.xyzw (COP2 to COP2)
 ;;   2: C,m  -> lqc2 (memory to COP2)
 ;;   3: m,C  -> sqc2 (COP2 to memory)
-;;   4: C,d  -> qmtc2 (GP to COP2 - for argument loading)
-;;   5: d,C  -> qmfc2 (COP2 to GP - for return values)
 (define_insn "*movv4sf_vu0"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,C,m,C,d")
-        (match_operand:V4SF 1 "move_operand"          "YG,C,m,C,d,C"))]
+  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=C,C,C,m")
+        (match_operand:V4SF 1 "move_operand"          "YG,C,m,C"))]
   "ISA_HAS_VU0"
   "@
    vsub.xyzw\t%0,$vf0,$vf0
    vmove.xyzw\t%0,%1
    lqc2\t%0,%1
-   sqc2\t%1,%0
-   qmtc2\t%1,%0
-   qmfc2\t%0,%1"
-  [(set_attr "type" "fadd,fmove,fpload,fpstore,mtc,mfc")
+   sqc2\t%1,%0"
+  [(set_attr "type" "fadd,fmove,fpload,fpstore")
    (set_attr "mode" "V4SF")])
+
+;; VU0 vec_extract: Extract scalar from V4SF by going through memory.
+;; VU0 has no direct element extraction instruction, so we store to memory
+;; and load the individual element.
+(define_expand "vec_extractv4sfsf"
+  [(match_operand:SF 0 "register_operand")
+   (match_operand:V4SF 1 "register_operand")
+   (match_operand 2 "const_0_to_3_operand")]
+  "ISA_HAS_VU0"
+{
+  rtx mem = assign_stack_temp (V4SFmode, 16);
+  emit_move_insn (mem, operands[1]);
+  rtx elem_mem = adjust_address (mem, SFmode, INTVAL (operands[2]) * 4);
+  emit_move_insn (operands[0], elem_mem);
+  DONE;
+})
 
 ;; MSA: V4SF move using FP registers
 (define_insn "*movv4sf_msa"
