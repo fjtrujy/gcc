@@ -1516,3 +1516,104 @@
   [(set_attr "type" "idiv")
    (set_attr "mode" "TI")])
 
+;; =========================================================================
+;; Vector-by-Scalar Shift Expanders for Autovectorization
+;; =========================================================================
+;; These handle V4SI << scalar by broadcasting the scalar to a vector
+;; and using the parallel variable shift instructions.
+;; For constant shifts, the immediate shift patterns are used instead.
+
+;; Helper: Broadcast a 32-bit scalar to all elements of V4SI
+;; Uses: dsll32 + or (64-bit ops on low half) then pcpyld to duplicate to 128 bits
+(define_expand "mmi_broadcast_w"
+  [(set (match_operand:V4SI 0 "register_operand")
+        (vec_duplicate:V4SI (match_operand:SI 1 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  /* Allocate 128-bit register, work on low 64 bits */
+  rtx tmp128 = gen_reg_rtx (V2DImode);
+  rtx tmp64 = gen_lowpart (DImode, tmp128);
+  rtx src_di = gen_reg_rtx (DImode);
+  rtx shifted = gen_reg_rtx (DImode);
+
+  /* Zero-extend scalar to 64 bits */
+  emit_insn (gen_zero_extendsidi2 (src_di, operands[1]));
+
+  /* Duplicate to both halves of 64-bit: shift left 32 and OR */
+  emit_insn (gen_ashldi3 (shifted, src_di, GEN_INT (32)));
+  emit_insn (gen_iordi3 (tmp64, shifted, src_di));
+
+  /* Use pcpyld to duplicate low 64 bits to both halves of 128-bit */
+  emit_insn (gen_mmi_pcpyld (tmp128, tmp128, tmp128));
+
+  /* Convert to V4SI */
+  emit_move_insn (operands[0], gen_lowpart (V4SImode, tmp128));
+  DONE;
+})
+
+;; ashlv4si3: V4SI << scalar (constant or variable)
+(define_expand "ashlv4si3"
+  [(set (match_operand:V4SI 0 "register_operand")
+        (ashift:V4SI (match_operand:V4SI 1 "register_operand")
+                     (match_operand:SI 2 "reg_or_vector_same_uimm6_operand")))]
+  "ISA_HAS_MMI"
+{
+  if (CONST_INT_P (operands[2]))
+    {
+      /* Use immediate shift pattern */
+      emit_insn (gen_mmi_psllw (operands[0], operands[1], operands[2]));
+    }
+  else
+    {
+      /* Broadcast scalar to vector and use variable shift */
+      rtx shift_vec = gen_reg_rtx (V4SImode);
+      emit_insn (gen_mmi_broadcast_w (shift_vec, operands[2]));
+      emit_insn (gen_mmi_psllvw (operands[0], operands[1], shift_vec));
+    }
+  DONE;
+})
+
+;; lshrv4si3: V4SI >> scalar (logical, constant or variable)
+(define_expand "lshrv4si3"
+  [(set (match_operand:V4SI 0 "register_operand")
+        (lshiftrt:V4SI (match_operand:V4SI 1 "register_operand")
+                       (match_operand:SI 2 "reg_or_vector_same_uimm6_operand")))]
+  "ISA_HAS_MMI"
+{
+  if (CONST_INT_P (operands[2]))
+    {
+      /* Use immediate shift pattern */
+      emit_insn (gen_mmi_psrlw (operands[0], operands[1], operands[2]));
+    }
+  else
+    {
+      /* Broadcast scalar to vector and use variable shift */
+      rtx shift_vec = gen_reg_rtx (V4SImode);
+      emit_insn (gen_mmi_broadcast_w (shift_vec, operands[2]));
+      emit_insn (gen_mmi_psrlvw (operands[0], operands[1], shift_vec));
+    }
+  DONE;
+})
+
+;; ashrv4si3: V4SI >> scalar (arithmetic, constant or variable)
+(define_expand "ashrv4si3"
+  [(set (match_operand:V4SI 0 "register_operand")
+        (ashiftrt:V4SI (match_operand:V4SI 1 "register_operand")
+                       (match_operand:SI 2 "reg_or_vector_same_uimm6_operand")))]
+  "ISA_HAS_MMI"
+{
+  if (CONST_INT_P (operands[2]))
+    {
+      /* Use immediate shift pattern */
+      emit_insn (gen_mmi_psraw (operands[0], operands[1], operands[2]));
+    }
+  else
+    {
+      /* Broadcast scalar to vector and use variable shift */
+      rtx shift_vec = gen_reg_rtx (V4SImode);
+      emit_insn (gen_mmi_broadcast_w (shift_vec, operands[2]));
+      emit_insn (gen_mmi_psravw (operands[0], operands[1], shift_vec));
+    }
+  DONE;
+})
+

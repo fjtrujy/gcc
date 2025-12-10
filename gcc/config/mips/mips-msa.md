@@ -656,7 +656,8 @@
 (define_expand "abs<mode>2"
   [(match_operand:IMSA 0 "register_operand")
    (abs:IMSA (match_operand:IMSA 1 "register_operand"))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
 {
   if (ISA_HAS_MMI
       && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))
@@ -1087,7 +1088,8 @@
 	(lshiftrt:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
 	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
 {
   switch (which_alternative)
     {
@@ -1112,14 +1114,24 @@
     }
 }
   [(set_attr "type" "simd_shift,simd_shift,arith,arith")
-   (set_attr "mode" "<MODE>")])
+   (set_attr "mode" "<MODE>")
+   (set (attr "enabled")
+        (cond [(and (eq_attr "alternative" "0,1")
+		    (not (match_test "ISA_HAS_MSA")))
+	       (const_string "no")
+	       (and (eq_attr "alternative" "2,3")
+		    (not (match_test "<MODE>mode == V4SImode
+				      || <MODE>mode == V8HImode")))
+	       (const_string "no")]
+	      (const_string "yes")))])
 
 (define_insn "vashr<mode>3"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
 	(ashiftrt:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
 	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
 {
   switch (which_alternative)
     {
@@ -1144,14 +1156,24 @@
     }
 }
   [(set_attr "type" "simd_shift,simd_shift,arith,arith")
-   (set_attr "mode" "<MODE>")])
+   (set_attr "mode" "<MODE>")
+   (set (attr "enabled")
+        (cond [(and (eq_attr "alternative" "0,1")
+		    (not (match_test "ISA_HAS_MSA")))
+	       (const_string "no")
+	       (and (eq_attr "alternative" "2,3")
+		    (not (match_test "<MODE>mode == V4SImode
+				      || <MODE>mode == V8HImode")))
+	       (const_string "no")]
+	      (const_string "yes")))])
 
 (define_insn "vashl<mode>3"
   [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
 	(ashift:IMSA
 	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
 	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA
+   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
 {
   switch (which_alternative)
     {
@@ -1176,7 +1198,16 @@
     }
 }
   [(set_attr "type" "simd_shift,simd_shift,arith,arith")
-   (set_attr "mode" "<MODE>")])
+   (set_attr "mode" "<MODE>")
+   (set (attr "enabled")
+        (cond [(and (eq_attr "alternative" "0,1")
+		    (not (match_test "ISA_HAS_MSA")))
+	       (const_string "no")
+	       (and (eq_attr "alternative" "2,3")
+		    (not (match_test "<MODE>mode == V4SImode
+				      || <MODE>mode == V8HImode")))
+	       (const_string "no")]
+	      (const_string "yes")))])
 
 ;; Floating-point operations (V2DF only - V4SF handled separately for VU0 compatibility)
 (define_insn "add<mode>3"
