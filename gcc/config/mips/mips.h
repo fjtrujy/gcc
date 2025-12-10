@@ -3392,26 +3392,32 @@ struct GTY(())  mips_frame_info {
   /* Likewise doubleword accumulator X ($acX).  */
   unsigned int acc_mask;
 
-  /* The number of GPRs, FPRs, doubleword accumulators and COP0
-     registers saved.  */
+  /* Likewise VU0 register (COP2_REG_FIRST + X).  */
+  unsigned int vu0_mask;
+
+  /* The number of GPRs, FPRs, doubleword accumulators, COP0 registers
+     and VU0 registers saved.  */
   unsigned int num_gp;
   unsigned int num_fp;
   unsigned int num_acc;
   unsigned int num_cop0_regs;
+  unsigned int num_vu0;
 
-  /* The offset of the topmost GPR, FPR, accumulator and COP0-register
-     save slots from the top of the frame, or zero if no such slots are
-     needed.  */
+  /* The offset of the topmost GPR, FPR, accumulator, COP0-register
+     and VU0-register save slots from the top of the frame, or zero
+     if no such slots are needed.  */
   HOST_WIDE_INT gp_save_offset;
   HOST_WIDE_INT fp_save_offset;
   HOST_WIDE_INT acc_save_offset;
   HOST_WIDE_INT cop0_save_offset;
+  HOST_WIDE_INT vu0_save_offset;
 
   /* Likewise, but giving offsets from the bottom of the frame.  */
   HOST_WIDE_INT gp_sp_offset;
   HOST_WIDE_INT fp_sp_offset;
   HOST_WIDE_INT acc_sp_offset;
   HOST_WIDE_INT cop0_sp_offset;
+  HOST_WIDE_INT vu0_sp_offset;
 
   /* Similar, but the value passed to _mcount.  */
   HOST_WIDE_INT ra_fp_offset;
