@@ -602,7 +602,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   COP3_REGS,	COP3_REGS,	COP3_REGS,	COP3_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
-  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS
+  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
+  FPU_ACC_REGS
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -13360,6 +13361,10 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   if (regno == GOT_VERSION_REGNUM)
     return mode == SImode;
 
+  /* FPU (COP1) accumulator can hold SF (32-bit single-precision float).  */
+  if (FPU_ACC_REG_P (regno) && TARGET_MIPS5900 && mode == E_SFmode)
+    return true;
+
   return false;
 }
 
@@ -13437,6 +13442,10 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
       return (GET_MODE_SIZE (mode) + UNITS_PER_FPREG - 1) / UNITS_PER_FPREG;
     }
 
+  /* FPU (COP1) accumulator is 32-bit wide and can hold SF in one register.  */
+  if (FPU_ACC_REG_P (regno) && TARGET_MIPS5900 && mode == E_SFmode)
+    return 1;
+
   /* All other registers are word-sized.  */
   return (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 }
@@ -13470,6 +13479,14 @@ mips_class_max_nregs (enum reg_class rclass, machine_mode mode)
 	}
 
       left &= ~reg_class_contents[FP_REGS];
+    }
+  /* FPU (COP1) accumulator is 32-bit wide (SF mode).  */
+  if (hard_reg_set_intersect_p (left, reg_class_contents[(int) FPU_ACC_REGS]))
+    {
+      if (TARGET_MIPS5900 && mode == E_SFmode)
+	size = MIN (size, 4);
+
+      left &= ~reg_class_contents[FPU_ACC_REGS];
     }
   if (!hard_reg_set_empty_p (left))
     size = MIN (size, UNITS_PER_WORD);
@@ -15776,6 +15793,7 @@ AVAIL_NON_MIPS16 (loongson, TARGET_LOONGSON_MMI)
 AVAIL_MIPS16E2_OR_NON_MIPS16 (cache, TARGET_CACHE_BUILTIN)
 AVAIL_NON_MIPS16 (msa, TARGET_MSA)
 AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
+AVAIL_NON_MIPS16 (r5900_fpu, TARGET_MIPS5900)
 
 /* Construct a mips_builtin_description from the given arguments.
 
@@ -15948,6 +15966,25 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
     { CODE_FOR_mipsr6_ ## INSN, MIPS_FP_COND_f,				\
     "__builtin_mipsr6_" #INSN,  MIPS_BUILTIN_DIRECT,			\
     FUNCTION_TYPE, mips_builtin_avail_r6, true }
+
+/* Define an R5900 FPU MIPS_BUILTIN_DIRECT pure function __builtin_mips_<INSN>_s
+   for instruction CODE_FOR_fpu_<INSN>.  FUNCTION_TYPE is a builtin_description
+   field.  */
+#define R5900_FPU_BUILTIN_PURE(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_fpu_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN "_s",  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, true }
+
+/* Define an R5900 FPU MIPS_BUILTIN_DIRECT_NO_TARGET function for ACC writes.
+   These are for accumulator operations with no return value.  */
+#define R5900_FPU_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)		\
+    { CODE_FOR_fpu_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN "_s",  MIPS_BUILTIN_DIRECT_NO_TARGET,	\
+    FUNCTION_TYPE, mips_builtin_avail_r5900_fpu, false }
+
+/* R5900 FPU min/max aliases - use existing RTL patterns */
+#define CODE_FOR_fpu_min CODE_FOR_sminsf3
+#define CODE_FOR_fpu_max CODE_FOR_smaxsf3
 
 #define CODE_FOR_mips_sqrt_ps CODE_FOR_sqrtv2sf2
 #define CODE_FOR_mips_addq_ph CODE_FOR_addv2hi3
@@ -17022,6 +17059,20 @@ static const struct mips_builtin_description mips_builtins[] = {
   MIPSR6_BUILTIN_PURE (max_a_d, MIPS_DF_FTYPE_DF_DF),
   MIPSR6_BUILTIN_PURE (class_s, MIPS_SF_FTYPE_SF),
   MIPSR6_BUILTIN_PURE (class_d, MIPS_DF_FTYPE_DF),
+
+  /* R5900 FPU (COP1) ACC builtins */
+  /* ACC-writing instructions: ACC = result (no FP register output) */
+  R5900_FPU_NO_TARGET_BUILTIN (adda, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (suba, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (mula, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (madda, MIPS_VOID_FTYPE_SF_SF),
+  R5900_FPU_NO_TARGET_BUILTIN (msuba, MIPS_VOID_FTYPE_SF_SF),
+  /* ACC-reading instructions: fd = ACC op (fs * ft) */
+  R5900_FPU_BUILTIN_PURE (madd, MIPS_SF_FTYPE_SF_SF),
+  R5900_FPU_BUILTIN_PURE (msub, MIPS_SF_FTYPE_SF_SF),
+  /* R5900 FPU min/max explicit intrinsics */
+  R5900_FPU_BUILTIN_PURE (min, MIPS_SF_FTYPE_SF_SF),
+  R5900_FPU_BUILTIN_PURE (max, MIPS_SF_FTYPE_SF_SF),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
@@ -17598,6 +17649,7 @@ mips_expand_builtin_direct (enum insn_code icode, rtx target, tree exp,
 {
   struct expand_operand ops[MAX_RECOG_OPERANDS];
   int opno, argno;
+  int nops = call_expr_nargs (exp);
 
   /* Map any target to operand 0.  */
   opno = 0;
@@ -17605,10 +17657,49 @@ mips_expand_builtin_direct (enum insn_code icode, rtx target, tree exp,
     create_output_operand (&ops[opno++], target, TYPE_MODE (TREE_TYPE (exp)));
 
   /* Map the arguments to the other operands.  */
-  gcc_assert (opno + call_expr_nargs (exp)
-	      == insn_data[icode].n_generator_args);
-  for (argno = 0; argno < call_expr_nargs (exp); argno++)
+  for (argno = 0; argno < nops; argno++)
     mips_prepare_builtin_arg (&ops[opno++], exp, argno);
+
+  /* R5900 FPU ACC builtins need the ACC register added as an operand.  */
+  switch (icode)
+    {
+    case CODE_FOR_fpu_adda:
+    case CODE_FOR_fpu_suba:
+    case CODE_FOR_fpu_mula:
+      /* ACC-writing only: add ACC as output operand (operand 2).  */
+      gcc_assert (!has_target_p && nops == 2);
+      {
+	rtx acc = gen_rtx_REG (SFmode, FPU_ACC_REG_FIRST);
+	create_output_operand (&ops[opno++], acc, SFmode);
+      }
+      break;
+
+    case CODE_FOR_fpu_madda:
+    case CODE_FOR_fpu_msuba:
+      /* ACC read-modify-write: add ACC as output (operand 2) and input (operand 3).  */
+      gcc_assert (!has_target_p && nops == 2);
+      {
+	rtx acc = gen_rtx_REG (SFmode, FPU_ACC_REG_FIRST);
+	create_output_operand (&ops[opno++], acc, SFmode);
+	create_input_operand (&ops[opno++], acc, SFmode);
+      }
+      break;
+
+    case CODE_FOR_fpu_madd:
+    case CODE_FOR_fpu_msub:
+      /* ACC-reading with target: add ACC as input operand (operand 3).  */
+      gcc_assert (has_target_p && nops == 2);
+      {
+	rtx acc = gen_rtx_REG (SFmode, FPU_ACC_REG_FIRST);
+	create_input_operand (&ops[opno++], acc, SFmode);
+      }
+      break;
+
+    default:
+      /* Other builtins: verify operand count matches pattern.  */
+      gcc_assert (opno == insn_data[icode].n_generator_args);
+      break;
+    }
 
   return mips_expand_builtin_insn (icode, opno, ops, has_target_p);
 }
