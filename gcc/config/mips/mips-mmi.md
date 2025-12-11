@@ -1617,3 +1617,44 @@
   DONE;
 })
 
+;; =========================================================================
+;; V8HI Shift Expanders for Autovectorization
+;; =========================================================================
+;; R5900 MMI only supports immediate (constant) shifts for halfwords.
+;; There are no variable halfword shift instructions (psllvh, psrlvh, psravh).
+;; These expanders only handle constant shifts; variable shifts will fail
+;; to match, causing the autovectorizer to fall back to scalar code.
+
+;; ashlv8hi3: V8HI << scalar (constant only)
+(define_expand "ashlv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+        (ashift:V8HI (match_operand:V8HI 1 "register_operand")
+                     (match_operand:SI 2 "const_uimm5_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_psllh (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+;; lshrv8hi3: V8HI >> scalar (logical, constant only)
+(define_expand "lshrv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+        (lshiftrt:V8HI (match_operand:V8HI 1 "register_operand")
+                       (match_operand:SI 2 "const_uimm5_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_psrlh (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+;; ashrv8hi3: V8HI >> scalar (arithmetic, constant only)
+(define_expand "ashrv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+        (ashiftrt:V8HI (match_operand:V8HI 1 "register_operand")
+                       (match_operand:SI 2 "const_uimm5_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_psrah (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
