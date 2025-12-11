@@ -336,6 +336,14 @@
   (and (match_code "reg")
        (match_test "FPU_ACC_REG_P (REGNO (op))")))
 
+(define_predicate "lo1_operand"
+  (and (match_code "reg")
+       (match_test "REGNO (op) == LO1_REGNUM")))
+
+(define_predicate "hilo1_operand"
+  (and (match_code "reg")
+       (match_test "MD1_REG_P (REGNO (op))")))
+
 (define_predicate "fcc_reload_operand"
   (and (match_code "reg,subreg")
        (match_test "ST_REG_P (true_regnum (op))")))

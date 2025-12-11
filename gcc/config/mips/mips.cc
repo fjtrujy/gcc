@@ -603,7 +603,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
   ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
-  FPU_ACC_REGS
+  FPU_ACC_REGS,
+  MD1_0_REG,	MD1_1_REG	/* R5900 Pipeline 1 HI1/LO1 registers */
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -13341,6 +13342,12 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
 	  if (size <= UNITS_PER_WORD * 2)
 	    return regno == (size <= UNITS_PER_WORD ? LO_REGNUM : MD_REG_FIRST);
 	}
+      else if (MD1_REG_P (regno))
+	{
+	  /* R5900 Pipeline 1 HI1/LO1 have the same constraints as HI/LO.  */
+	  if (size <= UNITS_PER_WORD * 2)
+	    return regno == (size <= UNITS_PER_WORD ? LO1_REGNUM : MD1_REG_FIRST);
+	}
       else
 	{
 	  /* DSP accumulators do not have the same restrictions as
@@ -15794,6 +15801,7 @@ AVAIL_MIPS16E2_OR_NON_MIPS16 (cache, TARGET_CACHE_BUILTIN)
 AVAIL_NON_MIPS16 (msa, TARGET_MSA)
 AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 AVAIL_NON_MIPS16 (r5900_fpu, TARGET_MIPS5900)
+AVAIL_NON_MIPS16 (r5900, TARGET_MIPS5900)
 
 /* Construct a mips_builtin_description from the given arguments.
 
@@ -15985,6 +15993,36 @@ AVAIL_NON_MIPS16 (r5900_fpu, TARGET_MIPS5900)
 /* R5900 FPU min/max aliases - use existing RTL patterns */
 #define CODE_FOR_fpu_min CODE_FOR_sminsf3
 #define CODE_FOR_fpu_max CODE_FOR_smaxsf3
+
+/* Define an R5900 Pipeline 1 MIPS_BUILTIN_DIRECT pure function
+   __builtin_mips_<INSN> for instruction CODE_FOR_pipe1_<INSN>.
+   FUNCTION_TYPE is a builtin_description field.  */
+#define R5900_PIPE1_BUILTIN_PURE(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_pipe1_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_r5900, true }
+
+/* Define an R5900 Pipeline 1 MIPS_BUILTIN_DIRECT_NO_TARGET function.
+   These are for MAC1 operations with no return value.  */
+#define R5900_PIPE1_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)		\
+    { CODE_FOR_pipe1_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_r5900, false }
+
+/* Define an R5900 Pipeline 0 MIPS_BUILTIN_DIRECT pure function
+   __builtin_mips_<INSN> for instruction CODE_FOR_pipe0_<INSN>.
+   FUNCTION_TYPE is a builtin_description field.  */
+#define R5900_PIPE0_BUILTIN_PURE(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_pipe0_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_r5900, true }
+
+/* Define an R5900 Pipeline 0 MIPS_BUILTIN_DIRECT_NO_TARGET function.
+   These are for MAC0 operations with no return value.  */
+#define R5900_PIPE0_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)		\
+    { CODE_FOR_pipe0_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_r5900, false }
 
 #define CODE_FOR_mips_sqrt_ps CODE_FOR_sqrtv2sf2
 #define CODE_FOR_mips_addq_ph CODE_FOR_addv2hi3
@@ -17073,6 +17111,30 @@ static const struct mips_builtin_description mips_builtins[] = {
   /* R5900 FPU min/max explicit intrinsics */
   R5900_FPU_BUILTIN_PURE (min, MIPS_SF_FTYPE_SF_SF),
   R5900_FPU_BUILTIN_PURE (max, MIPS_SF_FTYPE_SF_SF),
+
+  /* R5900 Pipeline 1 (MAC1) builtins - second integer multiply-accumulate unit */
+  R5900_PIPE1_NO_TARGET_BUILTIN (mult1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (multu1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (div1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (divu1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (madd1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (maddu1, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (mthi1, MIPS_VOID_FTYPE_SI),
+  R5900_PIPE1_NO_TARGET_BUILTIN (mtlo1, MIPS_VOID_FTYPE_SI),
+  R5900_PIPE1_BUILTIN_PURE (mfhi1, MIPS_SI_FTYPE_VOID),
+  R5900_PIPE1_BUILTIN_PURE (mflo1, MIPS_SI_FTYPE_VOID),
+
+  /* R5900 Pipeline 0 (MAC0) builtins - explicit intrinsics for dual-pipeline code */
+  R5900_PIPE0_NO_TARGET_BUILTIN (mult, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (multu, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (div, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (divu, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (madd, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (maddu, MIPS_VOID_FTYPE_SI_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (mthi, MIPS_VOID_FTYPE_SI),
+  R5900_PIPE0_NO_TARGET_BUILTIN (mtlo, MIPS_VOID_FTYPE_SI),
+  R5900_PIPE0_BUILTIN_PURE (mfhi, MIPS_SI_FTYPE_VOID),
+  R5900_PIPE0_BUILTIN_PURE (mflo, MIPS_SI_FTYPE_VOID),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the
