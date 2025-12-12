@@ -1315,6 +1315,9 @@ struct mips_cpu_info {
 /* The MSA ASE is available.  */
 #define ISA_HAS_MSA		(TARGET_MSA && !TARGET_MIPS16)
 
+/* The R5900 MMI (MultiMedia Instructions) ASE is available.  */
+#define ISA_HAS_MMI		(TARGET_MIPS5900 && !TARGET_MIPS16)
+
 /* The MIPS16e V2 instructions are available.  */
 #define ISA_HAS_MIPS16E2       (TARGET_MIPS16 && TARGET_MIPS16E2 \
 				&& !TARGET_64BIT)
@@ -2510,6 +2513,13 @@ enum reg_class
    && GET_MODE_SIZE (MODE) == UNITS_PER_MSA_REG		\
    && (GET_MODE_CLASS (MODE) == MODE_VECTOR_INT		\
        || GET_MODE_CLASS (MODE) == MODE_VECTOR_FLOAT))
+
+/* R5900 MMI 128-bit modes (integer vectors in GP registers).  */
+#define R5900_MMI_MODE_P(MODE)				\
+  (TARGET_MIPS5900					\
+   && ((MODE) == E_TImode || (MODE) == E_V4SImode	\
+       || (MODE) == E_V8HImode || (MODE) == E_V16QImode	\
+       || (MODE) == E_V2DImode))
 
 /* Temporary register that is used when restoring $gp after a call.  $4 and $5
    are used for returning complex double values in soft-float code, so $6 is the

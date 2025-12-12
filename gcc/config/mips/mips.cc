@@ -2552,6 +2552,12 @@ mips_cannot_force_const_mem (machine_mode mode, rtx x)
   if (GET_CODE (x) == HIGH)
     return true;
 
+  /* R5900 128-bit modes: always allow forcing non-zero constants to memory
+     since there's no way to synthesize 128-bit immediates.  Zero is
+     handled directly by the patterns using $0.  */
+  if (TARGET_MIPS5900 && GET_MODE_SIZE (mode) == 16 && !const_0_operand (x, mode))
+    return false;
+
   /* As an optimization, reject constants that mips_legitimize_move
      can expand inline.
 
@@ -3907,6 +3913,26 @@ mips_legitimize_move (machine_mode mode, rtx dest, rtx src)
       return true;
     }
 
+  /* R5900 128-bit modes: force constants to memory since there are no
+     instructions to load 128-bit immediates directly.  This applies to
+     TImode.  For zero, we can skip this since the patterns handle it
+     using $0.  Also skip for MD registers since they don't use TImode.  */
+  if (TARGET_MIPS5900 && mode == E_TImode && CONSTANT_P (src)
+      && !(REG_P (dest) && MD_REG_P (REGNO (dest))))
+    {
+      /* Skip proper zero constants - let patterns handle using $0.  */
+      if (const_0_operand (src, mode))
+	return false;
+      /* Non-zero constants need memory load.  */
+      rtx mem = force_const_mem (mode, src);
+      if (mem)
+	{
+	  mips_split_symbol (dest, XEXP (mem, 0), mode, &XEXP (mem, 0));
+	  mips_emit_move (dest, mem);
+	  return true;
+	}
+    }
+
   /* We need to deal with constants that would be legitimate
      immediate_operands but aren't legitimate move_operands.  */
   if (CONSTANT_P (src) && !move_operand (src, mode))
@@ -5007,6 +5033,10 @@ mips_split_move_p (rtx dest, rtx src, enum mips_split_type split_type)
   if (MSA_SUPPORTED_MODE_P (GET_MODE (dest)))
     return mips_split_128bit_move_p (dest, src);
 
+  /* R5900 TImode moves don't need splitting - GP registers are 128-bit wide.  */
+  if (TARGET_MIPS5900 && GET_MODE (dest) == E_TImode)
+    return false;
+
   /* Otherwise split all multiword moves.  */
   return size > UNITS_PER_WORD;
 }
@@ -5355,6 +5385,30 @@ mips_output_move (rtx dest, rtx src)
     {
       gcc_assert (mips_const_vector_same_int_p (src, mode, -512, 511));
       return "ldi.%v0\t%w0,%E1";
+    }
+
+  /* R5900 TImode (128-bit) using lq/sq/por.
+     R5900 GPRs are 128-bit wide, so $0 is a full 128-bit zero.
+     Use POR for register-register moves to copy all 128 bits.  */
+  if (TARGET_MIPS5900 && mode == E_TImode)
+    {
+      if (dest_code == REG && GP_REG_P (REGNO (dest)))
+	{
+	  if (src_code == REG && GP_REG_P (REGNO (src)))
+	    return "por\t%0,$0,%1";
+	  if (src_code == MEM)
+	    return "lq\t%0,%1";
+	  /* Use por for zero constant to clear all 128 bits (move only clears 64).  */
+	  if (src == CONST0_RTX (mode))
+	    return "por\t%0,$0,$0";
+	}
+      if (dest_code == MEM)
+	{
+	  if (src_code == REG && GP_REG_P (REGNO (src)))
+	    return "sq\t%1,%0";
+	  if (src == CONST0_RTX (mode))
+	    return "sq\t$0,%0";
+	}
     }
 
   if ((src_code == REG && GP_REG_P (REGNO (src)))
@@ -11537,11 +11591,13 @@ mips_compute_frame_info (void)
  			      ARRAY_SIZE (mips16e_a0_a3_regs), &frame->num_gp);
     }
 
-  /* Move above the GPR save area.  */
+  /* Move above the GPR save area.
+     R5900 GPRs are 128-bit wide, so we need 16 bytes per register.  */
   if (frame->num_gp > 0)
     {
-      offset += MIPS_STACK_ALIGN (frame->num_gp * UNITS_PER_WORD);
-      frame->gp_sp_offset = offset - UNITS_PER_WORD;
+      HOST_WIDE_INT gp_reg_size = TARGET_MIPS5900 ? 16 : UNITS_PER_WORD;
+      offset += MIPS_STACK_ALIGN (frame->num_gp * gp_reg_size);
+      frame->gp_sp_offset = offset - gp_reg_size;
     }
 
   /* Find out which FPRs we need to save.  This loop must iterate over
@@ -12099,14 +12155,18 @@ mips_for_each_saved_gpr_and_fpr (HOST_WIDE_INT sp_offset,
   if (TARGET_MICROMIPS)
     umips_build_save_restore (fn, &mask, &offset);
 
+  /* R5900 GPRs are 128-bit wide, so use TImode for save/restore.  */
+  machine_mode gpr_mode = TARGET_MIPS5900 ? E_TImode : word_mode;
+  HOST_WIDE_INT gp_reg_size = TARGET_MIPS5900 ? 16 : UNITS_PER_WORD;
+
   for (regno = GP_REG_LAST; regno >= GP_REG_FIRST; regno--)
     if (BITSET_P (mask, regno - GP_REG_FIRST))
       {
 	/* Record the ra offset for use by mips_function_profiler.  */
 	if (regno == RETURN_ADDR_REGNUM)
 	  cfun->machine->frame.ra_fp_offset = offset + sp_offset;
-	mips_save_restore_reg (word_mode, regno, offset, fn);
-	offset -= UNITS_PER_WORD;
+	mips_save_restore_reg (gpr_mode, regno, offset, fn);
+	offset -= gp_reg_size;
       }
 
   /* This loop must iterate over the same space as its companion in
@@ -13280,6 +13340,10 @@ mips_hard_regno_mode_ok_uncached (unsigned int regno, machine_mode mode)
   size = GET_MODE_SIZE (mode);
   mclass = GET_MODE_CLASS (mode);
 
+  /* R5900 GP registers are 128-bit wide and can hold TImode natively.  */
+  if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
+    return true;
+
   if (GP_REG_P (regno) && mode != CCFmode && !MSA_SUPPORTED_MODE_P (mode))
     return ((regno - GP_REG_FIRST) & 1) == 0 || size <= UNITS_PER_WORD;
 
@@ -13453,6 +13517,10 @@ mips_hard_regno_nregs (unsigned int regno, machine_mode mode)
   if (FPU_ACC_REG_P (regno) && TARGET_MIPS5900 && mode == E_SFmode)
     return 1;
 
+  /* R5900 GP registers are 128-bit wide and can hold TImode in one register.  */
+  if (GP_REG_P (regno) && TARGET_MIPS5900 && mode == E_TImode)
+    return 1;
+
   /* All other registers are word-sized.  */
   return (GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
 }
@@ -13496,7 +13564,13 @@ mips_class_max_nregs (enum reg_class rclass, machine_mode mode)
       left &= ~reg_class_contents[FPU_ACC_REGS];
     }
   if (!hard_reg_set_empty_p (left))
-    size = MIN (size, UNITS_PER_WORD);
+    {
+      /* R5900 GP registers are 128-bit wide for TImode.  */
+      if (TARGET_MIPS5900 && mode == E_TImode)
+	size = MIN (size, 16);
+      else
+	size = MIN (size, UNITS_PER_WORD);
+    }
   return (GET_MODE_SIZE (mode) + size - 1) / size;
 }
 
@@ -13506,6 +13580,15 @@ static bool
 mips_can_change_mode_class (machine_mode from,
 			    machine_mode to, reg_class_t rclass)
 {
+  /* R5900 has 128-bit GPRs.  TImode values fit in a single register and
+     should not be decomposed into smaller modes, as lower-subreg cannot
+     handle this properly.  Disallow mode changes from TImode to
+     smaller modes for GPRs on R5900.  */
+  if (TARGET_MIPS5900 && from == E_TImode
+      && GET_MODE_SIZE (to) < GET_MODE_SIZE (from)
+      && reg_classes_intersect_p (GR_REGS, rclass))
+    return false;
+
   /* Allow conversions between different Loongson integer vectors,
      and between those vectors and DImode.  */
   if (GET_MODE_SIZE (from) == 8 && GET_MODE_SIZE (to) == 8
@@ -13579,6 +13662,14 @@ mips_mode_ok_for_mov_fmt_p (machine_mode mode)
 static bool
 mips_modes_tieable_p (machine_mode mode1, machine_mode mode2)
 {
+  /* R5900 has 128-bit GPRs.  TImode values fit in a single register and
+     should not be decomposed into smaller modes, as lower-subreg cannot
+     handle this properly.  */
+  if (TARGET_MIPS5900
+      && ((mode1 == TImode && GET_MODE_SIZE (mode2) < 16)
+	  || (mode2 == TImode && GET_MODE_SIZE (mode1) < 16)))
+    return false;
+
   /* FPRs allow no mode punning, so it's not worth tying modes if we'd
      prefer to put one of them in FPRs.  */
   return (mode1 == mode2
@@ -13899,6 +13990,11 @@ mips_vector_mode_supported_p (machine_mode mode)
     case E_V4HImode:
     case E_V8QImode:
       return TARGET_LOONGSON_MMI;
+
+    case E_V16QImode:
+    case E_V8HImode:
+    case E_V4SImode:
+      return ISA_HAS_MMI || MSA_SUPPORTED_MODE_P (mode);
 
     default:
       return MSA_SUPPORTED_MODE_P (mode);
@@ -15802,6 +15898,7 @@ AVAIL_NON_MIPS16 (msa, TARGET_MSA)
 AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 AVAIL_NON_MIPS16 (r5900_fpu, TARGET_MIPS5900)
 AVAIL_NON_MIPS16 (r5900, TARGET_MIPS5900)
+AVAIL_NON_MIPS16 (mmi, ISA_HAS_MMI)
 
 /* Construct a mips_builtin_description from the given arguments.
 
@@ -16023,6 +16120,21 @@ AVAIL_NON_MIPS16 (r5900, TARGET_MIPS5900)
     { CODE_FOR_pipe0_ ## INSN, MIPS_FP_COND_f,				\
     "__builtin_mips_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
     FUNCTION_TYPE, mips_builtin_avail_r5900, false }
+
+/* Define an R5900 MMI MIPS_BUILTIN_DIRECT pure function __builtin_mmi_<INSN>
+   for instruction CODE_FOR_mmi_<INSN>.  FUNCTION_TYPE is a builtin_description
+   field.  */
+#define MMI_BUILTIN_PURE(INSN, FUNCTION_TYPE)				\
+    { CODE_FOR_mmi_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mmi_" #INSN,  MIPS_BUILTIN_DIRECT,			\
+    FUNCTION_TYPE, mips_builtin_avail_mmi, true }
+
+/* Define an R5900 MMI MIPS_BUILTIN_DIRECT_NO_TARGET function for __builtin_mmi_<INSN>.
+   These are for operations with no return value.  */
+#define MMI_NO_TARGET_BUILTIN(INSN, FUNCTION_TYPE)			\
+    { CODE_FOR_mmi_ ## INSN, MIPS_FP_COND_f,				\
+    "__builtin_mmi_" #INSN,  MIPS_BUILTIN_DIRECT_NO_TARGET,		\
+    FUNCTION_TYPE, mips_builtin_avail_mmi, false }
 
 #define CODE_FOR_mips_sqrt_ps CODE_FOR_sqrtv2sf2
 #define CODE_FOR_mips_addq_ph CODE_FOR_addv2hi3
@@ -17135,6 +17247,32 @@ static const struct mips_builtin_description mips_builtins[] = {
   R5900_PIPE0_NO_TARGET_BUILTIN (mtlo, MIPS_VOID_FTYPE_SI),
   R5900_PIPE0_BUILTIN_PURE (mfhi, MIPS_SI_FTYPE_VOID),
   R5900_PIPE0_BUILTIN_PURE (mflo, MIPS_SI_FTYPE_VOID),
+
+  /* Built-in functions for R5900 MMI (Multimedia Instructions).  */
+  /* Parallel add: PADDB, PADDH, PADDW */
+  MMI_BUILTIN_PURE (paddb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (paddh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (paddw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel subtract: PSUBB, PSUBH, PSUBW */
+  MMI_BUILTIN_PURE (psubb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (psubh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (psubw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Saturating add (signed): PADDSB, PADDSH, PADDSW */
+  MMI_BUILTIN_PURE (paddsb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (paddsh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (paddsw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Saturating subtract (signed): PSUBSB, PSUBSH, PSUBSW */
+  MMI_BUILTIN_PURE (psubsb, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (psubsh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (psubsw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Saturating add (unsigned): PADDUB, PADDUH, PADDUW */
+  MMI_BUILTIN_PURE (paddub, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (padduh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (padduw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Saturating subtract (unsigned): PSUBUB, PSUBUH, PSUBUW */
+  MMI_BUILTIN_PURE (psubub, MIPS_V16QI_FTYPE_V16QI_V16QI),
+  MMI_BUILTIN_PURE (psubuh, MIPS_V8HI_FTYPE_V8HI_V8HI),
+  MMI_BUILTIN_PURE (psubuw, MIPS_V4SI_FTYPE_V4SI_V4SI),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the

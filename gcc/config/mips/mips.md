@@ -262,8 +262,19 @@
 	(const_string "no")))
 
 ;; True if the main data type is four times of the size of a word.
+;; R5900 GP registers are 128-bit wide, so TImode doesn't need splitting on R5900.
+;; For TImode: qword_mode is YES only for non-64bit, non-R5900 targets.
+;; For TFmode: qword_mode is YES only for non-64bit targets (FP is separate).
 (define_attr "qword_mode" "no,yes"
-  (cond [(and (eq_attr "mode" "TI,TF")
+  (cond [(and (eq_attr "mode" "TI")
+	      (not (match_test "TARGET_64BIT"))
+	      (not (match_test "TARGET_MIPS5900")))
+	 (const_string "yes")
+	 ;; R5900 TI mode never needs splitting regardless of TARGET_64BIT
+	 (and (eq_attr "mode" "TI")
+	      (match_test "TARGET_MIPS5900"))
+	 (const_string "no")
+	 (and (eq_attr "mode" "TF")
 	      (not (match_test "TARGET_64BIT")))
 	 (const_string "yes")]
 	(const_string "no")))
@@ -5341,7 +5352,7 @@
 (define_expand "movti"
   [(set (match_operand:TI 0)
 	(match_operand:TI 1))]
-  "TARGET_64BIT"
+  "TARGET_64BIT || TARGET_MIPS5900"
 {
   if (mips_legitimize_move (TImode, operands[0], operands[1]))
     DONE;
@@ -5352,6 +5363,7 @@
 	(match_operand:TI 1 "move_operand" "d,i,m,dJ,*J,*d,*a"))]
   "TARGET_64BIT
    && !TARGET_MIPS16
+   && !TARGET_MIPS5900
    && (register_operand (operands[0], TImode)
        || reg_or_0_operand (operands[1], TImode))"
   { return mips_output_move (operands[0], operands[1]); }
@@ -5360,6 +5372,196 @@
    	(if_then_else (eq_attr "move_type" "imul")
 		      (const_string "SI")
 		      (const_string "TI")))])
+
+;; R5900 TImode (128-bit integer) move using lq/sq
+;; R5900 GP registers are 128-bit wide, so no splitting is needed.
+;; Alternatives:
+;;   0: d,d  -> por (128-bit register copy via MMI)
+;;   1: d,m  -> lq (128-bit load from memory)
+;;   2: d,J  -> por $d,$0,$0 (128-bit zero to register)
+;;   3: m,d  -> sq (128-bit store to memory)
+;;   4: m,J  -> sq $0,mem (128-bit zero store to memory)
+(define_insn "*movti_r5900"
+  [(set (match_operand:TI 0 "nonimmediate_operand" "=d,d,d,m,m")
+	(match_operand:TI 1 "move_operand" "d,m,J,d,J"))]
+  "TARGET_MIPS5900
+   && (register_operand (operands[0], TImode)
+       || reg_or_0_operand (operands[1], TImode))"
+  { return mips_output_move (operands[0], operands[1]); }
+  [(set_attr "type" "move,load,move,store,store")
+   (set_attr "mode" "TI")])
+
+;; -------------------------------------------------------------------------
+;; R5900 MMI: Basic Parallel Add/Subtract Instructions
+;; -------------------------------------------------------------------------
+
+;; Parallel add: PADDB, PADDH, PADDW
+(define_insn "mmi_paddb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(plus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+		    (match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_paddh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(plus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		   (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_paddw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(plus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		   (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; Parallel subtract: PSUBB, PSUBH, PSUBW
+(define_insn "mmi_psubb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(minus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+		     (match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_psubh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(minus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		    (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_psubw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(minus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		    (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; Saturating add (signed): PADDSB, PADDSH, PADDSW
+(define_insn "mmi_paddsb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(ss_plus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddsb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_paddsh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(ss_plus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddsh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_paddsw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ss_plus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddsw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; Saturating subtract (signed): PSUBSB, PSUBSH, PSUBSW
+(define_insn "mmi_psubsb"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(ss_minus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+			(match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubsb\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_psubsh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(ss_minus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		       (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubsh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_psubsw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(ss_minus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubsw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; Saturating add (unsigned): PADDUB, PADDUH, PADDUW
+(define_insn "mmi_paddub"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(us_plus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+		       (match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "paddub\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_padduh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(us_plus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		      (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "padduh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_padduw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(us_plus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		      (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "padduw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+;; Saturating subtract (unsigned): PSUBUB, PSUBUH, PSUBUW
+(define_insn "mmi_psubub"
+  [(set (match_operand:V16QI 0 "register_operand" "=d")
+	(us_minus:V16QI (match_operand:V16QI 1 "register_operand" "d")
+			(match_operand:V16QI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubub\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_psubuh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(us_minus:V8HI (match_operand:V8HI 1 "register_operand" "d")
+		       (match_operand:V8HI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubuh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
+(define_insn "mmi_psubuw"
+  [(set (match_operand:V4SI 0 "register_operand" "=d")
+	(us_minus:V4SI (match_operand:V4SI 1 "register_operand" "d")
+		       (match_operand:V4SI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "psubuw\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
 
 (define_insn "*movti_mips16"
   [(set (match_operand:TI 0 "nonimmediate_operand" "=d,y,d,d,d,d,m,*d")
