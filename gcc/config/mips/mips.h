@@ -1917,8 +1917,8 @@ FP_ASM_SPEC "\
   1,									\
   /* FPU (COP1) accumulator register */					\
   1,									\
-  /* R5900 Pipeline 1 HI1/LO1 registers (call-clobbered) */		\
-  1, 1,									\
+  /* R5900 Pipeline 1 HI1/LO1 registers (call-saved, matching HI/LO) */	\
+  0, 0,									\
   /* VU0 Q and I registers (call-clobbered) */				\
   1, 1									\
 }
