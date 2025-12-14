@@ -2211,10 +2211,10 @@ enum reg_class
   MD1_1_REG,			/* R5900 Pipeline 1 second register */
   MD1_REGS,			/* R5900 Pipeline 1 HI1/LO1 registers */
   ACC_REGS,			/* Hi/Lo, DSP, and MD1 accumulator registers */
-  VU0_ACC_REGS,			/* VU0 accumulator register */
-  FPU_ACC_REGS,			/* FPU (COP1) accumulator register */
-  VU0_Q_REGS,			/* VU0 Q register (division/sqrt result) */
-  VU0_I_REGS,			/* VU0 I register (immediate float) */
+  VU0_ACC_REG,			/* VU0 accumulator register */
+  FPU_ACC_REG,			/* FPU (COP1) accumulator register */
+  VU0_Q_REG,			/* VU0 Q register (division/sqrt result) */
+  VU0_I_REG,			/* VU0 I register (immediate float) */
   FRAME_REGS,			/* $arg and $frame */
   GR_AND_MD0_REGS,		/* union classes */
   GR_AND_MD1_REGS,
@@ -2259,10 +2259,10 @@ enum reg_class
   "MD1_1_REG",								\
   "MD1_REGS",								\
   "ACC_REGS",								\
-  "VU0_ACC_REGS",							\
-  "FPU_ACC_REGS",							\
-  "VU0_Q_REGS",								\
-  "VU0_I_REGS",								\
+  "VU0_ACC_REG",							\
+  "FPU_ACC_REG",							\
+  "VU0_Q_REG",								\
+  "VU0_I_REG",								\
   "FRAME_REGS",								\
   "GR_AND_MD0_REGS",							\
   "GR_AND_MD1_REGS",							\
@@ -2308,10 +2308,10 @@ enum reg_class
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x80000000, 0x00000000 },	/* MD1_1_REG */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xc0000000, 0x00000000 },	/* MD1_REGS */		\
   { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0xc03f0000, 0x00000000 },	/* ACC_REGS */		\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000, 0x00000000 },	/* VU0_ACC_REGS */	\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x20000000, 0x00000000 },	/* FPU_ACC_REGS */	\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000001 },	/* VU0_Q_REGS */	\
-  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000002 },	/* VU0_I_REGS */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000, 0x00000000 },	/* VU0_ACC_REG */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x20000000, 0x00000000 },	/* FPU_ACC_REG */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000001 },	/* VU0_Q_REG */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000002 },	/* VU0_I_REG */	\
   { 0x00000000, 0x00000000, 0x00006000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* FRAME_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD0_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD1_REGS */	\

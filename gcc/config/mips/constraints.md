@@ -258,19 +258,19 @@
 	    (and (not (match_operand 0 "stack_operand"))
 		 (not (match_test "CONSTANT_P (XEXP (op, 0))"))))))
 
-(define_register_constraint "Ya" "ISA_HAS_VU0 ? VU0_ACC_REGS : NO_REGS"
+(define_register_constraint "Ya" "ISA_HAS_VU0 ? VU0_ACC_REG : NO_REGS"
   "@internal
    VU0 accumulator register (ACC).")
 
-(define_register_constraint "Yq" "ISA_HAS_VU0 ? VU0_Q_REGS : NO_REGS"
+(define_register_constraint "Yq" "ISA_HAS_VU0 ? VU0_Q_REG : NO_REGS"
   "@internal
    VU0 Q register (division/sqrt result).")
 
-(define_register_constraint "Yi" "ISA_HAS_VU0 ? VU0_I_REGS : NO_REGS"
+(define_register_constraint "Yi" "ISA_HAS_VU0 ? VU0_I_REG : NO_REGS"
   "@internal
    VU0 I register (immediate float value).")
 
-(define_register_constraint "YF" "TARGET_MIPS5900 ? FPU_ACC_REGS : NO_REGS"
+(define_register_constraint "YF" "TARGET_MIPS5900 ? FPU_ACC_REG : NO_REGS"
   "@internal
    FPU (COP1) accumulator register (ACC).")
 

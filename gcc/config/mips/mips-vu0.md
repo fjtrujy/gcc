@@ -1,5 +1,5 @@
 ;; VU0 128-bit vector float patterns for PS2 R5900
-;; Also provides V4SF patterns for MSA compatibility
+;; Provides V4SF patterns for autovectorization
 ;; Copyright (C) 2025 Free Software Foundation, Inc.
 ;;
 ;; This file is part of GCC.
@@ -20,7 +20,6 @@
 
 ;; VU0 operates on 4x32-bit single-precision floats (V4SF mode)
 ;; using COP2 registers (vf0-vf31)
-;; MSA also supports V4SF using FP registers
 
 ;; VU0 register constants
 (define_constants
@@ -248,11 +247,11 @@
 ;; Vector Move (required for autovectorization)
 ;; -------------------------------------------------------------------------
 
-;; V4SF move expand - handles both VU0 and MSA
+;; V4SF move expand - VU0 only (MSA disabled for PS2/R5900)
 (define_expand "movv4sf"
   [(set (match_operand:V4SF 0)
         (match_operand:V4SF 1))]
-  "ISA_HAS_VU0 || ISA_HAS_MSA"
+  "ISA_HAS_VU0"
 {
   if (mips_legitimize_move (V4SFmode, operands[0], operands[1]))
     DONE;
@@ -293,66 +292,44 @@
   DONE;
 })
 
-;; MSA: V4SF move using FP registers
-(define_insn "*movv4sf_msa"
-  [(set (match_operand:V4SF 0 "nonimmediate_operand" "=f,f,R,*d,*f")
-	(match_operand:V4SF 1 "move_operand" "fYGYI,R,f,*f,*d"))]
-  "ISA_HAS_MSA"
-  { return mips_output_move (operands[0], operands[1]); }
-  [(set_attr "type" "simd_move,simd_load,simd_store,simd_copy,simd_insert")
-   (set_attr "mode" "V4SF")])
+;; MSA disabled for PS2/R5900 - V4SF move pattern removed (was unreachable)
 
 ;; -------------------------------------------------------------------------
 ;; Vector Arithmetic (standard optab names for autovectorization)
-;; These patterns handle both VU0 and MSA for V4SF mode
+;; VU0-only patterns for V4SF mode
 ;; -------------------------------------------------------------------------
 
-;; Vector addition
+;; Vector addition - VU0 only (MSA disabled for PS2/R5900)
 ;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for VU0 operands.
 (define_insn "addv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C,f")
-        (plus:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv,f")
-                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv,f")))]
-  "ISA_HAS_VU0 || ISA_HAS_MSA"
-  "@
-   vadd.xyzw\t%0,%u1,%u2
-   vadd.xyzw\t%0,%u1,%u2
-   vadd.xyzw\t%0,%u1,%u2
-   vadd.xyzw\t%0,%u1,%u2
-   fadd.w\t%w0,%w1,%w2"
-  [(set_attr "type" "fadd,fadd,fadd,fadd,simd_fadd")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (plus:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")))]
+  "ISA_HAS_VU0"
+  "vadd.xyzw\t%0,%u1,%u2"
+  [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
-;; Vector subtraction
+;; Vector subtraction - VU0 only (MSA disabled for PS2/R5900)
 ;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for VU0 operands.
 (define_insn "subv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C,f")
-        (minus:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv,f")
-                    (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv,f")))]
-  "ISA_HAS_VU0 || ISA_HAS_MSA"
-  "@
-   vsub.xyzw\t%0,%u1,%u2
-   vsub.xyzw\t%0,%u1,%u2
-   vsub.xyzw\t%0,%u1,%u2
-   vsub.xyzw\t%0,%u1,%u2
-   fsub.w\t%w0,%w1,%w2"
-  [(set_attr "type" "fadd,fadd,fadd,fadd,simd_fadd")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (minus:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                    (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")))]
+  "ISA_HAS_VU0"
+  "vsub.xyzw\t%0,%u1,%u2"
+  [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
-;; Vector multiplication
+;; Vector multiplication - VU0 only (MSA disabled for PS2/R5900)
 ;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for VU0 operands.
 (define_insn "mulv4sf3"
-  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C,f")
-        (mult:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv,f")
-                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv,f")))]
-  "ISA_HAS_VU0 || ISA_HAS_MSA"
-  "@
-   vmul.xyzw\t%0,%u1,%u2
-   vmul.xyzw\t%0,%u1,%u2
-   vmul.xyzw\t%0,%u1,%u2
-   vmul.xyzw\t%0,%u1,%u2
-   fmul.w\t%w0,%w1,%w2"
-  [(set_attr "type" "fmul,fmul,fmul,fmul,simd_fmul")
+  [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
+        (mult:V4SF (match_operand:V4SF 1 "vu0_reg_or_vf0_operand" "C,Yv,C,Yv")
+                   (match_operand:V4SF 2 "vu0_reg_or_vf0_operand" "C,C,Yv,Yv")))]
+  "ISA_HAS_VU0"
+  "vmul.xyzw\t%0,%u1,%u2"
+  [(set_attr "type" "fmul")
    (set_attr "mode" "V4SF")])
 
 ;; -------------------------------------------------------------------------
@@ -369,7 +346,7 @@
   [(set_attr "type" "fabs")
    (set_attr "mode" "V4SF")])
 
-;; Vector maximum - VU0 only (MSA provides its own smaxv4sf3)
+;; Vector maximum - VU0 only
 ;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "*smaxv4sf3_vu0"
   [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")
@@ -380,7 +357,7 @@
   [(set_attr "type" "fadd")
    (set_attr "mode" "V4SF")])
 
-;; Vector minimum - VU0 only (VU0 uses vmini, MSA provides its own sminv4sf3)
+;; Vector minimum - VU0 only
 ;; Supports VF0 constant {0.0, 0.0, 0.0, 1.0} for either operand.
 (define_insn "*sminv4sf3_vu0"
   [(set (match_operand:V4SF 0 "register_operand" "=C,C,C,C")

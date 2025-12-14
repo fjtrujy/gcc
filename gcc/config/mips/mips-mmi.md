@@ -24,7 +24,7 @@
 ;; This file provides:
 ;; - Explicit intrinsics via __builtin_mmi_* functions
 ;; - Vector move patterns for autovectorization support
-;; Standard optab patterns (add/sub) are in mips-msa.md with MMI alternatives.
+;; Standard optab patterns (add/sub/xor/ior/and) are defined below.
 
 ;; -------------------------------------------------------------------------
 ;; Mode Iterators for MMI Vector Modes
@@ -78,6 +78,17 @@
    (V8HI "V16HI")
    (V4SI "V8SI")])
 
+;; Aliases for MSA-compatible mode attribute names (used by moved patterns)
+(define_mode_attr VHMODE
+  [(V8HI "V16QI")
+   (V4SI "V8HI")
+   (V2DI "V4SI")])
+
+(define_mode_attr VDMODE
+  [(V4SI "V2DI")
+   (V8HI "V4SI")
+   (V16QI "V8HI")])
+
 ;; -------------------------------------------------------------------------
 ;; Vector Move Patterns for Autovectorization
 ;; -------------------------------------------------------------------------
@@ -95,7 +106,7 @@
 (define_insn "*mov<mode>_mmi"
   [(set (match_operand:VMMI 0 "nonimmediate_operand" "=d,d,d,m,m")
 	(match_operand:VMMI 1 "move_operand" "d,m,YG,d,YG"))]
-  "ISA_HAS_MMI && !ISA_HAS_MSA
+  "ISA_HAS_MMI
    && (register_operand (operands[0], <MODE>mode)
        || reg_or_0_operand (operands[1], <MODE>mode))"
   { return mips_output_move (operands[0], operands[1]); }
@@ -301,8 +312,7 @@
 ;; -------------------------------------------------------------------------
 ;; Saturating Subtract - Autovectorization Patterns
 ;; -------------------------------------------------------------------------
-;; Standard optab names for autovectorization. MSA doesn't have ss_minus/us_minus
-;; patterns, so these don't conflict.
+;; Standard optab names for autovectorization (ss_minus/us_minus).
 
 ;; Signed saturating subtract (byte/halfword/word)
 (define_insn "sssub<mode>3"
@@ -689,7 +699,6 @@
 
 ;; Unaligned 128-bit access for V4SF (VU0 float vector).
 ;; Uses QFSRV for loads, regular moves for stores.
-;; V4SF is not in MSA_NO_V4SF so it needs its own pattern.
 
 (define_expand "movmisalignv4sf"
   [(set (match_operand:V4SF 0 "nonimmediate_operand")
@@ -1131,16 +1140,11 @@
 ;; -------------------------------------------------------------------------
 ;; vec_pack_trunc - Pack with truncation (narrowing)
 ;; -------------------------------------------------------------------------
-;; vec_pack_trunc patterns are defined in mips-msa.md with the condition
-;; "ISA_HAS_MSA || ISA_HAS_MMI". The mips_expand_vec_pack_trunc() function
-;; in mips.cc handles both MSA and MMI cases, emitting PPACB/PPACH/PPACW.
-
-;; -------------------------------------------------------------------------
-;; vec_unpack - Unpack/widen operations
-;; -------------------------------------------------------------------------
-;; vec_unpack patterns are defined in mips-msa.md with the condition
-;; "ISA_HAS_MSA || ISA_HAS_MMI". The mips_expand_vec_unpack() function
-;; in mips.cc handles both MSA and MMI cases.
+;; NOTE: vec_pack_trunc and vec_unpack patterns were previously in mips-msa.md
+;; with the condition "ISA_HAS_MSA || ISA_HAS_MMI". After MSA was disabled for
+;; PS2/R5900, these patterns were moved below to this file for MMI-only use.
+;; The mips_expand_vec_pack_trunc() and mips_expand_vec_unpack() functions
+;; in mips.cc now only handle MMI cases, emitting PPACB/PPACH/PPACW and PEXTL/PEXTU.
 
 ;; =========================================================================
 ;; Parallel Move From/To HI/LO Registers
@@ -1617,3 +1621,219 @@
   DONE;
 })
 
+;;
+;; ....................
+;;
+;;	PACK/UNPACK OPERATIONS
+;;
+;; ....................
+;;
+;; These patterns were previously shared with MSA (in mips-msa.md).
+;; They have been moved here for MMI-only use after MSA was disabled.
+
+;; Pack truncate - narrowing operation
+;; Combines two wider vectors into one narrower vector by truncating elements
+(define_expand "vec_pack_trunc_<mode>"
+  [(match_operand:<VHMODE> 0 "register_operand")
+   (match_operand:MMI_DWH 1 "register_operand")
+   (match_operand:MMI_DWH 2 "register_operand")]
+  "ISA_HAS_MMI"
+{
+  mips_expand_vec_pack_trunc (operands);
+  DONE;
+})
+
+;; Unpack signed hi - sign-extend upper half of vector to wider elements
+(define_expand "vec_unpacks_hi_<mode>"
+  [(match_operand:<VDMODE> 0 "register_operand")
+   (match_operand:MMI_WHB 1 "register_operand")]
+  "ISA_HAS_MMI"
+{
+  mips_expand_vec_unpack (operands, false/*unsigned_p*/, true/*high_p*/);
+  DONE;
+})
+
+;; Unpack signed lo - sign-extend lower half of vector to wider elements
+(define_expand "vec_unpacks_lo_<mode>"
+  [(match_operand:<VDMODE> 0 "register_operand")
+   (match_operand:MMI_WHB 1 "register_operand")]
+  "ISA_HAS_MMI"
+{
+  mips_expand_vec_unpack (operands, false/*unsigned_p*/, false/*high_p*/);
+  DONE;
+})
+
+;; Unpack unsigned hi - zero-extend upper half of vector to wider elements
+(define_expand "vec_unpacku_hi_<mode>"
+  [(match_operand:<VDMODE> 0 "register_operand")
+   (match_operand:MMI_WHB 1 "register_operand")]
+  "ISA_HAS_MMI"
+{
+  mips_expand_vec_unpack (operands, true/*unsigned_p*/, true/*high_p*/);
+  DONE;
+})
+
+;; Unpack unsigned lo - zero-extend lower half of vector to wider elements
+(define_expand "vec_unpacku_lo_<mode>"
+  [(match_operand:<VDMODE> 0 "register_operand")
+   (match_operand:MMI_WHB 1 "register_operand")]
+  "ISA_HAS_MMI"
+{
+  mips_expand_vec_unpack (operands, true/*unsigned_p*/, false/*high_p*/);
+  DONE;
+})
+
+;;
+;; ....................
+;;
+;;	VECTOR MULTIPLY
+;;
+;; ....................
+;;
+;; V8HI multiply - moved from mips.md after MSA was disabled
+
+(define_expand "mulv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+	(mult:V8HI (match_operand:V8HI 1 "register_operand")
+		   (match_operand:V8HI 2 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_mulv8hi3_internal (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+;;
+;; ....................
+;;
+;;	VECTOR ARITHMETIC (MMI-only patterns)
+;;
+;; ....................
+;;
+;; These patterns were previously shared with MSA (in mips-msa.md).
+;; After MSA was disabled, MMI-only versions are needed here.
+
+;; Vector addition - V16QI, V8HI, V4SI
+(define_insn "add<mode>3"
+  [(set (match_operand:VMMIBHW 0 "register_operand" "=d")
+	(plus:VMMIBHW
+	  (match_operand:VMMIBHW 1 "register_operand" "d")
+	  (match_operand:VMMIBHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+{
+  switch (GET_MODE (operands[0]))
+    {
+    case E_V16QImode: return "paddb\t%0,%1,%2";
+    case E_V8HImode:  return "paddh\t%0,%1,%2";
+    case E_V4SImode:  return "paddw\t%0,%1,%2";
+    default: gcc_unreachable ();
+    }
+}
+  [(set_attr "alu_type" "simd_add")
+   (set_attr "type" "simd_int_arith")
+   (set_attr "mode" "<MODE>")])
+
+;; Vector subtraction - V16QI, V8HI, V4SI
+(define_insn "sub<mode>3"
+  [(set (match_operand:VMMIBHW 0 "register_operand" "=d")
+	(minus:VMMIBHW
+	  (match_operand:VMMIBHW 1 "register_operand" "d")
+	  (match_operand:VMMIBHW 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+{
+  switch (GET_MODE (operands[0]))
+    {
+    case E_V16QImode: return "psubb\t%0,%1,%2";
+    case E_V8HImode:  return "psubh\t%0,%1,%2";
+    case E_V4SImode:  return "psubw\t%0,%1,%2";
+    default: gcc_unreachable ();
+    }
+}
+  [(set_attr "alu_type" "simd_add")
+   (set_attr "type" "simd_int_arith")
+   (set_attr "mode" "<MODE>")])
+
+;; Logical XOR - all MMI vector modes
+(define_insn "xor<mode>3"
+  [(set (match_operand:VMMI 0 "register_operand" "=d")
+	(xor:VMMI
+	  (match_operand:VMMI 1 "register_operand" "d")
+	  (match_operand:VMMI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pxor\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "<MODE>")])
+
+;; Logical OR - all MMI vector modes
+(define_insn "ior<mode>3"
+  [(set (match_operand:VMMI 0 "register_operand" "=d")
+	(ior:VMMI
+	  (match_operand:VMMI 1 "register_operand" "d")
+	  (match_operand:VMMI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "por\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "<MODE>")])
+
+;; Logical AND - all MMI vector modes
+(define_insn "and<mode>3"
+  [(set (match_operand:VMMI 0 "register_operand" "=d")
+	(and:VMMI
+	  (match_operand:VMMI 1 "register_operand" "d")
+	  (match_operand:VMMI 2 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pand\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "<MODE>")])
+
+;; Logical NOT - all MMI vector modes
+(define_insn "one_cmpl<mode>2"
+  [(set (match_operand:VMMI 0 "register_operand" "=d")
+	(not:VMMI (match_operand:VMMI 1 "register_operand" "d")))]
+  "ISA_HAS_MMI"
+  "pnor\t%0,%1,%1"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "<MODE>")])
+
+;;
+;; ....................
+;;
+;;	VECTOR MOVE OPERATIONS
+;;
+;; ....................
+;;
+;; Generic vector move expand - moved from mips-msa.md after MSA was disabled
+;; V4SF is handled separately in mips-vu0.md for VU0 compatibility
+
+(define_expand "mov<mode>"
+  [(set (match_operand:VMMIBHW 0)
+	(match_operand:VMMIBHW 1))]
+  "ISA_HAS_MMI"
+{
+  if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
+    DONE;
+})
+
+;; movmisalign for MMI vector modes (V16QI, V8HI, V4SI)
+;; For MMI: Uses QFSRV for loads, falls back to regular moves for stores.
+;; CRITICAL: Never FAIL - use emit_move_insn as fallback to avoid ICE.
+(define_expand "movmisalign<mode>"
+  [(set (match_operand:VMMIBHW 0)
+	(match_operand:VMMIBHW 1))]
+  "ISA_HAS_MMI"
+{
+  /* Handle mem-to-mem: force source to register first */
+  if (MEM_P (operands[0]) && MEM_P (operands[1]))
+    operands[1] = force_reg (<MODE>mode, operands[1]);
+
+  /* For MMI (R5900), use QFSRV for loads, regular moves for stores */
+  if (REG_P (operands[0]) && MEM_P (operands[1]))
+    {
+      /* Load: Use optimized QFSRV sequence */
+      if (mips_expand_movmisalign_128 (operands[0], operands[1], <MODE>mode))
+	DONE;
+    }
+
+  /* Fallback for stores or if QFSRV optimization didn't apply */
+  emit_move_insn (operands[0], operands[1]);
+  DONE;
+})

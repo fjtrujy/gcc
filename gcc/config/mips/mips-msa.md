@@ -90,7 +90,6 @@
   UNSPEC_MSA_SUBSUU_S
   UNSPEC_MSA_SUBSUS_U
   UNSPEC_MSA_VSHF
-  UNSPEC_MSA_PCKEV
 ])
 
 ;; All vector modes with 128 bits.
@@ -126,17 +125,8 @@
 ;; Only floating-point modes.
 (define_mode_iterator FMSA     [V2DF V4SF])
 
-;; Floating-point modes excluding V4SF (which may be handled by VU0).
-(define_mode_iterator FMSA_NO_V4SF [V2DF])
-
-;; MSA modes excluding V4SF (which is handled in mips-vu0.md for VU0 compatibility).
-(define_mode_iterator MSA_NO_V4SF [V2DF V2DI V4SI V8HI V16QI])
-
 ;; Only used for reduce_plus_scal: V4SI, V8HI, V16QI have HADD.
 (define_mode_iterator MSA_NO_HADD [V2DF V4SF V2DI])
-
-;; Integer modes excluding V8HI (which may be handled by MMI for R5900).
-(define_mode_iterator IMSA_NO_V8HI [V2DI V4SI V16QI])
 
 ;; The attribute gives the integer vector mode with same size.
 (define_mode_attr VIMODE
@@ -203,14 +193,6 @@
    (V4SI "h")
    (V8HI "b")])
 
-;; This attribute indicates whether the mode is supported by R5900 MMI
-;; for integer arithmetic operations.  V2DI is not supported.
-(define_mode_attr mmi_supported
-  [(V2DI "no")
-   (V4SI "yes")
-   (V8HI "yes")
-   (V16QI "yes")])
-
 ;; This attribute gives define_insn suffix for MSA instructions that need
 ;; distinction between integer and floating point.
 (define_mode_attr msafmt_f
@@ -262,29 +244,18 @@
   DONE;
 })
 
-;; Internal pattern for MSA pckev instruction (used by expand).
-(define_insn "msa_pckev_<mode>"
-  [(set (match_operand:<VHMODE> 0 "register_operand" "=f")
-	(unspec:<VHMODE>
-	  [(match_operand:IMSA_DWH 1 "register_operand" "f")
-	   (match_operand:IMSA_DWH 2 "register_operand" "f")]
-	  UNSPEC_MSA_PCKEV))]
+;; pckev pattern with implicit type conversion.
+(define_insn "vec_pack_trunc_<mode>"
+   [(set (match_operand:<VHMODE> 0 "register_operand" "=f")
+	 (vec_concat:<VHMODE>
+	   (truncate:<VTRUNCMODE>
+	     (match_operand:IMSA_DWH 1 "register_operand" "f"))
+	   (truncate:<VTRUNCMODE>
+	     (match_operand:IMSA_DWH 2 "register_operand" "f"))))]
   "ISA_HAS_MSA"
   "pckev.<hmsafmt>\t%w0,%w2,%w1"
   [(set_attr "type" "simd_permute")
    (set_attr "mode" "<MODE>")])
-
-;; vec_pack_trunc - pack with truncation (narrowing).
-;; Handles both MSA (pckev) and R5900 MMI (ppac*) via helper function.
-(define_expand "vec_pack_trunc_<mode>"
-  [(match_operand:<VHMODE> 0 "register_operand")
-   (match_operand:IMSA_DWH 1 "register_operand")
-   (match_operand:IMSA_DWH 2 "register_operand")]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
-{
-  mips_expand_vec_pack_trunc (operands);
-  DONE;
-})
 
 (define_expand "vec_unpacks_hi_v4sf"
   [(set (match_operand:V2DF 0 "register_operand" "=f")
@@ -311,7 +282,7 @@
 (define_expand "vec_unpacks_hi_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA"
 {
   mips_expand_vec_unpack (operands, false/*unsigned_p*/, true/*high_p*/);
   DONE;
@@ -320,7 +291,7 @@
 (define_expand "vec_unpacks_lo_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA"
 {
   mips_expand_vec_unpack (operands, false/*unsigned_p*/, false/*high_p*/);
   DONE;
@@ -329,7 +300,7 @@
 (define_expand "vec_unpacku_hi_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA"
 {
   mips_expand_vec_unpack (operands, true/*unsigned_p*/, true/*high_p*/);
   DONE;
@@ -338,7 +309,7 @@
 (define_expand "vec_unpacku_lo_<mode>"
   [(match_operand:<VDMODE> 0 "register_operand")
    (match_operand:IMSA_WHB 1 "register_operand")]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  "ISA_HAS_MSA"
 {
   mips_expand_vec_unpack (operands, true/*unsigned_p*/, false/*high_p*/);
   DONE;
@@ -362,11 +333,9 @@
   DONE;
 })
 
-;; For V4SF vec_extract when both MSA and VU0 are available, VU0 handles it.
-;; Use FMSA_NO_V4SF here; V4SF is handled in mips-vu0.md.
 (define_expand "vec_extract<mode><unitmode>"
   [(match_operand:<UNITMODE> 0 "register_operand")
-   (match_operand:FMSA_NO_V4SF 1 "register_operand")
+   (match_operand:FMSA 1 "register_operand")
    (match_operand 2 "const_<indeximm>_operand")]
   "ISA_HAS_MSA"
 {
@@ -447,11 +416,7 @@
    (match_operand:MSA 1 "reg_or_m1_operand")
    (match_operand:MSA 2 "reg_or_0_operand")
    (match_operand:IMSA 3 "register_operand")]
-  "(ISA_HAS_MSA
-    || (ISA_HAS_MMI
-        && <MSA:MODE>mode != E_V2DImode
-        && <MSA:MODE>mode != E_V2DFmode
-        && <MSA:MODE>mode != E_V4SFmode))
+  "ISA_HAS_MSA
    && (GET_MODE_NUNITS (<MSA:MODE>mode) == GET_MODE_NUNITS (<IMSA:MODE>mode))"
 {
   mips_expand_vec_cond_expr (<MSA:MODE>mode, <MSA:VIMODE>mode, operands, true);
@@ -480,7 +445,7 @@
    (match_operator 3 ""
      [(match_operand:MSA_2 4 "register_operand")
       (match_operand:MSA_2 5 "register_operand")])]
-  "(ISA_HAS_MSA || ISA_HAS_MMI)
+  "ISA_HAS_MSA
    && (GET_MODE_NUNITS (<MSA:MODE>mode) == GET_MODE_NUNITS (<MSA_2:MODE>mode))"
 {
   mips_expand_vec_cond_expr (<MSA:MODE>mode, <MSA:VIMODE>mode, operands, false);
@@ -490,19 +455,10 @@
 (define_expand "vec_cmp<MSA:mode><mode_i>"
   [(match_operand:<VIMODE> 0 "register_operand")
    (match_operator 1 ""
-     [(match_operand:MSA 2 "nonmemory_operand")
-      (match_operand:MSA 3 "nonmemory_operand")])]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI
-       && <MSA:MODE>mode != E_V2DImode
-       && <MSA:MODE>mode != E_V2DFmode
-       && <MSA:MODE>mode != E_V4SFmode)"
+     [(match_operand:MSA 2 "register_operand")
+      (match_operand:MSA 3 "register_operand")])]
+  "ISA_HAS_MSA"
 {
-  /* Force constant operands to registers for MMI.  */
-  if (!register_operand (operands[2], <MSA:MODE>mode))
-    operands[2] = force_reg (<MSA:MODE>mode, operands[2]);
-  if (!register_operand (operands[3], <MSA:MODE>mode))
-    operands[3] = force_reg (<MSA:MODE>mode, operands[3]);
   mips_expand_vec_cmp_expr (operands);
   DONE;
 })
@@ -510,17 +466,10 @@
 (define_expand "vec_cmpu<IMSA:mode><mode_i>"
   [(match_operand:<VIMODE> 0 "register_operand")
    (match_operator 1 ""
-     [(match_operand:IMSA 2 "nonmemory_operand")
-      (match_operand:IMSA 3 "nonmemory_operand")])]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI
-       && <IMSA:MODE>mode != E_V2DImode)"
+     [(match_operand:IMSA 2 "register_operand")
+      (match_operand:IMSA 3 "register_operand")])]
+  "ISA_HAS_MSA"
 {
-  /* Force constant operands to registers for MMI.  */
-  if (!register_operand (operands[2], <IMSA:MODE>mode))
-    operands[2] = force_reg (<IMSA:MODE>mode, operands[2]);
-  if (!register_operand (operands[3], <IMSA:MODE>mode))
-    operands[3] = force_reg (<IMSA:MODE>mode, operands[3]);
   mips_expand_vec_cmp_expr (operands);
   DONE;
 })
@@ -654,30 +603,14 @@
    (set_attr "mode" "<MODE>")])
 
 (define_expand "abs<mode>2"
-  [(match_operand:IMSA 0 "register_operand")
-   (abs:IMSA (match_operand:IMSA 1 "register_operand"))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
+  [(match_operand:IMSA 0 "register_operand" "=f")
+   (abs:IMSA (match_operand:IMSA 1 "register_operand" "f"))]
+  "ISA_HAS_MSA"
 {
-  if (ISA_HAS_MMI
-      && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))
-    {
-      /* R5900 MMI has native pabsw/pabsh instructions.  */
-      if (<MODE>mode == V4SImode)
-	emit_insn (gen_mmi_pabsw (operands[0], operands[1]));
-      else
-	emit_insn (gen_mmi_pabsh (operands[0], operands[1]));
-      DONE;
-    }
-  else if (ISA_HAS_MSA)
-    {
-      rtx reg = gen_reg_rtx (<MODE>mode);
-      emit_move_insn (reg, CONST0_RTX (<MODE>mode));
-      emit_insn (gen_msa_add_a_<msafmt> (operands[0], operands[1], reg));
-      DONE;
-    }
-  else
-    FAIL;
+  rtx reg = gen_reg_rtx (<MODE>mode);
+  emit_move_insn (reg, CONST0_RTX (<MODE>mode));
+  emit_insn (gen_msa_add_a_<msafmt> (operands[0], operands[1], reg));
+  DONE;
 })
 
 (define_expand "neg<mode>2"
@@ -723,61 +656,37 @@
   [(set_attr "type" "simd_sld")
    (set_attr "mode" "<MODE>")])
 
-;; V4SF mov is handled in mips-vu0.md for VU0 compatibility
-;; Supports both MSA and R5900 MMI
 (define_expand "mov<mode>"
-  [(set (match_operand:MSA_NO_V4SF 0)
-	(match_operand:MSA_NO_V4SF 1))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  [(set (match_operand:MSA 0)
+	(match_operand:MSA 1))]
+  "ISA_HAS_MSA"
 {
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
     DONE;
 })
 
-;; movmisalign for vector modes - MSA and MMI.
-;; For MMI: Uses QFSRV for loads, falls back to regular moves for stores.
-;; CRITICAL: Never FAIL - use emit_move_insn as fallback to avoid ICE.
 (define_expand "movmisalign<mode>"
-  [(set (match_operand:MSA_NO_V4SF 0)
-	(match_operand:MSA_NO_V4SF 1))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  [(set (match_operand:MSA 0)
+	(match_operand:MSA 1))]
+  "ISA_HAS_MSA"
 {
-  /* Handle mem-to-mem: force source to register first */
-  if (MEM_P (operands[0]) && MEM_P (operands[1]))
-    operands[1] = force_reg (<MODE>mode, operands[1]);
-
-  /* For MMI (R5900), use QFSRV for loads, regular moves for stores */
-  if (ISA_HAS_MMI && !ISA_HAS_MSA)
-    {
-      if (REG_P (operands[0]) && MEM_P (operands[1]))
-	{
-	  /* Load: Use optimized QFSRV sequence */
-	  if (mips_expand_movmisalign_128 (operands[0], operands[1], <MODE>mode))
-	    DONE;
-	}
-      /* Store or fallback: Use regular move (may trap on misaligned HW) */
-      emit_move_insn (operands[0], operands[1]);
-      DONE;
-    }
-  /* For MSA, use the standard move which handles misalignment */
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
     DONE;
 })
 
 ;; 128-bit MSA modes can only exist in MSA registers or memory.  An exception
 ;; is allowing MSA modes for GP registers for arguments and return values.
-;; V4SF is handled in mips-vu0.md for VU0 compatibility.
 (define_insn "mov<mode>_msa"
-  [(set (match_operand:MSA_NO_V4SF 0 "nonimmediate_operand" "=f,f,R,*d,*f")
-	(match_operand:MSA_NO_V4SF 1 "move_operand" "fYGYI,R,f,*f,*d"))]
+  [(set (match_operand:MSA 0 "nonimmediate_operand" "=f,f,R,*d,*f")
+	(match_operand:MSA 1 "move_operand" "fYGYI,R,f,*f,*d"))]
   "ISA_HAS_MSA"
   { return mips_output_move (operands[0], operands[1]); }
   [(set_attr "type" "simd_move,simd_load,simd_store,simd_copy,simd_insert")
    (set_attr "mode" "<MODE>")])
 
 (define_split
-  [(set (match_operand:MSA_NO_V4SF 0 "nonimmediate_operand")
-	(match_operand:MSA_NO_V4SF 1 "move_operand"))]
+  [(set (match_operand:MSA 0 "nonimmediate_operand")
+	(match_operand:MSA 1 "move_operand"))]
   "reload_completed && ISA_HAS_MSA
    && mips_split_move_insn_p (operands[0], operands[1], insn)"
   [(const_int 0)]
@@ -813,41 +722,12 @@
 })
 
 ;; Integer operations
-;; V2DI add - MSA only (R5900 MMI doesn't have 64-bit packed add)
-(define_insn "addv2di3"
-  [(set (match_operand:V2DI 0 "register_operand" "=f,f,f")
-	(plus:V2DI
-	  (match_operand:V2DI 1 "register_operand" "f,f,f")
-	  (match_operand:V2DI 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5")))]
-  "ISA_HAS_MSA"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "addv.d\t%w0,%w1,%w2";
-    case 1:
-      {
-	HOST_WIDE_INT val = INTVAL (CONST_VECTOR_ELT (operands[2], 0));
-	operands[2] = GEN_INT (-val);
-	return "subvi.d\t%w0,%w1,%d2";
-      }
-    case 2:
-      return "addvi.d\t%w0,%w1,%E2";
-    default:
-      gcc_unreachable ();
-    }
-}
-  [(set_attr "alu_type" "simd_add")
-   (set_attr "type" "simd_int_arith")
-   (set_attr "mode" "V2DI")])
-
-;; Supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "add<mode>3"
-  [(set (match_operand:IMSA_WHB 0 "register_operand" "=f,f,f,d")
-	(plus:IMSA_WHB
-	  (match_operand:IMSA_WHB 1 "register_operand" "f,f,f,d")
-	  (match_operand:IMSA_WHB 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
+	(plus:IMSA
+	  (match_operand:IMSA 1 "register_operand" "f,f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_ximm5_operand" "f,Unv5,Uuv5")))]
+  "ISA_HAS_MSA"
 {
   switch (which_alternative)
     {
@@ -862,15 +742,6 @@
       }
     case 2:
       return "addvi.<msafmt>\t%w0,%w1,%E2";
-    case 3:
-      /* R5900 MMI parallel add.  */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V16QImode: return "paddb\t%0,%1,%2";
-	case E_V8HImode:  return "paddh\t%0,%1,%2";
-	case E_V4SImode:  return "paddw\t%0,%1,%2";
-	default: gcc_unreachable ();
-	}
     default:
       gcc_unreachable ();
     }
@@ -879,80 +750,27 @@
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-;; V2DI sub - MSA only (R5900 MMI doesn't have 64-bit packed subtract)
-(define_insn "subv2di3"
-  [(set (match_operand:V2DI 0 "register_operand" "=f,f")
-	(minus:V2DI
-	  (match_operand:V2DI 1 "register_operand" "f,f")
-	  (match_operand:V2DI 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5")))]
-  "ISA_HAS_MSA"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "subv.d\t%w0,%w1,%w2";
-    case 1:
-      return "subvi.d\t%w0,%w1,%E2";
-    default:
-      gcc_unreachable ();
-    }
-}
-  [(set_attr "alu_type" "simd_add")
-   (set_attr "type" "simd_int_arith")
-   (set_attr "mode" "V2DI")])
-
-;; Supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "sub<mode>3"
-  [(set (match_operand:IMSA_WHB 0 "register_operand" "=f,f,d")
-	(minus:IMSA_WHB
-	  (match_operand:IMSA_WHB 1 "register_operand" "f,f,d")
-	  (match_operand:IMSA_WHB 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "subv.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      return "subvi.<msafmt>\t%w0,%w1,%E2";
-    case 2:
-      /* R5900 MMI parallel subtract.  */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V16QImode: return "psubb\t%0,%1,%2";
-	case E_V8HImode:  return "psubh\t%0,%1,%2";
-	case E_V4SImode:  return "psubw\t%0,%1,%2";
-	default: gcc_unreachable ();
-	}
-    default:
-      gcc_unreachable ();
-    }
-}
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+	(minus:IMSA
+	  (match_operand:IMSA 1 "register_operand" "f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm5_operand" "f,Uuv5")))]
+  "ISA_HAS_MSA"
+  "@
+   subv.<msafmt>\t%w0,%w1,%w2
+   subvi.<msafmt>\t%w0,%w1,%E2"
   [(set_attr "alu_type" "simd_add")
    (set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-;; Use IMSA_NO_V8HI to avoid conflict with mulv8hi3 expand in mips.md.
-;; V8HI multiply is handled by a unified expand that dispatches to
-;; either MSA (msa_mulv8hi3_insn) or MMI (mmi_mulv8hi3_internal).
 (define_insn "mul<mode>3"
-  [(set (match_operand:IMSA_NO_V8HI 0 "register_operand" "=f")
-	(mult:IMSA_NO_V8HI (match_operand:IMSA_NO_V8HI 1 "register_operand" "f")
-			   (match_operand:IMSA_NO_V8HI 2 "register_operand" "f")))]
+  [(set (match_operand:IMSA 0 "register_operand" "=f")
+	(mult:IMSA (match_operand:IMSA 1 "register_operand" "f")
+		   (match_operand:IMSA 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "mulv.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_mul")
    (set_attr "mode" "<MODE>")])
-
-;; V8HI multiply - MSA implementation (used by unified mulv8hi3 expand).
-(define_insn "msa_mulv8hi3_insn"
-  [(set (match_operand:V8HI 0 "register_operand" "=f")
-	(mult:V8HI (match_operand:V8HI 1 "register_operand" "f")
-		   (match_operand:V8HI 2 "register_operand" "f")))]
-  "ISA_HAS_MSA"
-  "mulv.h\t%w0,%w1,%w2"
-  [(set_attr "type" "simd_mul")
-   (set_attr "mode" "V8HI")])
 
 (define_insn "msa_maddv_<msafmt>"
   [(set (match_operand:IMSA 0 "register_operand" "=f")
@@ -1010,43 +828,38 @@
   [(set_attr "type" "simd_div")
    (set_attr "mode" "<MODE>")])
 
-;; Logical XOR - supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "xor<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(xor:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8")))]
+  "ISA_HAS_MSA"
   "@
    xor.v\t%w0,%w1,%w2
    bnegi.%v0\t%w0,%w1,%V2
-   xori.b\t%w0,%w1,%B2
-   pxor\t%0,%1,%2"
-  [(set_attr "type" "simd_logic,simd_bit,simd_logic,arith")
+   xori.b\t%w0,%w1,%B2"
+  [(set_attr "type" "simd_logic,simd_bit,simd_logic")
    (set_attr "mode" "<MODE>")])
 
-;; Logical OR - supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "ior<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(ior:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YC,Urv8")))]
+  "ISA_HAS_MSA"
   "@
    or.v\t%w0,%w1,%w2
    bseti.%v0\t%w0,%w1,%V2
-   ori.b\t%w0,%w1,%B2
-   por\t%0,%1,%2"
-  [(set_attr "type" "simd_logic,simd_bit,simd_logic,arith")
+   ori.b\t%w0,%w1,%B2"
+  [(set_attr "type" "simd_logic,simd_bit,simd_logic")
    (set_attr "mode" "<MODE>")])
 
-;; Logical AND - supports both MSA (FPU registers) and R5900 MMI (GP registers)
 (define_insn "and<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f,d")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f,f")
 	(and:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,f,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YZ,Urv8,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
+	  (match_operand:IMSA 1 "register_operand" "f,f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_val_operand" "f,YZ,Urv8")))]
+  "ISA_HAS_MSA"
 {
   switch (which_alternative)
     {
@@ -1061,177 +874,89 @@
       }
     case 2:
       return "andi.b\t%w0,%w1,%B2";
-    case 3:
-      /* R5900 MMI parallel AND (128-bit in GP registers).  */
-      return "pand\t%0,%1,%2";
     default:
       gcc_unreachable ();
     }
 }
-  [(set_attr "type" "simd_logic,simd_bit,simd_logic,arith")
+  [(set_attr "type" "simd_logic,simd_bit,simd_logic")
    (set_attr "mode" "<MODE>")])
 
-;; Logical NOT - supports both MSA (FPU registers) and R5900 MMI (GP registers)
-;; MSA uses NOR.V with same operand, MMI uses PNOR with same operand
 (define_insn "one_cmpl<mode>2"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,d")
-	(not:IMSA (match_operand:IMSA 1 "register_operand" "f,d")))]
-  "ISA_HAS_MSA || ISA_HAS_MMI"
-  "@
-   nor.v\t%w0,%w1,%w1
-   pnor\t%0,%1,%1"
-  [(set_attr "type" "simd_logic,arith")
+  [(set (match_operand:IMSA 0 "register_operand" "=f")
+	(not:IMSA (match_operand:IMSA 1 "register_operand" "f")))]
+  "ISA_HAS_MSA"
+  "nor.v\t%w0,%w1,%w1"
+  [(set_attr "type" "simd_logic")
    (set_attr "mode" "TI")])
 
 (define_insn "vlshr<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(lshiftrt:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
+	  (match_operand:IMSA 1 "register_operand" "f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6")))]
+  "ISA_HAS_MSA"
 {
-  switch (which_alternative)
-    {
-    case 0:
-      return "srl.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      return mips_msa_output_shift_immediate ("srli.<msafmt>\t%w0,%w1,%E2", operands);
-    case 2:
-      /* R5900 MMI parallel immediate shift */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V8HImode: return "psrlh\t%0,%1,%E2";
-	case E_V4SImode: return "psrlw\t%0,%1,%E2";
-	default: gcc_unreachable ();
-	}
-    case 3:
-      /* R5900 MMI parallel variable shift (V4SI only) */
-      gcc_assert (GET_MODE (operands[0]) == E_V4SImode);
-      return "psrlvw\t%0,%1,%2";
-    default:
-      gcc_unreachable ();
-    }
+  if (which_alternative == 0)
+    return "srl.<msafmt>\t%w0,%w1,%w2";
+
+  return mips_msa_output_shift_immediate("srli.<msafmt>\t%w0,%w1,%E2", operands);
 }
-  [(set_attr "type" "simd_shift,simd_shift,arith,arith")
-   (set_attr "mode" "<MODE>")
-   (set (attr "enabled")
-        (cond [(and (eq_attr "alternative" "0,1")
-		    (not (match_test "ISA_HAS_MSA")))
-	       (const_string "no")
-	       (and (eq_attr "alternative" "2,3")
-		    (not (match_test "<MODE>mode == V4SImode
-				      || <MODE>mode == V8HImode")))
-	       (const_string "no")]
-	      (const_string "yes")))])
+  [(set_attr "type" "simd_shift")
+   (set_attr "mode" "<MODE>")])
 
 (define_insn "vashr<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(ashiftrt:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
+	  (match_operand:IMSA 1 "register_operand" "f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6")))]
+  "ISA_HAS_MSA"
 {
-  switch (which_alternative)
-    {
-    case 0:
-      return "sra.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      return mips_msa_output_shift_immediate ("srai.<msafmt>\t%w0,%w1,%E2", operands);
-    case 2:
-      /* R5900 MMI parallel immediate shift */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V8HImode: return "psrah\t%0,%1,%E2";
-	case E_V4SImode: return "psraw\t%0,%1,%E2";
-	default: gcc_unreachable ();
-	}
-    case 3:
-      /* R5900 MMI parallel variable shift (V4SI only) */
-      gcc_assert (GET_MODE (operands[0]) == E_V4SImode);
-      return "psravw\t%0,%1,%2";
-    default:
-      gcc_unreachable ();
-    }
+  if (which_alternative == 0)
+    return "sra.<msafmt>\t%w0,%w1,%w2";
+
+  return mips_msa_output_shift_immediate("srai.<msafmt>\t%w0,%w1,%E2", operands);
 }
-  [(set_attr "type" "simd_shift,simd_shift,arith,arith")
-   (set_attr "mode" "<MODE>")
-   (set (attr "enabled")
-        (cond [(and (eq_attr "alternative" "0,1")
-		    (not (match_test "ISA_HAS_MSA")))
-	       (const_string "no")
-	       (and (eq_attr "alternative" "2,3")
-		    (not (match_test "<MODE>mode == V4SImode
-				      || <MODE>mode == V8HImode")))
-	       (const_string "no")]
-	      (const_string "yes")))])
+  [(set_attr "type" "simd_shift")
+   (set_attr "mode" "<MODE>")])
 
 (define_insn "vashl<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d,d")
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
 	(ashift:IMSA
-	  (match_operand:IMSA 1 "register_operand" "f,f,d,d")
-	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6,Uuv6,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
+	  (match_operand:IMSA 1 "register_operand" "f,f")
+	  (match_operand:IMSA 2 "reg_or_vector_same_uimm6_operand" "f,Uuv6")))]
+  "ISA_HAS_MSA"
 {
-  switch (which_alternative)
-    {
-    case 0:
-      return "sll.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      return mips_msa_output_shift_immediate ("slli.<msafmt>\t%w0,%w1,%E2", operands);
-    case 2:
-      /* R5900 MMI parallel immediate shift */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V8HImode: return "psllh\t%0,%1,%E2";
-	case E_V4SImode: return "psllw\t%0,%1,%E2";
-	default: gcc_unreachable ();
-	}
-    case 3:
-      /* R5900 MMI parallel variable shift (V4SI only) */
-      gcc_assert (GET_MODE (operands[0]) == E_V4SImode);
-      return "psllvw\t%0,%1,%2";
-    default:
-      gcc_unreachable ();
-    }
-}
-  [(set_attr "type" "simd_shift,simd_shift,arith,arith")
-   (set_attr "mode" "<MODE>")
-   (set (attr "enabled")
-        (cond [(and (eq_attr "alternative" "0,1")
-		    (not (match_test "ISA_HAS_MSA")))
-	       (const_string "no")
-	       (and (eq_attr "alternative" "2,3")
-		    (not (match_test "<MODE>mode == V4SImode
-				      || <MODE>mode == V8HImode")))
-	       (const_string "no")]
-	      (const_string "yes")))])
+  if (which_alternative == 0)
+    return "sll.<msafmt>\t%w0,%w1,%w2";
 
-;; Floating-point operations (V2DF only - V4SF handled separately for VU0 compatibility)
+  return mips_msa_output_shift_immediate("slli.<msafmt>\t%w0,%w1,%E2", operands);
+}
+  [(set_attr "type" "simd_shift")
+   (set_attr "mode" "<MODE>")])
+
+;; Floating-point operations
 (define_insn "add<mode>3"
-  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
-	(plus:FMSA_NO_V4SF (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")
-		   (match_operand:FMSA_NO_V4SF 2 "register_operand" "f")))]
+  [(set (match_operand:FMSA 0 "register_operand" "=f")
+	(plus:FMSA (match_operand:FMSA 1 "register_operand" "f")
+		   (match_operand:FMSA 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "fadd.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fadd")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "sub<mode>3"
-  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
-	(minus:FMSA_NO_V4SF (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")
-		    (match_operand:FMSA_NO_V4SF 2 "register_operand" "f")))]
+  [(set (match_operand:FMSA 0 "register_operand" "=f")
+	(minus:FMSA (match_operand:FMSA 1 "register_operand" "f")
+		    (match_operand:FMSA 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "fsub.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fadd")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "mul<mode>3"
-  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
-	(mult:FMSA_NO_V4SF (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")
-		   (match_operand:FMSA_NO_V4SF 2 "register_operand" "f")))]
+  [(set (match_operand:FMSA 0 "register_operand" "=f")
+	(mult:FMSA (match_operand:FMSA 1 "register_operand" "f")
+		   (match_operand:FMSA 2 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "fmul.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fmul")
@@ -1246,35 +971,15 @@
   [(set_attr "type" "simd_fdiv")
    (set_attr "mode" "<MODE>")])
 
-;; FMA for V2DF (always MSA)
-(define_insn "fmav2df4"
-  [(set (match_operand:V2DF 0 "register_operand" "=f")
-	(fma:V2DF (match_operand:V2DF 1 "register_operand" "f")
-		  (match_operand:V2DF 2 "register_operand" "f")
-		  (match_operand:V2DF 3 "register_operand" "0")))]
+(define_insn "fma<mode>4"
+  [(set (match_operand:FMSA 0 "register_operand" "=f")
+	(fma:FMSA (match_operand:FMSA 1 "register_operand" "f")
+		  (match_operand:FMSA 2 "register_operand" "f")
+		  (match_operand:FMSA 3 "register_operand" "0")))]
   "ISA_HAS_MSA"
-  "fmadd.d\t%w0,%w1,%w2"
+  "fmadd.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_fmadd")
-   (set_attr "mode" "V2DF")])
-
-;; FMA for V4SF - expand to handle VU0 vs MSA
-(define_expand "fmav4sf4"
-  [(set (match_operand:V4SF 0 "register_operand")
-	(fma:V4SF (match_operand:V4SF 1 "register_operand")
-		  (match_operand:V4SF 2 "register_operand")
-		  (match_operand:V4SF 3 "register_operand")))]
-  "ISA_HAS_MSA || ISA_HAS_VU0")
-
-;; MSA fmav4sf4 insn (only used when VU0 not available)
-(define_insn "*fmav4sf4_msa"
-  [(set (match_operand:V4SF 0 "register_operand" "=f")
-	(fma:V4SF (match_operand:V4SF 1 "register_operand" "f")
-		  (match_operand:V4SF 2 "register_operand" "f")
-		  (match_operand:V4SF 3 "register_operand" "0")))]
-  "ISA_HAS_MSA && !ISA_HAS_VU0"
-  "fmadd.w\t%w0,%w1,%w2"
-  [(set_attr "type" "simd_fmadd")
-   (set_attr "mode" "V4SF")])
+   (set_attr "mode" "<MODE>")])
 
 (define_insn "fnma<mode>4"
   [(set (match_operand:FMSA 0 "register_operand" "=f")
@@ -1315,60 +1020,20 @@
    (set_attr "mode" "<MODE>")])
 
 (define_insn "ssadd<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,d")
-	(ss_plus:IMSA (match_operand:IMSA 1 "register_operand" "f,d")
-		      (match_operand:IMSA 2 "register_operand" "f,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode
-		       || <MODE>mode == V8HImode
-		       || <MODE>mode == V16QImode))"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "adds_s.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      /* R5900 MMI parallel saturating add (signed).  */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V16QImode: return "paddsb\t%0,%1,%2";
-	case E_V8HImode:  return "paddsh\t%0,%1,%2";
-	case E_V4SImode:  return "paddsw\t%0,%1,%2";
-	default: gcc_unreachable ();
-	}
-    default:
-      gcc_unreachable ();
-    }
-}
+  [(set (match_operand:IMSA 0 "register_operand" "=f")
+	(ss_plus:IMSA (match_operand:IMSA 1 "register_operand" "f")
+		      (match_operand:IMSA 2 "register_operand" "f")))]
+  "ISA_HAS_MSA"
+  "adds_s.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
 (define_insn "usadd<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,d")
-	(us_plus:IMSA (match_operand:IMSA 1 "register_operand" "f,d")
-		      (match_operand:IMSA 2 "register_operand" "f,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode
-		       || <MODE>mode == V8HImode
-		       || <MODE>mode == V16QImode))"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "adds_u.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      /* R5900 MMI parallel saturating add (unsigned).  */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V16QImode: return "paddub\t%0,%1,%2";
-	case E_V8HImode:  return "padduh\t%0,%1,%2";
-	case E_V4SImode:  return "padduw\t%0,%1,%2";
-	default: gcc_unreachable ();
-	}
-    default:
-      gcc_unreachable ();
-    }
-}
+  [(set (match_operand:IMSA 0 "register_operand" "=f")
+	(us_plus:IMSA (match_operand:IMSA 1 "register_operand" "f")
+		      (match_operand:IMSA 2 "register_operand" "f")))]
+  "ISA_HAS_MSA"
+  "adds_u.<msafmt>\t%w0,%w1,%w2"
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
@@ -1993,20 +1658,18 @@
   [(V4SF "S2I")
    (V2DF "D2I")])
 
-;; Use FMSA_NO_V4SF to avoid conflict with VU0's floatv4siv4sf2 pattern.
-(define_insn "float<fint><FMSA_NO_V4SF:mode>2"
-  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
-	(float:FMSA_NO_V4SF (match_operand:<VIMODE> 1 "register_operand" "f")))]
+(define_insn "float<fint><FMSA:mode>2"
+  [(set (match_operand:FMSA 0 "register_operand" "=f")
+	(float:FMSA (match_operand:<VIMODE> 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ffint_s.<msafmt>\t%w0,%w1"
   [(set_attr "type" "simd_fcvt")
    (set_attr "cnv_mode" "<FINTCNV>")
    (set_attr "mode" "<MODE>")])
 
-;; Use FMSA_NO_V4SF for consistency (VU0 doesn't support unsigned conversions).
-(define_insn "floatuns<fint><FMSA_NO_V4SF:mode>2"
-  [(set (match_operand:FMSA_NO_V4SF 0 "register_operand" "=f")
-	(unsigned_float:FMSA_NO_V4SF
+(define_insn "floatuns<fint><FMSA:mode>2"
+  [(set (match_operand:FMSA 0 "register_operand" "=f")
+	(unsigned_float:FMSA
 	  (match_operand:<VIMODE> 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ffint_u.<msafmt>\t%w0,%w1"
@@ -2164,45 +1827,23 @@
    (set_attr "cnv_mode" "<FINTCNV_2>")
    (set_attr "mode" "<MODE>")])
 
-;; Use FMSA_NO_V4SF to avoid conflict with VU0's fix_truncv4sfv4si2 pattern.
-(define_insn "fix_trunc<FMSA_NO_V4SF:mode><mode_i>2"
+(define_insn "fix_trunc<FMSA:mode><mode_i>2"
   [(set (match_operand:<VIMODE> 0 "register_operand" "=f")
-	(fix:<VIMODE> (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")))]
+	(fix:<VIMODE> (match_operand:FMSA 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ftrunc_s.<msafmt>\t%w0,%w1"
   [(set_attr "type" "simd_fcvt")
    (set_attr "cnv_mode" "<FINTCNV_2>")
    (set_attr "mode" "<MODE>")])
 
-;; Use FMSA_NO_V4SF for consistency (VU0 doesn't support unsigned conversions).
-(define_insn "fixuns_trunc<FMSA_NO_V4SF:mode><mode_i>2"
+(define_insn "fixuns_trunc<FMSA:mode><mode_i>2"
   [(set (match_operand:<VIMODE> 0 "register_operand" "=f")
-	(unsigned_fix:<VIMODE> (match_operand:FMSA_NO_V4SF 1 "register_operand" "f")))]
+	(unsigned_fix:<VIMODE> (match_operand:FMSA 1 "register_operand" "f")))]
   "ISA_HAS_MSA"
   "ftrunc_u.<msafmt>\t%w0,%w1"
   [(set_attr "type" "simd_fcvt")
    (set_attr "cnv_mode" "<FINTCNV_2>")
    (set_attr "mode" "<MODE>")])
-
-;; Explicit V4SF unsigned conversion patterns for MSA builtins.
-;; VU0 doesn't support unsigned conversions, so these are MSA-only.
-(define_insn "fixuns_truncv4sfv4si2"
-  [(set (match_operand:V4SI 0 "register_operand" "=f")
-	(unsigned_fix:V4SI (match_operand:V4SF 1 "register_operand" "f")))]
-  "ISA_HAS_MSA"
-  "ftrunc_u.w\t%w0,%w1"
-  [(set_attr "type" "simd_fcvt")
-   (set_attr "cnv_mode" "S2I")
-   (set_attr "mode" "V4SF")])
-
-(define_insn "floatunsv4siv4sf2"
-  [(set (match_operand:V4SF 0 "register_operand" "=f")
-	(unsigned_float:V4SF (match_operand:V4SI 1 "register_operand" "f")))]
-  "ISA_HAS_MSA"
-  "ffint_u.w\t%w0,%w1"
-  [(set_attr "type" "simd_fcvt")
-   (set_attr "cnv_mode" "I2S")
-   (set_attr "mode" "V4SF")])
 
 (define_insn "msa_ftq_h"
   [(set (match_operand:V8HI 0 "register_operand" "=f")
@@ -2604,33 +2245,14 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-;; Signed maximum - supports both MSA (FPU registers) and R5900 MMI (GP registers)
-;; Note: MMI only supports V4SI (word) and V8HI (halfword), not V16QI or V2DI
 (define_insn "smax<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d")
-	(smax:IMSA (match_operand:IMSA 1 "register_operand" "f,f,d")
-		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "max_s.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      return "maxi_s.<msafmt>\t%w0,%w1,%E2";
-    case 2:
-      /* R5900 MMI parallel max.  */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V8HImode:  return "pmaxh\t%0,%1,%2";
-	case E_V4SImode:  return "pmaxw\t%0,%1,%2";
-	default: gcc_unreachable ();
-	}
-    default:
-      gcc_unreachable ();
-    }
-}
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+	(smax:IMSA (match_operand:IMSA 1 "register_operand" "f,f")
+		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5")))]
+  "ISA_HAS_MSA"
+  "@
+   max_s.<msafmt>\t%w0,%w1,%w2
+   maxi_s.<msafmt>\t%w0,%w1,%E2"
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
@@ -2657,33 +2279,14 @@
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
-;; Signed minimum - supports both MSA (FPU registers) and R5900 MMI (GP registers)
-;; Note: MMI only supports V4SI (word) and V8HI (halfword), not V16QI or V2DI
 (define_insn "smin<mode>3"
-  [(set (match_operand:IMSA 0 "register_operand" "=f,f,d")
-	(smin:IMSA (match_operand:IMSA 1 "register_operand" "f,f,d")
-		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5,d")))]
-  "ISA_HAS_MSA
-   || (ISA_HAS_MMI && (<MODE>mode == V4SImode || <MODE>mode == V8HImode))"
-{
-  switch (which_alternative)
-    {
-    case 0:
-      return "min_s.<msafmt>\t%w0,%w1,%w2";
-    case 1:
-      return "mini_s.<msafmt>\t%w0,%w1,%E2";
-    case 2:
-      /* R5900 MMI parallel min.  */
-      switch (GET_MODE (operands[0]))
-	{
-	case E_V8HImode:  return "pminh\t%0,%1,%2";
-	case E_V4SImode:  return "pminw\t%0,%1,%2";
-	default: gcc_unreachable ();
-	}
-    default:
-      gcc_unreachable ();
-    }
-}
+  [(set (match_operand:IMSA 0 "register_operand" "=f,f")
+	(smin:IMSA (match_operand:IMSA 1 "register_operand" "f,f")
+		   (match_operand:IMSA 2 "reg_or_vector_same_simm5_operand" "f,Usv5")))]
+  "ISA_HAS_MSA"
+  "@
+   min_s.<msafmt>\t%w0,%w1,%w2
+   mini_s.<msafmt>\t%w0,%w1,%E2"
   [(set_attr "type" "simd_int_arith")
    (set_attr "mode" "<MODE>")])
 
