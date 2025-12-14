@@ -166,7 +166,7 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PSUBH` | Parallel Subtract Halfword | `__builtin_mmi_psubh(a, b)` | `v8hi (-)` | ✓ |
 | `PADDW` | Parallel Add Word | `__builtin_mmi_paddw(a, b)` | `v4si (+)` | ✓ |
 | `PSUBW` | Parallel Subtract Word | `__builtin_mmi_psubw(a, b)` | `v4si (-)` | ✓ |
-| `PADSBH` | Parallel Add/Subtract Halfword | - | - | - |
+| `PADSBH` | Parallel Add/Subtract Halfword | `__builtin_mmi_padsbh(a, b)` | - | - |
 | `PADDSB` | Parallel Add with Signed Saturation Byte | `__builtin_mmi_paddsb(a, b)` | - | ✓ |
 | `PSUBSB` | Parallel Subtract with Signed Saturation Byte | `__builtin_mmi_psubsb(a, b)` | - | ✓ |
 | `PADDSH` | Parallel Add with Signed Saturation Halfword | `__builtin_mmi_paddsh(a, b)` | - | ✓ |

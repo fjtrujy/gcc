@@ -35,6 +35,14 @@ test_paddw (v4si a, v4si b)
 }
 /* { dg-final { scan-assembler "\\tpaddw\\t" } } */
 
+/* Test __builtin_mmi_padsbh */
+NOMIPS16 v8hi
+test_padsbh (v8hi a, v8hi b)
+{
+  return __builtin_mmi_padsbh (a, b);
+}
+/* { dg-final { scan-assembler "\\tpadsbh\\t" } } */
+
 /* Test __builtin_mmi_psubb */
 NOMIPS16 v16qi
 test_psubb (v16qi a, v16qi b)

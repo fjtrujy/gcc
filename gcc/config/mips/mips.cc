@@ -17968,6 +17968,8 @@ static const struct mips_builtin_description mips_builtins[] = {
   MMI_BUILTIN_PURE (paddb, MIPS_V16QI_FTYPE_V16QI_V16QI),
   MMI_BUILTIN_PURE (paddh, MIPS_V8HI_FTYPE_V8HI_V8HI),
   MMI_BUILTIN_PURE (paddw, MIPS_V4SI_FTYPE_V4SI_V4SI),
+  /* Parallel add/subtract halfword: PADSBH */
+  MMI_BUILTIN_PURE (padsbh, MIPS_V8HI_FTYPE_V8HI_V8HI),
   /* Parallel subtract: PSUBB, PSUBH, PSUBW */
   MMI_BUILTIN_PURE (psubb, MIPS_V16QI_FTYPE_V16QI_V16QI),
   MMI_BUILTIN_PURE (psubh, MIPS_V8HI_FTYPE_V8HI_V8HI),

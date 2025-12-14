@@ -147,6 +147,20 @@
   [(set_attr "type" "arith")
    (set_attr "mode" "TI")])
 
+;; PADSBH - Parallel Add/Subtract Halfword (8 x 16-bit)
+;; Subtracts low 4 halfwords (bits 0-63), adds high 4 halfwords (bits 64-127)
+(define_insn "mmi_padsbh"
+  [(set (match_operand:V8HI 0 "register_operand" "=d")
+	(vec_concat:V8HI
+	  (minus:V4HI (subreg:V4HI (match_operand:V8HI 1 "register_operand" "d") 0)
+		      (subreg:V4HI (match_operand:V8HI 2 "register_operand" "d") 0))
+	  (plus:V4HI (subreg:V4HI (match_dup 1) 8)
+		     (subreg:V4HI (match_dup 2) 8))))]
+  "ISA_HAS_MMI"
+  "padsbh\t%0,%1,%2"
+  [(set_attr "type" "arith")
+   (set_attr "mode" "TI")])
+
 ;; -------------------------------------------------------------------------
 ;; Parallel Subtraction - Explicit Builtins
 ;; -------------------------------------------------------------------------
