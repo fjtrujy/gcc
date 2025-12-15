@@ -24743,13 +24743,54 @@ mips_truly_noop_truncation (poly_uint64 outprec, poly_uint64 inprec)
   return !TARGET_64BIT || inprec <= 32 || outprec > 32;
 }
 
+/* Implement TARGET_STATIC_RTX_ALIGNMENT.  */
+
+static HOST_WIDE_INT
+mips_static_rtx_alignment (machine_mode mode)
+{
+  /* R5900 MMI, VU0, and MSA all use 128-bit modes that require
+     16-byte (128-bit) alignment for lq/sq, lqc2/sqc2, and ld.b/st.b
+     instructions.  */
+  if (GET_MODE_SIZE (mode) == 16)
+    {
+      /* All 128-bit modes need 128-bit alignment on R5900 */
+      if (TARGET_MIPS5900)
+	return 128;
+
+      /* MSA also needs 128-bit alignment when enabled */
+      if (MSA_SUPPORTED_MODE_P (mode))
+	return 128;
+    }
+
+  /* For DFmode, use 64-bit alignment for better performance */
+  if (mode == DFmode && TARGET_64BIT)
+    return 64;
+
+  /* Default: return mode's natural alignment */
+  return GET_MODE_ALIGNMENT (mode);
+}
+
 /* Implement TARGET_CONSTANT_ALIGNMENT.  */
 
 static HOST_WIDE_INT
 mips_constant_alignment (const_tree exp, HOST_WIDE_INT align)
 {
+  /* For numeric constants (REAL_CST, VECTOR_CST, INTEGER_CST),
+     use the RTX alignment logic for consistency.  This ensures
+     vector and large integer constants get proper alignment. */
+  if (TREE_CODE (exp) == REAL_CST
+      || TREE_CODE (exp) == VECTOR_CST
+      || TREE_CODE (exp) == INTEGER_CST)
+    {
+      machine_mode mode = TYPE_MODE (TREE_TYPE (exp));
+      HOST_WIDE_INT mode_align = mips_static_rtx_alignment (mode);
+      return MAX (mode_align, align);
+    }
+
+  /* String constants and aggregate initializers: word-align */
   if (TREE_CODE (exp) == STRING_CST || TREE_CODE (exp) == CONSTRUCTOR)
     return MAX (align, BITS_PER_WORD);
+
   return align;
 }
 
@@ -25151,6 +25192,9 @@ mips_bit_clear_p (enum machine_mode mode, unsigned HOST_WIDE_INT m)
 
 #undef TARGET_TRULY_NOOP_TRUNCATION
 #define TARGET_TRULY_NOOP_TRUNCATION mips_truly_noop_truncation
+
+#undef TARGET_STATIC_RTX_ALIGNMENT
+#define TARGET_STATIC_RTX_ALIGNMENT mips_static_rtx_alignment
 
 #undef TARGET_CONSTANT_ALIGNMENT
 #define TARGET_CONSTANT_ALIGNMENT mips_constant_alignment
