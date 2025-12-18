@@ -39,3 +39,42 @@ Added `t-hardfp-sf` configuration for targets with hardware single-float only. T
 
 - `r5900-float32.c` - Verifies single-precision FP instructions are generated
 - `r5900-no-double.c` - Verifies double-precision FP instructions are NOT generated
+
+---
+
+## 2. Hardware Bug Workarounds
+
+### CLZ/CLO Instruction Disable
+
+The R5900 does not properly support Count Leading Zeros (CLZ) and Count Leading Ones (CLO) instructions. Disabled in `include/longlong.h`:
+
+```c
+#if (__mips == 32 || __mips == 64) && !defined(__mips16) && !defined(_MIPS_ARCH_R5900)
+#define count_leading_zeros(COUNT,X) ((COUNT) = __builtin_clz(X))
+```
+
+### Recursive `__muldi3` Prevention
+
+The R5900 requires a custom implementation to prevent recursive calls in 64-bit multiplication:
+
+```c
+#ifdef _MIPS_ARCH_R5900
+#define __umulsidi3(u, v) \
+  ({UDItype __w;                        \
+    __asm__ ("multu %1,%2\n\tpmfhl.lw %0" \
+             : "=d" (__w)               \
+             : "d" ((USItype) (u)),     \
+               "d" ((USItype) (v))      \
+             : "hi", "lo");             \
+    __w; })
+#endif
+```
+
+This uses the `pmfhl.lw` (Pack Move From HI/LO - Lower Word) instruction specific to the R5900.
+
+### Test Coverage
+
+- `r5900-no-clz.c` - Verifies CLZ/CLO instructions are NOT generated
+- `r5900-muldi3.c` - Verifies 64-bit multiplication with `multu`
+
+Fixes by davidgf.
