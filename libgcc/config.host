@@ -168,7 +168,11 @@ mips*-*-*)
 	cpu_type=mips
 	tmake_file="mips/t-mips"
 	if test "${libgcc_cv_mips_hard_float}" = yes; then
+	    if test "${libgcc_cv_mips_single_float}" = yes; then
+                tmake_file="${tmake_file} t-hardfp-sf t-hardfp"
+	    else
 		tmake_file="${tmake_file} t-hardfp-sfdf t-hardfp"
+	    fi
 	else
 		tmake_file="${tmake_file} t-softfp-sfdf"
 	fi
