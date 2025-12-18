@@ -128,3 +128,37 @@ This is used for efficient calculation of `a / sqrt(b)` operations common in 3D 
 
 - `r5900-rsqrt.c` - Verifies rsqrt.s instruction is generated
 - `r5900-fsqrt.c` - Verifies sqrt.s instruction is generated
+
+---
+
+## 4. Compiler-Level Feature Disabling
+
+### CLZ/CLO Instruction Disable
+
+The R5900 CLZ/CLO instructions are also disabled at the compiler level:
+
+```c
+#define ISA_HAS_CLZ_CLO (mips_isa_rev >= 1 && !TARGET_MIPS16 && !TARGET_MIPS5900)
+```
+
+### MIPS16 Incompatibility
+
+The R5900 does not support MIPS16 compressed instruction set. Added explicit compile-time error:
+
+```c
+if (TARGET_MIPS5900 && ((mips_base_compression_flags & MASK_MIPS16) != 0))
+    error("unsupported combination: %s", "-march=r5900 -mips16");
+```
+
+### Min/Max Float Instructions (`min.s`, `max.s`)
+
+Enables GCC to use the R5900's hardware min/max float instructions:
+
+```c
+#define ISA_HAS_FMIN_FMAX ((mips_isa_rev >= 6) || TARGET_MIPS5900)
+```
+
+### Test Coverage
+
+- `r5900-no-mips16.c` - Verifies MIPS16 is rejected with error
+- `r5900-minmax.c` - Verifies min.s/max.s instructions are generated
