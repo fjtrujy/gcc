@@ -1121,6 +1121,7 @@
 
 (define_delay (and (eq_attr "type" "branch")
 		   (not (match_test "TARGET_MIPS16"))
+		   (not (match_test "TARGET_FIX_R5900"))
 		   (eq_attr "branch_likely" "yes"))
   [(eq_attr "can_delay" "yes")
    (nil)
@@ -1130,6 +1131,7 @@
 ;; not annul on false.
 (define_delay (and (eq_attr "type" "branch,simd_branch")
 		   (not (match_test "TARGET_MIPS16"))
+		   (not (match_test "TARGET_FIX_R5900"))
 		   (ior (match_test "TARGET_CB_NEVER")
 			(and (eq_attr "compact_form" "maybe")
 			     (not (match_test "TARGET_CB_ALWAYS")))
@@ -1806,7 +1808,7 @@
 		 (match_operand:SI 3 "register_operand" "l,l,l,d")))
    (clobber (match_scratch:SI 4 "=X,X,3,l"))
    (clobber (match_scratch:SI 5 "=X,X,X,&d"))]
-  "TARGET_MIPS3900 && !TARGET_MIPS16"
+  "(TARGET_MIPS3900 || TARGET_MIPS5900) && !TARGET_MIPS16"
   "@
     madd\t%1,%2
     madd\t%1,%2

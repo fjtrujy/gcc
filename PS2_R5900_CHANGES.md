@@ -162,3 +162,40 @@ Enables GCC to use the R5900's hardware min/max float instructions:
 
 - `r5900-no-mips16.c` - Verifies MIPS16 is rejected with error
 - `r5900-minmax.c` - Verifies min.s/max.s instructions are generated
+
+---
+
+## 5. Short-Loop Bug Fix and 3-Operand Multiply
+
+### Short-Loop Bug Fix
+
+The R5900 has a hardware bug related to short loops with branch-likely instructions. This fix prevents GCC from using delay slots in certain branch patterns:
+
+```lisp
+(define_delay (and (eq_attr "type" "branch")
+                   (not (match_test "TARGET_MIPS16"))
+                   (not (match_test "TARGET_FIX_R5900"))  ; <-- Added
+                   (eq_attr "branch_likely" "yes"))
+  ...)
+```
+
+`TARGET_FIX_R5900` is automatically enabled when targeting the R5900.
+
+Short-loop bugfix by frno7.
+
+### 3-Operand Multiply Instruction
+
+Extended the 3-operand multiply pattern to work on R5900 (similar to R3900):
+
+```c
+(TARGET_MIPS3900 || TARGET_MIPS5900) && !TARGET_MIPS16
+```
+
+This enables efficient 3-operand multiply operations.
+
+### Test Coverage
+
+- `r5900-fix-shortloop.c` - Short-loop bug fix verification
+- `r5900-mult.c` - Verifies mult instruction generation
+- `r5900-mult3.c` - Verifies 3-operand mult instruction
+- `r5900-madd.c` - Verifies multiply instruction patterns
