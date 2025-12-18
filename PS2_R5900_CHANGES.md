@@ -78,3 +78,53 @@ This uses the `pmfhl.lw` (Pack Move From HI/LO - Lower Word) instruction specifi
 - `r5900-muldi3.c` - Verifies 64-bit multiplication with `multu`
 
 Fixes by davidgf.
+
+---
+
+## 3. R5900 Instruction Pipeline Scheduling
+
+### File: `gcc/config/mips/5900.md`
+
+Added comprehensive instruction scheduling information for the R5900 processor.
+
+**Defined execution units:**
+- `r5900_alu0`, `r5900_alu1` - Two ALU units
+- `r5900_c1` - FPU (Coprocessor 1)
+- `r5900_br` - Branch unit
+- `r5900_ls` - Load/Store unit
+
+**Instruction reservations with cycle counts:**
+
+| Instruction Type | Cycles | Execution Unit |
+|------------------|--------|----------------|
+| ALU operations | 1 | ALU0 or ALU1 |
+| Load/Store | 1 | LS |
+| FP Load/Store | 2 | C1 |
+| FP Convert | 4 | C1 |
+| FP Move/Abs/Neg | 4 | C1 |
+| FP Compare | 4 | C1 |
+| FP Add | 4 | C1 |
+| FP Multiply | 4 | C1 |
+| FP Divide | 8 | C1 |
+| FP Square Root | 8 | C1 |
+| FP Reciprocal Square Root | 14 | C1 |
+| Integer Multiply | 4 | ALU0 |
+| Integer Divide | 37 | ALU0 |
+| Branch/Jump/Call | 1 | BR |
+| HI/LO Register | 1 | ALU0 |
+| FP Min/Max | 4 | C1 |
+
+### Reciprocal Square Root (`rsqrt.s`)
+
+Added support for the R5900's hardware reciprocal square root instruction:
+
+```asm
+rsqrt.s %0, %1, %2   ; %0 = %1 / sqrt(%2)
+```
+
+This is used for efficient calculation of `a / sqrt(b)` operations common in 3D graphics.
+
+### Test Coverage
+
+- `r5900-rsqrt.c` - Verifies rsqrt.s instruction is generated
+- `r5900-fsqrt.c` - Verifies sqrt.s instruction is generated
