@@ -265,3 +265,22 @@ For proper `std::thread` support on PS2, weak symbol usage is disabled in `libgc
 ```
 
 This ensures thread-related symbols are always resolved at link time rather than using weak references, which is required for the PS2SDK threading implementation.
+
+---
+
+## 8. Atomic Operations
+
+### POSIX Atomic Implementation
+
+The R5900 does not support LL/SC atomic instructions. Modified `libatomic` to use POSIX atomic implementation for PS2:
+
+```bash
+# In configure.tgt
+*-*-linux* | *-*-gnu* | *-*-k*bsd*-gnu | *-ps2-elf* \  # Added *-ps2-elf*
+```
+
+Also added PS2-specific test skipping in `libatomic/configure` because ps2sdk libraries may not be available during the build phase.
+
+### Test Coverage
+
+- `r5900-no-ll-sc.c` - Verifies LL/SC atomic instructions are NOT generated
