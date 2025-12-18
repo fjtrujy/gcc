@@ -249,3 +249,19 @@ Enables Position Independent Code (PIC) and ABI calls by default for shared obje
 ### Test Coverage
 
 - `r5900-basic.c` - Basic R5900 target compilation
+
+---
+
+## 7. Threading Support
+
+### Disable Weak Symbol Usage
+
+For proper `std::thread` support on PS2, weak symbol usage is disabled in `libgcc/gthr.h`:
+
+```c
+/* PS2 Specific change for std::thread */
+#undef GTHREAD_USE_WEAK
+#define GTHREAD_USE_WEAK 0
+```
+
+This ensures thread-related symbols are always resolved at link time rather than using weak references, which is required for the PS2SDK threading implementation.
