@@ -199,3 +199,53 @@ This enables efficient 3-operand multiply operations.
 - `r5900-mult.c` - Verifies mult instruction generation
 - `r5900-mult3.c` - Verifies 3-operand mult instruction
 - `r5900-madd.c` - Verifies multiply instruction patterns
+
+---
+
+## 6. PS2SDK Platform Configuration
+
+### File: `gcc/config/mips/ps2sdk.h`
+
+Created a PS2SDK-specific header that defines default linking behavior:
+
+```c
+#define LIB_SPEC "\
+    -lm \
+    --start-group \
+        %{g:-lg} %{!g:-lc} \
+        %{pg:-lprofglue} \
+        -lcdvd \
+        -lpthread \
+        -lpthreadglue \
+        -lcglue \
+        -lkernel \
+    --end-group"
+```
+
+**Libraries included by default:**
+- `libm` - Math library
+- `libc` or `libg` (debug) - C library
+- `libprofglue` - Profiling support (when `-pg` is used)
+- `libcdvd` - CD/DVD access
+- `libpthread` / `libpthreadglue` - Threading support
+- `libcglue` - C runtime glue layer
+- `libkernel` - PS2 kernel interface
+
+### Default Startup Files
+
+```c
+#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
+#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
+```
+
+### Builtin Macro
+
+Defines `__ps2sdk__` preprocessor macro for PS2-specific code detection.
+
+### PIC/ABI Configuration
+
+Enables Position Independent Code (PIC) and ABI calls by default for shared object support.
+
+### Test Coverage
+
+- `r5900-basic.c` - Basic R5900 target compilation
