@@ -254,6 +254,7 @@ extern bool mips_expand_ins_as_unaligned_store (rtx, rtx, HOST_WIDE_INT,
 						HOST_WIDE_INT);
 extern bool mips_expand_movmisalign_ti (rtx, rtx);
 extern bool mips_expand_movmisalign_128 (rtx, rtx, machine_mode);
+extern bool mips_expand_movmisalign_store_128 (rtx, rtx, machine_mode);
 extern bool mips_mem_fits_mode_p (machine_mode mode, rtx x);
 extern HOST_WIDE_INT mips_debugger_offset (rtx, HOST_WIDE_INT);
 

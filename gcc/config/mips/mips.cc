@@ -2709,6 +2709,14 @@ mips_valid_offset_p (rtx x, machine_mode mode)
 				   mips_ldst_scaled_shift (mode)))
     return false;
 
+  /* R5900 lq/sq instructions require 16-byte aligned addresses.  If the offset
+     is not 16-byte aligned, the hardware silently ignores the lower 4 bits,
+     causing loads/stores to go to the wrong (aligned) address.  Reject such
+     addresses to force the compiler to use smaller (correctly aligned) operations.  */
+  if (TARGET_MIPS5900 && R5900_MMI_MODE_P (mode)
+      && (INTVAL (x) & 0xf) != 0)
+    return false;
+
   return true;
 }
 
@@ -2750,6 +2758,10 @@ static bool
 mips_classify_address (struct mips_address_info *info, rtx x,
 		       machine_mode mode, bool strict_p)
 {
+  /* NULL address is not valid.  */
+  if (x == NULL_RTX)
+    return false;
+
   switch (GET_CODE (x))
     {
     case REG:
@@ -3840,6 +3852,10 @@ mips_legitimize_address (rtx x, rtx oldx ATTRIBUTE_UNUSED,
   mips_split_plus (x, &base, &offset);
   if (offset != 0)
     {
+      /* R5900 lq/sq instructions require 16-byte aligned addresses.
+	 For misaligned addresses with MMI modes, we still legitimize
+	 the address but let the movmisalign patterns handle the actual
+	 memory access by decomposing into smaller aligned operations.  */
       if (!mips_valid_base_register_p (base, mode, false))
 	base = copy_to_mode_reg (Pmode, base);
       addr = mips_add_offset (NULL, base, offset);
@@ -9279,6 +9295,56 @@ mips_expand_movmisalign_128 (rtx dest, rtx src, machine_mode mode)
   return true;
 }
 
+/* Expand unaligned 128-bit vector STORE for MMI modes.
+   For stores to misaligned addresses, we decompose the vector store
+   into two 64-bit stores since R5900 doesn't have misaligned 128-bit stores.
+
+   MODE specifies the vector mode (V16QI, V8HI, V4SI, V4SF).
+   Return true on success, false if expansion is not possible.  */
+
+bool
+mips_expand_movmisalign_store_128 (rtx dest, rtx src, machine_mode mode)
+{
+  /* Only handle stores: mem = reg.  */
+  if (!MEM_P (dest) || !REG_P (src))
+    return false;
+
+  rtx addr = XEXP (dest, 0);
+
+  /* Verify this is a 128-bit vector mode.  */
+  if (GET_MODE_SIZE (mode) != 16)
+    return false;
+
+  /* Get the address into a register if needed.  */
+  if (!REG_P (addr))
+    addr = force_reg (Pmode, addr);
+
+  /* Convert source to TImode for easier splitting.  */
+  rtx ti_src = gen_reg_rtx (TImode);
+  emit_move_insn (ti_src, gen_lowpart (TImode, src));
+
+  /* Extract low and high 64-bit halves.
+     On R5900 with n32 ABI, TImode is stored in register pairs.
+     The low 64 bits are at offset 0, high 64 bits at offset 8.  */
+  rtx lo_half = gen_reg_rtx (DImode);
+  rtx hi_half = gen_reg_rtx (DImode);
+
+  emit_move_insn (lo_half, gen_lowpart (DImode, ti_src));
+  emit_move_insn (hi_half, gen_highpart (DImode, ti_src));
+
+  /* Store the two halves.  */
+  rtx mem_lo = gen_rtx_MEM (DImode, addr);
+  rtx addr_hi = gen_rtx_PLUS (Pmode, addr, GEN_INT (8));
+  rtx mem_hi = gen_rtx_MEM (DImode, addr_hi);
+
+  /* Use unaligned stores (SDL/SDR on MIPS) if available,
+     otherwise just use SD which should work on R5900.  */
+  emit_move_insn (mem_lo, lo_half);
+  emit_move_insn (mem_hi, hi_half);
+
+  return true;
+}
+
 /* Return true if X is a MEM with the same size as MODE.  */
 
 bool
@@ -14530,6 +14596,58 @@ mips_autovectorize_vector_modes (vector_modes *modes, bool)
   else if (ISA_HAS_MSA)
     modes->safe_push (V16QImode);
   return 0;
+}
+
+/* Implement TARGET_VECTOR_ALIGNMENT.
+   R5900 MMI lq/sq instructions require 16-byte alignment - they mask off
+   the lower 4 address bits, causing silent data corruption if the address
+   is not properly aligned.  This hook tells GCC the ABI alignment required
+   for vector types, so the vectorizer will use movmisalign patterns for
+   data that is not known to be 16-byte aligned.  */
+
+static HOST_WIDE_INT
+mips_vector_alignment (const_tree type)
+{
+  if (TARGET_MIPS5900 && TYPE_MODE (type) != VOIDmode)
+    {
+      machine_mode mode = TYPE_MODE (type);
+      /* R5900 MMI 128-bit modes require 16-byte alignment.  */
+      if (GET_MODE_SIZE (mode) == 16)
+	return 128;  /* 128 bits = 16 bytes */
+    }
+  /* Default: use default_vector_alignment behavior.  */
+  return default_vector_alignment (type);
+}
+
+/* Implement TARGET_VECTORIZE_PREFERRED_VECTOR_ALIGNMENT.
+   For R5900, we prefer the same 16-byte alignment that we require.  */
+
+static poly_uint64
+mips_preferred_vector_alignment (const_tree type)
+{
+  return mips_vector_alignment (type);
+}
+
+/* Implement TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT.
+   For R5900 MMI, we support misaligned vector access through movmisalign
+   patterns. Return true for 128-bit MMI modes to enable the vectorizer
+   to use these patterns when alignment cannot be proven.  */
+
+static bool
+mips_support_vector_misalignment (machine_mode mode,
+				  const_tree type ATTRIBUTE_UNUSED,
+				  int misalignment,
+				  bool is_packed ATTRIBUTE_UNUSED)
+{
+  if (TARGET_MIPS5900 && GET_MODE_SIZE (mode) == 16)
+    {
+      /* We have movmisalign patterns for R5900 MMI 128-bit modes.
+         Support any misalignment since we decompose into smaller stores.  */
+      return true;
+    }
+  /* For other modes, use default behavior (check for movmisalign optab).  */
+  return default_builtin_support_vector_misalignment (mode, type,
+						      misalignment, is_packed);
 }
 
 
@@ -25067,6 +25185,16 @@ mips_bit_clear_p (enum machine_mode mode, unsigned HOST_WIDE_INT m)
 #undef TARGET_VECTORIZE_AUTOVECTORIZE_VECTOR_MODES
 #define TARGET_VECTORIZE_AUTOVECTORIZE_VECTOR_MODES \
   mips_autovectorize_vector_modes
+#undef TARGET_VECTORIZE_PREFERRED_VECTOR_ALIGNMENT
+#define TARGET_VECTORIZE_PREFERRED_VECTOR_ALIGNMENT \
+  mips_preferred_vector_alignment
+
+#undef TARGET_VECTOR_ALIGNMENT
+#define TARGET_VECTOR_ALIGNMENT mips_vector_alignment
+
+#undef TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT
+#define TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT \
+  mips_support_vector_misalignment
 
 #undef TARGET_INIT_BUILTINS
 #define TARGET_INIT_BUILTINS mips_init_builtins

@@ -484,8 +484,10 @@
 ;; Parallel Min/Max Operations
 ;; -------------------------------------------------------------------------
 ;; Note: R5900 only has halfword and word min/max (no byte variants).
+;; R5900 only has SIGNED min/max instructions (pmaxh, pmaxw, pminh, pminw).
+;; There are NO unsigned variants (no pmaxub, etc.).
 
-;; PMAXH/W - Parallel Maximum (signed)
+;; PMAXH/W - Parallel Maximum (signed) - for builtins
 (define_insn "mmi_pmax<mmi_hw>"
   [(set (match_operand:VMMIHW 0 "register_operand" "=d")
 	(smax:VMMIHW (match_operand:VMMIHW 1 "register_operand" "d")
@@ -495,7 +497,7 @@
   [(set_attr "type" "arith")
    (set_attr "mode" "TI")])
 
-;; PMINH/W - Parallel Minimum (signed)
+;; PMINH/W - Parallel Minimum (signed) - for builtins
 (define_insn "mmi_pmin<mmi_hw>"
   [(set (match_operand:VMMIHW 0 "register_operand" "=d")
 	(smin:VMMIHW (match_operand:VMMIHW 1 "register_operand" "d")
@@ -504,6 +506,53 @@
   "pmin<mmi_hw>\t%0,%1,%2"
   [(set_attr "type" "arith")
    (set_attr "mode" "TI")])
+
+;; Standard named patterns for autovectorization
+;; These patterns enable GCC's tree-vect to vectorize min/max operations.
+
+;; smaxv4si3: Signed maximum for V4SI (4 x 32-bit words)
+(define_expand "smaxv4si3"
+  [(set (match_operand:V4SI 0 "register_operand")
+	(smax:V4SI (match_operand:V4SI 1 "register_operand")
+		   (match_operand:V4SI 2 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_pmaxw (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+;; sminv4si3: Signed minimum for V4SI (4 x 32-bit words)
+(define_expand "sminv4si3"
+  [(set (match_operand:V4SI 0 "register_operand")
+	(smin:V4SI (match_operand:V4SI 1 "register_operand")
+		   (match_operand:V4SI 2 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_pminw (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+;; smaxv8hi3: Signed maximum for V8HI (8 x 16-bit halfwords)
+(define_expand "smaxv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+	(smax:V8HI (match_operand:V8HI 1 "register_operand")
+		   (match_operand:V8HI 2 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_pmaxh (operands[0], operands[1], operands[2]));
+  DONE;
+})
+
+;; sminv8hi3: Signed minimum for V8HI (8 x 16-bit halfwords)
+(define_expand "sminv8hi3"
+  [(set (match_operand:V8HI 0 "register_operand")
+	(smin:V8HI (match_operand:V8HI 1 "register_operand")
+		   (match_operand:V8HI 2 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_mmi_pminh (operands[0], operands[1], operands[2]));
+  DONE;
+})
 
 ;; -------------------------------------------------------------------------
 ;; Parallel Shift Operations - Explicit Builtins
@@ -1541,9 +1590,9 @@
 ;; and using the parallel variable shift instructions.
 ;; For constant shifts, the immediate shift patterns are used instead.
 
-;; Helper: Broadcast a 32-bit scalar to all elements of V4SI
-;; Uses: dsll32 + or (64-bit ops on low half) then pcpyld to duplicate to 128 bits
-(define_expand "mmi_broadcast_w"
+;; Standard vec_duplicate pattern for V4SI - broadcasts scalar to all elements
+;; This is required for the auto-vectorizer to work correctly
+(define_expand "vec_duplicatev4si"
   [(set (match_operand:V4SI 0 "register_operand")
         (vec_duplicate:V4SI (match_operand:SI 1 "register_operand")))]
   "ISA_HAS_MMI"
@@ -1569,23 +1618,53 @@
   DONE;
 })
 
+;; Helper: Broadcast a 32-bit scalar to all elements of V4SI (named version)
+;; Uses: dsll32 + or (64-bit ops on low half) then pcpyld to duplicate to 128 bits
+(define_expand "mmi_broadcast_w"
+  [(set (match_operand:V4SI 0 "register_operand")
+        (vec_duplicate:V4SI (match_operand:SI 1 "register_operand")))]
+  "ISA_HAS_MMI"
+{
+  emit_insn (gen_vec_duplicatev4si (operands[0], operands[1]));
+  DONE;
+})
+
 ;; ashlv4si3: V4SI << scalar (constant or variable)
 (define_expand "ashlv4si3"
   [(set (match_operand:V4SI 0 "register_operand")
         (ashift:V4SI (match_operand:V4SI 1 "register_operand")
-                     (match_operand:SI 2 "reg_or_vector_same_uimm6_operand")))]
+                     (match_operand:SI 2 "nonmemory_operand")))]
   "ISA_HAS_MMI"
 {
-  if (CONST_INT_P (operands[2]))
+  if (CONST_INT_P (operands[2]) && IN_RANGE (INTVAL (operands[2]), 0, 31))
     {
-      /* Use immediate shift pattern */
+      /* Use immediate shift pattern for constants 0-31 */
       emit_insn (gen_mmi_psllw (operands[0], operands[1], operands[2]));
+    }
+  else if (CONST_VECTOR_P (operands[2]))
+    {
+      /* Handle const_vector with all same elements */
+      rtx first = CONST_VECTOR_ELT (operands[2], 0);
+      if (CONST_INT_P (first) && IN_RANGE (INTVAL (first), 0, 31))
+        emit_insn (gen_mmi_psllw (operands[0], operands[1], first));
+      else
+        {
+          rtx shift_vec = gen_reg_rtx (V4SImode);
+          emit_move_insn (shift_vec, operands[2]);
+          emit_insn (gen_mmi_psllvw (operands[0], operands[1], shift_vec));
+        }
     }
   else
     {
       /* Broadcast scalar to vector and use variable shift */
       rtx shift_vec = gen_reg_rtx (V4SImode);
-      emit_insn (gen_mmi_broadcast_w (shift_vec, operands[2]));
+      if (REG_P (operands[2]) || GET_CODE (operands[2]) == SUBREG)
+        emit_insn (gen_vec_duplicatev4si (shift_vec, operands[2]));
+      else
+        {
+          rtx tmp = force_reg (SImode, operands[2]);
+          emit_insn (gen_vec_duplicatev4si (shift_vec, tmp));
+        }
       emit_insn (gen_mmi_psllvw (operands[0], operands[1], shift_vec));
     }
   DONE;
@@ -1595,19 +1674,38 @@
 (define_expand "lshrv4si3"
   [(set (match_operand:V4SI 0 "register_operand")
         (lshiftrt:V4SI (match_operand:V4SI 1 "register_operand")
-                       (match_operand:SI 2 "reg_or_vector_same_uimm6_operand")))]
+                       (match_operand:SI 2 "nonmemory_operand")))]
   "ISA_HAS_MMI"
 {
-  if (CONST_INT_P (operands[2]))
+  if (CONST_INT_P (operands[2]) && IN_RANGE (INTVAL (operands[2]), 0, 31))
     {
-      /* Use immediate shift pattern */
+      /* Use immediate shift pattern for constants 0-31 */
       emit_insn (gen_mmi_psrlw (operands[0], operands[1], operands[2]));
+    }
+  else if (CONST_VECTOR_P (operands[2]))
+    {
+      /* Handle const_vector with all same elements */
+      rtx first = CONST_VECTOR_ELT (operands[2], 0);
+      if (CONST_INT_P (first) && IN_RANGE (INTVAL (first), 0, 31))
+        emit_insn (gen_mmi_psrlw (operands[0], operands[1], first));
+      else
+        {
+          rtx shift_vec = gen_reg_rtx (V4SImode);
+          emit_move_insn (shift_vec, operands[2]);
+          emit_insn (gen_mmi_psrlvw (operands[0], operands[1], shift_vec));
+        }
     }
   else
     {
       /* Broadcast scalar to vector and use variable shift */
       rtx shift_vec = gen_reg_rtx (V4SImode);
-      emit_insn (gen_mmi_broadcast_w (shift_vec, operands[2]));
+      if (REG_P (operands[2]) || GET_CODE (operands[2]) == SUBREG)
+        emit_insn (gen_vec_duplicatev4si (shift_vec, operands[2]));
+      else
+        {
+          rtx tmp = force_reg (SImode, operands[2]);
+          emit_insn (gen_vec_duplicatev4si (shift_vec, tmp));
+        }
       emit_insn (gen_mmi_psrlvw (operands[0], operands[1], shift_vec));
     }
   DONE;
@@ -1617,19 +1715,38 @@
 (define_expand "ashrv4si3"
   [(set (match_operand:V4SI 0 "register_operand")
         (ashiftrt:V4SI (match_operand:V4SI 1 "register_operand")
-                       (match_operand:SI 2 "reg_or_vector_same_uimm6_operand")))]
+                       (match_operand:SI 2 "nonmemory_operand")))]
   "ISA_HAS_MMI"
 {
-  if (CONST_INT_P (operands[2]))
+  if (CONST_INT_P (operands[2]) && IN_RANGE (INTVAL (operands[2]), 0, 31))
     {
-      /* Use immediate shift pattern */
+      /* Use immediate shift pattern for constants 0-31 */
       emit_insn (gen_mmi_psraw (operands[0], operands[1], operands[2]));
+    }
+  else if (CONST_VECTOR_P (operands[2]))
+    {
+      /* Handle const_vector with all same elements */
+      rtx first = CONST_VECTOR_ELT (operands[2], 0);
+      if (CONST_INT_P (first) && IN_RANGE (INTVAL (first), 0, 31))
+        emit_insn (gen_mmi_psraw (operands[0], operands[1], first));
+      else
+        {
+          rtx shift_vec = gen_reg_rtx (V4SImode);
+          emit_move_insn (shift_vec, operands[2]);
+          emit_insn (gen_mmi_psravw (operands[0], operands[1], shift_vec));
+        }
     }
   else
     {
       /* Broadcast scalar to vector and use variable shift */
       rtx shift_vec = gen_reg_rtx (V4SImode);
-      emit_insn (gen_mmi_broadcast_w (shift_vec, operands[2]));
+      if (REG_P (operands[2]) || GET_CODE (operands[2]) == SUBREG)
+        emit_insn (gen_vec_duplicatev4si (shift_vec, operands[2]));
+      else
+        {
+          rtx tmp = force_reg (SImode, operands[2]);
+          emit_insn (gen_vec_duplicatev4si (shift_vec, tmp));
+        }
       emit_insn (gen_mmi_psravw (operands[0], operands[1], shift_vec));
     }
   DONE;
@@ -1823,23 +1940,70 @@
 	(match_operand:VMMIBHW 1))]
   "ISA_HAS_MMI"
 {
+  /* R5900's sq instruction requires 16-byte alignment.  We use sq when:
+     1. MEM_ALIGN >= 128, AND one of:
+        a. Address is stack/frame pointer relative (ABI guarantees alignment)
+        b. Address is a direct symbol reference (explicit alignment attribute)
+
+     For pointer dereferences (ptr[i], struct->member[i]), we use safe
+     decomposed stores (two sd) because LTO can incorrectly infer alignment
+     based on type rather than actual memory layout.  */
+  if (TARGET_MIPS5900 && MEM_P (operands[0]))
+    {
+      bool use_sq = false;
+
+      if (MEM_ALIGN (operands[0]) >= 128)
+	{
+	  rtx addr = XEXP (operands[0], 0);
+
+	  /* Case 1: Stack/frame pointer relative - always 16-byte aligned.  */
+	  if (REG_P (addr))
+	    use_sq = (REGNO (addr) == STACK_POINTER_REGNUM
+		      || REGNO (addr) == FRAME_POINTER_REGNUM);
+	  else if (GET_CODE (addr) == PLUS && REG_P (XEXP (addr, 0)))
+	    use_sq = (REGNO (XEXP (addr, 0)) == STACK_POINTER_REGNUM
+		      || REGNO (XEXP (addr, 0)) == FRAME_POINTER_REGNUM);
+
+	  /* Case 2: Direct symbol reference - trust explicit alignment.
+	     This covers global/static arrays with __attribute__((aligned(16))).
+	     SYMBOL_REF or LABEL_REF at base means it's not a pointer deref.  */
+	  if (!use_sq)
+	    {
+	      rtx base = addr;
+	      if (GET_CODE (base) == PLUS)
+		base = XEXP (base, 0);
+	      if (GET_CODE (base) == CONST)
+		base = XEXP (base, 0);
+	      if (GET_CODE (base) == PLUS)
+		base = XEXP (base, 0);
+	      use_sq = (GET_CODE (base) == SYMBOL_REF
+			|| GET_CODE (base) == LABEL_REF);
+	    }
+	}
+
+      if (!use_sq)
+	{
+	  /* Use safe decomposed store sequence for pointer dereferences.  */
+	  rtx src = operands[1];
+	  if (!REG_P (src))
+	    src = force_reg (<MODE>mode, src);
+	  if (mips_expand_movmisalign_store_128 (operands[0], src, <MODE>mode))
+	    DONE;
+	}
+    }
   if (mips_legitimize_move (<MODE>mode, operands[0], operands[1]))
     DONE;
 })
 
 ;; movmisalign for MMI vector modes (V16QI, V8HI, V4SI)
-;; For MMI: Uses QFSRV for loads, falls back to regular moves for stores.
-;; CRITICAL: Never FAIL - use emit_move_insn as fallback to avoid ICE.
+;; For MMI: Uses QFSRV for loads, scalar decomposition for stores.
+;; CRITICAL: Never FAIL - always handle both loads and stores to avoid ICE.
 (define_expand "movmisalign<mode>"
   [(set (match_operand:VMMIBHW 0)
 	(match_operand:VMMIBHW 1))]
   "ISA_HAS_MMI"
 {
-  /* Handle mem-to-mem: force source to register first */
-  if (MEM_P (operands[0]) && MEM_P (operands[1]))
-    operands[1] = force_reg (<MODE>mode, operands[1]);
-
-  /* For MMI (R5900), use QFSRV for loads, regular moves for stores */
+  /* For MMI (R5900), use QFSRV for loads */
   if (REG_P (operands[0]) && MEM_P (operands[1]))
     {
       /* Load: Use optimized QFSRV sequence */
@@ -1847,7 +2011,19 @@
 	DONE;
     }
 
-  /* Fallback for stores or if QFSRV optimization didn't apply */
+  /* For stores, decompose into smaller stores since R5900
+     doesn't have misaligned 128-bit store instructions.
+     Force source to register first if needed (e.g., CONST_VECTOR).  */
+  if (MEM_P (operands[0]))
+    {
+      rtx src = operands[1];
+      if (!REG_P (src))
+	src = force_reg (<MODE>mode, src);
+      if (mips_expand_movmisalign_store_128 (operands[0], src, <MODE>mode))
+	DONE;
+    }
+
+  /* Fallback for any remaining cases */
   emit_move_insn (operands[0], operands[1]);
   DONE;
 })

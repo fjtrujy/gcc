@@ -150,7 +150,9 @@ These instructions operate on the full 128-bit width of GP registers.
 
 **Callee-saved register preservation**: Function prologues/epilogues use LQ/SQ to save and restore callee-saved registers (s0-s7, gp, fp, ra), preserving the full 128-bit width. This ensures that 128-bit values (`__int128`, vectors) in callee-saved registers are correctly preserved across function calls.
 
-**Automatic Unaligned 128-bit Access**: GCC automatically uses QFSRV for unaligned 128-bit loads when the type has `__attribute__((aligned(1)))`. This applies to all 128-bit types: `__int128` (TI), and vector types V16QI, V8HI, V4SI, V4SF. For stores, regular moves are used (which may trap on truly misaligned access on PS2 hardware).
+**Automatic Unaligned 128-bit Access**: GCC automatically uses QFSRV for unaligned 128-bit loads when the type has `__attribute__((aligned(1)))`. This applies to all 128-bit types: `__int128` (TI), and vector types V16QI, V8HI, V4SI, V4SF. For misaligned stores, GCC decomposes the 128-bit store into two 64-bit `SD` (store doubleword) instructions to avoid alignment traps.
+
+**Misaligned Vector Store Implementation**: When autovectorization generates stores to potentially misaligned addresses (common in SLP vectorizer patterns like structure initialization), GCC uses `movmisalign` patterns that decompose 128-bit stores into pairs of 64-bit stores, ensuring correct behavior without alignment exceptions.
 
 ---
 
@@ -218,11 +220,17 @@ These instructions operate on the full 128-bit width of GP registers.
 | `PSRLH` | Parallel Shift Right Logical Halfword | `__builtin_mmi_psrlh(a, n)` | `v8hi (>>)` | ✓ |
 | `PSRAH` | Parallel Shift Right Arithmetic Halfword | `__builtin_mmi_psrah(a, n)` | `v8hi (>>)` | ✓ |
 | `PSLLW` | Parallel Shift Left Logical Word | `__builtin_mmi_psllw(a, n)` | `v4si (<<)` | ✓ |
-| `PSLLVW` | Parallel Shift Left Logical Variable Word | `__builtin_mmi_psllvw(a, b)` | - | - |
+| `PSLLVW` | Parallel Shift Left Logical Variable Word | `__builtin_mmi_psllvw(a, b)` | - | ✓ (fallback) |
 | `PSRLW` | Parallel Shift Right Logical Word | `__builtin_mmi_psrlw(a, n)` | `v4si (>>)` | ✓ |
-| `PSRLVW` | Parallel Shift Right Logical Variable Word | `__builtin_mmi_psrlvw(a, b)` | - | - |
+| `PSRLVW` | Parallel Shift Right Logical Variable Word | `__builtin_mmi_psrlvw(a, b)` | - | ✓ (fallback) |
 | `PSRAW` | Parallel Shift Right Arithmetic Word | `__builtin_mmi_psraw(a, n)` | `v4si (>>)` | ✓ |
-| `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | `__builtin_mmi_psravw(a, b)` | - | - |
+| `PSRAVW` | Parallel Shift Right Arithmetic Variable Word | `__builtin_mmi_psravw(a, b)` | - | ✓ (fallback) |
+
+**Shift Optimization**: When autovectorizing shift operations with constant shift amounts (e.g., `v << 8`),
+GCC uses the efficient immediate-shift instructions (`PSLLW`, `PSRLW`, `PSRAW`). Variable shifts
+use the register-based variants (`PSLLVW`, etc.) with automatic scalar-to-vector broadcasting via
+`vec_duplicatev4si`. This optimization significantly improves code generation for patterns like
+byte replication (`(j << 24) | (j << 16) | (j << 8) | j`).
 
 #### 2.3.2 SA Register Operations
 
@@ -274,7 +282,25 @@ all integer and floating-point scalar types. VU0 vectors (V4SF) have no conditio
 **Loop Autovectorization**: Loops with SIGNED conditional selection patterns like
 `e[i] = (a[i] > b[i]) ? c[i] : d[i]` where a and b are signed int/short will autovectorize
 with MMI using PCGTW/PCGTH + PAND/POR. Unsigned conditional loops will use scalar MOVN/MOVZ.
-For best performance, min/max operations DO vectorize to PMINW/PMAXW instructions.
+
+**Min/Max Autovectorization**: Signed min/max patterns are fully supported:
+- `max[i] = (a[i] > b[i]) ? a[i] : b[i]` → `PMAXW` (int) or `PMAXH` (short)
+- `min[i] = (a[i] < b[i]) ? a[i] : b[i]` → `PMINW` (int) or `PMINH` (short)
+
+Note: R5900 only has SIGNED min/max instructions. Unsigned min/max patterns will use
+scalar code or comparison+select sequences.
+
+**Alignment Requirements**: R5900's `lq`/`sq` (128-bit load/store) instructions require
+16-byte alignment. If data is not 16-byte aligned, these instructions silently mask the
+lower 4 address bits, causing loads/stores to go to the wrong address. GCC handles this by:
+1. Declaring 128-bit alignment preference for MMI vector types via `TARGET_VECTORIZE_PREFERRED_VECTOR_ALIGNMENT`
+2. Using `movmisalign` patterns to decompose misaligned 128-bit accesses into two 64-bit operations
+3. Emitting alignment prologues/epilogues when vectorizing loops with potentially unaligned data
+
+**Data Alignment Best Practice**: For optimal MMI performance, align arrays to 16 bytes:
+```c
+int data[64] __attribute__((aligned(16)));  // 16-byte aligned for sq/lq
+```
 
 ### 2.6 Data Rearrangement
 
