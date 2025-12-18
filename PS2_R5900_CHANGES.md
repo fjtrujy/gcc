@@ -284,3 +284,65 @@ Also added PS2-specific test skipping in `libatomic/configure` because ps2sdk li
 ### Test Coverage
 
 - `r5900-no-ll-sc.c` - Verifies LL/SC atomic instructions are NOT generated
+
+---
+
+## Contributors
+
+The following developers contributed to these PS2/R5900 changes:
+
+- **Francisco Javier Trujillo Mata** (fjtrujy)
+- **Rick Gaiser** (Maximus32)
+- **Ziemas**
+- **uyjulian**
+- **sp193** (original libgcc patch)
+- **davidgf** (CLZ/CLO and __muldi3 fixes)
+- **frno7** (short-loop bugfix)
+
+---
+
+## Summary of Modified Files
+
+| File | Purpose |
+|------|---------|
+| `gcc/config.gcc` | Platform configuration |
+| `gcc/config/mips/ps2sdk.h` | PS2SDK-specific defaults |
+| `gcc/config/mips/5900.md` | R5900 instruction patterns & scheduling |
+| `gcc/config/mips/mips.cc` | MIPS16 compatibility check |
+| `gcc/config/mips/mips.h` | CLZ/CLO and FMIN/FMAX config |
+| `gcc/config/mips/mips.md` | Short-loop fix and MADD instruction |
+| `include/longlong.h` | CLZ disable and __muldi3 fix |
+| `libgcc/config.host` | Build configuration |
+| `libgcc/config/mips/sfp-machine.h` | 32-bit float configuration |
+| `libgcc/config/t-hardfp-sf` | Single-float hardware support |
+| `libgcc/configure` | MIPS16 and single-float detection |
+| `libgcc/configure.ac` | Build-time checks |
+| `libgcc/gthr.h` | Threading support |
+| `libatomic/configure` | Atomic operations config |
+| `libatomic/configure.tgt` | Target detection |
+| `gcc/testsuite/gcc.target/mips/r5900-*.c` | R5900 test suite |
+
+---
+
+## Running the Tests
+
+```bash
+# Run all R5900 tests
+cd build-mips64r5900el-ps2-elf-stage2
+make check-gcc RUNTESTFLAGS="mips.exp=r5900*"
+
+# Run a specific test
+make check-gcc RUNTESTFLAGS="mips.exp=r5900-rsqrt.c"
+```
+
+---
+
+## Building
+
+These changes are used by the PS2SDK toolchain. The typical target triplet is:
+
+```
+mips64r5900el-ps2-elf
+```
+
+Standard GCC build procedures apply with appropriate `--target` configuration.
