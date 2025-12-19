@@ -15978,6 +15978,12 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 #define CODE_FOR_mips_mult CODE_FOR_mulsidi3_32bit
 #define CODE_FOR_mips_multu CODE_FOR_umulsidi3_32bit
 
+/* R5900 Pipeline 0 3-operand instruction code mappings.  */
+#define CODE_FOR_mips_mult_3op CODE_FOR_r5900_mult_3op
+#define CODE_FOR_mips_multu_3op CODE_FOR_r5900_multu_3op
+#define CODE_FOR_mips_madd_3op CODE_FOR_r5900_madd_3op
+#define CODE_FOR_mips_maddu_3op CODE_FOR_r5900_maddu_3op
+
 /* R5900 Pipeline 1 instruction code mappings.  */
 #define CODE_FOR_mips_mult1 CODE_FOR_r5900_mult1
 #define CODE_FOR_mips_multu1 CODE_FOR_r5900_multu1
@@ -17058,6 +17064,13 @@ static const struct mips_builtin_description mips_builtins[] = {
   MIPSR6_BUILTIN_PURE (max_a_d, MIPS_DF_FTYPE_DF_DF),
   MIPSR6_BUILTIN_PURE (class_s, MIPS_SF_FTYPE_SF),
   MIPSR6_BUILTIN_PURE (class_d, MIPS_DF_FTYPE_DF),
+
+  /* Built-in functions for R5900 Pipeline 0 (MAC0) 3-operand forms.  */
+  /* Note: 2-operand mult/multu are standard MIPS instructions (mips_mult, mips_multu) */
+  DIRECT_BUILTIN_PURE (mult_3op, MIPS_SI_FTYPE_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (multu_3op, MIPS_USI_FTYPE_USI_USI, r5900),
+  DIRECT_BUILTIN_PURE (madd_3op, MIPS_SI_FTYPE_DI_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (maddu_3op, MIPS_USI_FTYPE_UDI_USI_USI, r5900),
 
   /* Built-in functions for R5900 Pipeline 1 (MAC1).  */
   /* 2-operand forms - result in HI1:LO1 */

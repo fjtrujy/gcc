@@ -224,12 +224,34 @@ Extended the 3-operand multiply pattern to work on R5900 (similar to R3900) in `
 
 This enables efficient 3-operand multiply operations.
 
+### Pipeline 0 3-Operand Built-in Functions
+
+The R5900 supports 3-operand forms of multiply and multiply-add for Pipeline 0 (standard HI:LO). These are available as builtins for explicit control:
+
+**Multiply 3-operand** (result in GPR and HI:LO):
+```c
+int __builtin_mips_mult_3op(int, int);        // mult rd,rs,rt (signed)
+unsigned int __builtin_mips_multu_3op(unsigned int, unsigned int);  // multu rd,rs,rt (unsigned)
+```
+
+**Multiply-Add 3-operand** (result in GPR and HI:LO):
+```c
+int __builtin_mips_madd_3op(long long acc, int, int);  // madd rd,rs,rt (signed)
+unsigned int __builtin_mips_maddu_3op(unsigned long long acc, unsigned int, unsigned int);  // maddu rd,rs,rt (unsigned)
+```
+
+The `acc` parameter represents the current HI:LO value. The result is written to both a GPR (low 32 bits) and HI:LO (full 64 bits).
+
+Note: While `mult` and `multu` produce the same low 32 bits (since low bits of signed and unsigned multiply are identical), the HI register differs (sign-extended vs zero-extended high 32 bits).
+
 ### Test Coverage
 
 - `r5900-fix-shortloop.c` - Short-loop bug fix verification
 - `r5900-mult.c` - Verifies mult instruction generation
 - `r5900-mult3.c` - Verifies 3-operand mult instruction
 - `r5900-madd.c` - Verifies multiply instruction patterns
+- `r5900-mult-3op.c` - Tests mult/multu 3-operand builtins
+- `r5900-madd-3op.c` - Tests madd/maddu 3-operand builtins
 
 ---
 
