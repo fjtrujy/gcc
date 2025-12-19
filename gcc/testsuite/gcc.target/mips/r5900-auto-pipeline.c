@@ -5,7 +5,7 @@
 
 /* 
  * This test verifies that GCC automatically selects between
- * Pipeline 0 (mult) and Pipeline 1 (mult1).
+ * Pipeline 0 (mult/madd) and Pipeline 1 (mult1/madd1).
  *
  * The mul<mode>3_mul3 pattern has four alternatives for R5900:
  * - Alt 0: Pipeline 0, result in GPR (mult rd,rs,rt) - R5900/R3900 specific
@@ -13,19 +13,18 @@
  * - Alt 2: Pipeline 1, result in GPR (mult1 rd,rs,rt) - R5900 specific
  * - Alt 3: Pipeline 1, result in LO1 (mult1 rs,rt) - 2-operand form, R5900 specific
  *
+ * The <u>maddsidi4 pattern has two alternatives for R5900:
+ * - Alt 0: Pipeline 0, uses HI:LO (madd/maddu)
+ * - Alt 1: Pipeline 1, uses HI1:LO1 (madd1/maddu1) - R5900 specific
+ *
  * Note: The 3-operand form "mult rd,rs,rt" is R5900/R3900 specific.
  * Standard MIPS uses "mul" for 3-operand multiply.
  *
  * GCC automatic selection:
  * - For low part only: 3-operand form (Pipeline 1 preferred)
- * - For accumulator patterns (madd): 2-operand form (Pipeline 0, needs HI:LO)
- *
- * Limitations:
- * - The 2-operand mult1 (Alt 3) is not auto-selected by GCC.
- * - Accumulator chains always use Pipeline 0 (mult+madd, not mult1+madd1).
- *   This is because the combiner creates chains around HI:LO, not HI1:LO1.
- * - To use Pipeline 1 for accumulation, use built-ins:
- *   __builtin_mips_mult1(), __builtin_mips_madd1(), __builtin_mips_madd1_3op()
+ * - For accumulator patterns (madd): Either pipeline based on register pressure
+ *   - Default: Pipeline 0 (HI:LO) when no pressure
+ *   - Pipeline 1 (HI1:LO1) may be selected under register pressure
  */
 
 /* Independent multiplies (low part only) - GCC uses 3-operand Pipeline 1 */

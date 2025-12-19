@@ -403,7 +403,7 @@
    simd_fexp2,simd_int_arith,simd_bit,simd_shift,simd_splat,simd_fill,
    simd_permute,simd_shf,simd_sat,simd_pcnt,simd_copy,simd_branch,simd_cmsa,
    simd_fminmax,simd_logic,simd_move,simd_load,simd_store,
-   imul1,idiv1,mfhi1,mflo1,mthi1,mtlo1"
+   imul1,idiv1,imadd1,mfhi1,mflo1,mthi1,mtlo1"
   (cond [(eq_attr "jal" "!unset") (const_string "call")
 	 (eq_attr "got" "load") (const_string "load")
 
@@ -2566,15 +2566,24 @@
 
 ;; See the comment above <u>msubsidi4 for the relationship between
 ;; ISA_HAS_DSP and ISA_HAS_DSP_MULT.
+;; For R5900, we add an alternative using Pipeline 1 (HI1:LO1) with madd1.
+;; The Ym constraint only matches for TARGET_MIPS5900, so alternative 1
+;; is automatically disabled for non-R5900 targets.
 (define_insn "<u>maddsidi4"
-  [(set (match_operand:DI 0 "muldiv_target_operand" "=ka")
+  [(set (match_operand:DI 0 "muldiv_target_operand" "=ka,Ym")
 	(plus:DI
-	 (mult:DI (any_extend:DI (match_operand:SI 1 "register_operand" "d"))
-		  (any_extend:DI (match_operand:SI 2 "register_operand" "d")))
-	 (match_operand:DI 3 "muldiv_target_operand" "0")))]
+	 (mult:DI (any_extend:DI (match_operand:SI 1 "register_operand" "d,d"))
+		  (any_extend:DI (match_operand:SI 2 "register_operand" "d,d")))
+	 (match_operand:DI 3 "muldiv_target_operand" "0,0")))]
   "(TARGET_MAD || ISA_HAS_MACC || GENERATE_MADD_MSUB || ISA_HAS_DSP)
    && !TARGET_64BIT"
 {
+  if (which_alternative == 1)
+    {
+      /* R5900 Pipeline 1: use madd1 with HI1:LO1 */
+      gcc_assert (TARGET_MIPS5900);
+      return "madd<u>1\t%1,%2";
+    }
   if (TARGET_MAD)
     return "mad<u>\t%1,%2";
   else if (ISA_HAS_DSP_MULT)
@@ -2585,8 +2594,8 @@
     /* See comment in *macc.  */
     return "%[macc<u>\t%@,%1,%2%]";
 }
-  [(set_attr "type" "imadd")
-   (set_attr "accum_in"	"3")
+  [(set_attr "type" "imadd,imadd1")
+   (set_attr "accum_in"	"3,3")
    (set_attr "mode" "SI")])
 
 ;; Floating point multiply accumulate instructions.

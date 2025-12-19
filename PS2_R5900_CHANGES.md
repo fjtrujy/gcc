@@ -369,7 +369,11 @@ The instruction scheduler models both pipelines as separate resources, allowing 
 
 ### Automatic Pipeline Selection
 
-GCC can **automatically** choose between Pipeline 0 (`mult`) and Pipeline 1 (`mult1`) for multiply operations. The `mul<mode>3_mul3` pattern in `mips.md` has four alternatives:
+GCC can **automatically** choose between Pipeline 0 and Pipeline 1 for both multiply and multiply-accumulate operations.
+
+#### Multiply Instructions
+
+The `mul<mode>3_mul3` pattern in `mips.md` has four alternatives:
 
 | Alt | Pipeline | Dest | Clobber | Instruction |
 |-----|----------|------|---------|-------------|
@@ -379,6 +383,19 @@ GCC can **automatically** choose between Pipeline 0 (`mult`) and Pipeline 1 (`mu
 | 3 | Pipeline 1 | LO1 | - | `mult1 rs,rt` |
 
 Alternatives 2 and 3 are only available on R5900 (guarded by `Ym` and `Yl` constraints).
+
+#### Multiply-Accumulate Instructions
+
+The `<u>maddsidi4` pattern in `mips.md` has two alternatives for R5900:
+
+| Alt | Pipeline | Accumulator | Instruction |
+|-----|----------|-------------|-------------|
+| 0 | Pipeline 0 | HI:LO | `madd`/`maddu` |
+| 1 | Pipeline 1 | HI1:LO1 | `madd1`/`maddu1` |
+
+Alternative 1 is only available on R5900 (guarded by `Ym` constraint).
+
+#### Selection Criteria
 
 The register allocator selects the best alternative based on:
 - Register pressure and availability
@@ -398,7 +415,7 @@ mult1   $2,$4,$5    ; Automatic Pipeline 1 selection
 jr      $31
 ```
 
-For accumulator patterns (mult + madd), Pipeline 0 is typically used since the multiply-accumulate optimization requires HI:LO.
+For accumulator patterns (mult + madd), Pipeline 0 is typically used by default, but Pipeline 1 (madd1) may be selected under register pressure when HI:LO is already in use.
 
 ### Built-in Functions
 
