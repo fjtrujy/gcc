@@ -602,7 +602,8 @@ const enum reg_class mips_regno_to_class[FIRST_PSEUDO_REGISTER] = {
   COP3_REGS,	COP3_REGS,	COP3_REGS,	COP3_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,	DSP_ACC_REGS,
   DSP_ACC_REGS,	DSP_ACC_REGS,	ALL_REGS,	ALL_REGS,
-  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS
+  ALL_REGS,	ALL_REGS,	ALL_REGS,	ALL_REGS,
+  R5900_MD0_REG, R5900_MD1_REG
 };
 
 static tree mips_handle_code_readable_attr (tree *, tree, tree, int, bool *);
@@ -5384,6 +5385,15 @@ mips_output_move (rtx dest, rtx src)
 	      return retval;
 	    }
 
+	  /* Handle R5900 Pipeline 1 accumulators (HI1/LO1).  */
+	  if (R5900_MD_REG_P (REGNO (dest)))
+	    {
+	      if (REGNO (dest) == R5900_LO_REGNUM)
+		return "mtlo1\t%z1";
+	      else
+		return "mthi1\t%z1";
+	    }
+
 	  if (FP_REG_P (REGNO (dest)))
 	    {
 	      if (msa_p)
@@ -5436,6 +5446,15 @@ mips_output_move (rtx dest, rtx src)
 	      retval[2] = reg_names[REGNO (src)][4];
 	      retval[3] = reg_names[REGNO (src)][5];
 	      return retval;
+	    }
+
+	  /* Handle R5900 Pipeline 1 accumulators (HI1/LO1).  */
+	  if (R5900_MD_REG_P (REGNO (src)))
+	    {
+	      if (REGNO (src) == R5900_LO_REGNUM)
+		return "mflo1\t%0";
+	      else
+		return "mfhi1\t%0";
 	    }
 
 	  if (FP_REG_P (REGNO (src)))
@@ -15772,6 +15791,7 @@ AVAIL_NON_MIPS16 (dspr2, TARGET_DSPR2)
 AVAIL_NON_MIPS16 (dsp_32, !TARGET_64BIT && TARGET_DSP)
 AVAIL_NON_MIPS16 (dsp_64, TARGET_64BIT && TARGET_DSP)
 AVAIL_NON_MIPS16 (dspr2_32, !TARGET_64BIT && TARGET_DSPR2)
+AVAIL_NON_MIPS16 (r5900, TARGET_MIPS5900)
 AVAIL_NON_MIPS16 (loongson, TARGET_LOONGSON_MMI)
 AVAIL_MIPS16E2_OR_NON_MIPS16 (cache, TARGET_CACHE_BUILTIN)
 AVAIL_NON_MIPS16 (msa, TARGET_MSA)
@@ -15957,6 +15977,18 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 #define CODE_FOR_mips_mul_ph CODE_FOR_mulv2hi3
 #define CODE_FOR_mips_mult CODE_FOR_mulsidi3_32bit
 #define CODE_FOR_mips_multu CODE_FOR_umulsidi3_32bit
+
+/* R5900 Pipeline 1 instruction code mappings.  */
+#define CODE_FOR_mips_mult1 CODE_FOR_r5900_mult1
+#define CODE_FOR_mips_multu1 CODE_FOR_r5900_multu1
+#define CODE_FOR_mips_div1 CODE_FOR_r5900_div1
+#define CODE_FOR_mips_divu1 CODE_FOR_r5900_divu1
+#define CODE_FOR_mips_madd1 CODE_FOR_r5900_madd1
+#define CODE_FOR_mips_maddu1 CODE_FOR_r5900_maddu1
+#define CODE_FOR_mips_mfhi1 CODE_FOR_r5900_mfhi1
+#define CODE_FOR_mips_mflo1 CODE_FOR_r5900_mflo1
+#define CODE_FOR_mips_mthi1 CODE_FOR_r5900_mthi1
+#define CODE_FOR_mips_mtlo1 CODE_FOR_r5900_mtlo1
 
 #define CODE_FOR_loongson_packsswh CODE_FOR_vec_pack_ssat_v2si
 #define CODE_FOR_loongson_packsshb CODE_FOR_vec_pack_ssat_v4hi
@@ -17022,6 +17054,18 @@ static const struct mips_builtin_description mips_builtins[] = {
   MIPSR6_BUILTIN_PURE (max_a_d, MIPS_DF_FTYPE_DF_DF),
   MIPSR6_BUILTIN_PURE (class_s, MIPS_SF_FTYPE_SF),
   MIPSR6_BUILTIN_PURE (class_d, MIPS_DF_FTYPE_DF),
+
+  /* Built-in functions for R5900 Pipeline 1 (MAC1).  */
+  DIRECT_BUILTIN_PURE (mult1, MIPS_DI_FTYPE_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (multu1, MIPS_DI_FTYPE_USI_USI, r5900),
+  DIRECT_BUILTIN_PURE (div1, MIPS_DI_FTYPE_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (divu1, MIPS_DI_FTYPE_USI_USI, r5900),
+  DIRECT_BUILTIN_PURE (madd1, MIPS_DI_FTYPE_DI_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (maddu1, MIPS_DI_FTYPE_DI_USI_USI, r5900),
+  DIRECT_BUILTIN_PURE (mfhi1, MIPS_SI_FTYPE_DI, r5900),
+  DIRECT_BUILTIN_PURE (mflo1, MIPS_SI_FTYPE_DI, r5900),
+  DIRECT_NO_TARGET_BUILTIN (mthi1, MIPS_VOID_FTYPE_SI_DI, r5900),
+  DIRECT_BUILTIN (mtlo1, MIPS_DI_FTYPE_SI, r5900),
 };
 
 /* Index I is the function declaration for mips_builtins[I], or null if the

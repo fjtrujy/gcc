@@ -318,15 +318,84 @@ Also added PS2-specific test skipping in `libatomic/configure` because ps2sdk li
 
 ---
 
+## 9. Pipeline 1 (MAC1) Support - HI1/LO1 Registers
+
+### Overview
+
+The R5900 has a dual pipeline architecture with two multiply-accumulator units:
+- **Pipeline 0 (MAC0)**: Uses standard HI/LO registers
+- **Pipeline 1 (MAC1)**: Uses additional HI1/LO1 registers
+
+This allows parallel multiplication operations for improved performance.
+
+### Register Definitions
+
+Added in `gcc/config/mips/mips.h`:
+- `R5900_MD_REG_FIRST` (188) and `R5900_MD_REG_LAST` (189)
+- `R5900_HI_REGNUM` and `R5900_LO_REGNUM` for Pipeline 1 accumulators
+- `R5900_MD_REG_P` macro to test for Pipeline 1 registers
+- `R5900_MD_REGS` register class
+
+### Constraints
+
+Added in `gcc/config/mips/constraints.md`:
+- `Yl` - LO1 register constraint
+- `Ym` - HI1:LO1 register pair constraint
+
+### Instruction Patterns
+
+Added in `gcc/config/mips/5900.md`:
+- `mult1` / `multu1` - Signed/unsigned multiply using Pipeline 1
+- `div1` / `divu1` - Signed/unsigned divide using Pipeline 1
+- `madd1` / `maddu1` - Multiply-add using Pipeline 1
+- `mfhi1` / `mflo1` - Move from HI1/LO1
+- `mthi1` / `mtlo1` - Move to HI1/LO1
+
+### Built-in Functions
+
+Available in `gcc/config/mips/mips.cc`:
+
+```c
+// Pipeline 1 multiply operations
+long long __builtin_mips_mult1(int, int);
+unsigned long long __builtin_mips_multu1(unsigned int, unsigned int);
+
+// Pipeline 1 divide operations
+long long __builtin_mips_div1(int, int);
+unsigned long long __builtin_mips_divu1(unsigned int, unsigned int);
+
+// Pipeline 1 multiply-add operations
+long long __builtin_mips_madd1(long long, int, int);
+unsigned long long __builtin_mips_maddu1(unsigned long long, unsigned int, unsigned int);
+
+// Move from/to HI1/LO1
+int __builtin_mips_mfhi1(long long);
+int __builtin_mips_mflo1(long long);
+long long __builtin_mips_mtlo1(int);
+void __builtin_mips_mthi1(int, long long);
+```
+
+### Test Coverage
+
+- `r5900-mult1.c` - Tests mult1/multu1 builtins
+- `r5900-div1.c` - Tests div1/divu1 builtins
+- `r5900-madd1.c` - Tests madd1/maddu1 builtins
+- `r5900-mfhilo1.c` - Tests mfhi1/mflo1 builtins
+- `r5900-mtlo1.c` - Tests mtlo1 builtin
+
+---
+
 ## Summary of Implemented Changes
 
 | File | Purpose |
 |------|---------|
 | `gcc/config.gcc` | Platform configuration |
+| `gcc/config/mips/constraints.md` | R5900 HI1/LO1 register constraints |
+| `gcc/config/mips/mips-ftypes.def` | R5900 builtin function types |
 | `gcc/config/mips/ps2sdk.h` | PS2SDK-specific defaults |
 | `gcc/config/mips/5900.md` | R5900 instruction patterns & scheduling |
-| `gcc/config/mips/mips.cc` | MIPS16 compatibility check |
-| `gcc/config/mips/mips.h` | CLZ/CLO and FMIN/FMAX config |
+| `gcc/config/mips/mips.cc` | MIPS16 compatibility check, R5900 builtins |
+| `gcc/config/mips/mips.h` | CLZ/CLO, FMIN/FMAX config, HI1/LO1 registers |
 | `gcc/config/mips/mips.md` | Short-loop fix and MADD instruction |
 | `include/longlong.h` | CLZ disable and __muldi3 fix |
 | `libgcc/config.host` | Build configuration |
@@ -365,8 +434,8 @@ Standard MIPS uses 64-bit GP registers; R5900 extends these to 128-bit. Would re
 |----------|------|---------|------------|------------|------------|
 | `HI` | 64-bit | Upper result of multiply/divide (Pipeline 0) | **Implemented** | 64 | `"x"` |
 | `LO` | 64-bit | Lower result of multiply/divide (Pipeline 0) | **Implemented** | 65 | `"l"`, `"x"` |
-| `HI1` | 64-bit | Upper result of multiply/divide (Pipeline 1) | Not implemented | 190 | `"Ym"` |
-| `LO1` | 64-bit | Lower result of multiply/divide (Pipeline 1) | Not implemented | 191 | `"Yl"`, `"Ym"` |
+| `HI1` | 64-bit | Upper result of multiply/divide (Pipeline 1) | **Implemented** | 188 | `"Ym"` |
+| `LO1` | 64-bit | Lower result of multiply/divide (Pipeline 1) | **Implemented** | 189 | `"Yl"`, `"Ym"` |
 
 The R5900 has dual multiply/divide pipelines (MAC0 and MAC1). MULT1/DIV1/MADD1 use HI1/LO1 and can execute in parallel with Pipeline 0 operations.
 
@@ -593,20 +662,20 @@ R5900 has two multiply/divide units (MAC0/Pipeline 0 and MAC1/Pipeline 1) with d
 | `MTHI` | Move To HI0 | `__builtin_mips_mthi(v)` | **Implemented** |
 | `MTLO` | Move To LO0 | `__builtin_mips_mtlo(v)` | **Implemented** |
 
-### Pipeline 1 (MAC1) - Not Implemented
+### Pipeline 1 (MAC1) - **Implemented**
 
 | Instruction | Description | Intrinsic | GCC Status |
 |-------------|-------------|-----------|------------|
-| `MULT1` | Multiply Word (signed) | `__builtin_mips_mult1(a, b)` | Not implemented |
-| `MULTU1` | Multiply Word (unsigned) | `__builtin_mips_multu1(a, b)` | Not implemented |
-| `DIV1` | Divide Word (signed) | `__builtin_mips_div1(a, b)` | Not implemented |
-| `DIVU1` | Divide Word (unsigned) | `__builtin_mips_divu1(a, b)` | Not implemented |
-| `MADD1` | Multiply-Add (signed) | `__builtin_mips_madd1(a, b)` | Not implemented |
-| `MADDU1` | Multiply-Add (unsigned) | `__builtin_mips_maddu1(a, b)` | Not implemented |
-| `MFHI1` | Move From HI1 | `__builtin_mips_mfhi1()` | Not implemented |
-| `MFLO1` | Move From LO1 | `__builtin_mips_mflo1()` | Not implemented |
-| `MTHI1` | Move To HI1 | `__builtin_mips_mthi1(v)` | Not implemented |
-| `MTLO1` | Move To LO1 | `__builtin_mips_mtlo1(v)` | Not implemented |
+| `MULT1` | Multiply Word (signed) | `__builtin_mips_mult1(a, b)` | **Implemented** |
+| `MULTU1` | Multiply Word (unsigned) | `__builtin_mips_multu1(a, b)` | **Implemented** |
+| `DIV1` | Divide Word (signed) | `__builtin_mips_div1(a, b)` | **Implemented** |
+| `DIVU1` | Divide Word (unsigned) | `__builtin_mips_divu1(a, b)` | **Implemented** |
+| `MADD1` | Multiply-Add (signed) | `__builtin_mips_madd1(acc, a, b)` | **Implemented** |
+| `MADDU1` | Multiply-Add (unsigned) | `__builtin_mips_maddu1(acc, a, b)` | **Implemented** |
+| `MFHI1` | Move From HI1 | `__builtin_mips_mfhi1(acc)` | **Implemented** |
+| `MFLO1` | Move From LO1 | `__builtin_mips_mflo1(acc)` | **Implemented** |
+| `MTHI1` | Move To HI1 | `__builtin_mips_mthi1(v, acc)` | **Implemented** |
+| `MTLO1` | Move To LO1 | `__builtin_mips_mtlo1(v)` | **Implemented** |
 
 ---
 

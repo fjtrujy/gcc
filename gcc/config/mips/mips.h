@@ -1820,9 +1820,10 @@ FP_ASM_SPEC "\
 	- CPRESTORE_SLOT_REGNUM
    - 2 dummy entries that were used at various times in the past.
    - 6 DSP accumulator registers (3 hi-lo pairs) for MIPS DSP ASE
-   - 6 DSP control registers  */
+   - 6 DSP control registers
+   - 2 R5900 accumulator registers (hi1 and lo1) for R5900 dual pipeline  */
 
-#define FIRST_PSEUDO_REGISTER 188
+#define FIRST_PSEUDO_REGISTER 190
 
 /* By default, fix the kernel registers ($26 and $27), the global
    pointer ($28) and the stack pointer ($29).  This can change
@@ -1851,7 +1852,9 @@ FP_ASM_SPEC "\
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,			\
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,			\
   /* 6 DSP accumulator registers & 6 control registers */		\
-  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1					\
+  0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,					\
+  /* 2 R5900 accumulator registers (hi1 and lo1) */			\
+  0, 0									\
 }
 
 
@@ -1885,7 +1888,9 @@ FP_ASM_SPEC "\
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			\
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,			\
   /* 6 DSP accumulator registers & 6 control registers */		\
-  1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0					\
+  1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,					\
+  /* 2 R5900 accumulator registers (hi1 and lo1) */			\
+  1, 1									\
 }
 
 /* Internal macros to classify a register number as to whether it's a
@@ -1948,9 +1953,18 @@ FP_ASM_SPEC "\
 #define DSP_ACC_REG_LAST 181
 #define DSP_ACC_REG_NUM (DSP_ACC_REG_LAST - DSP_ACC_REG_FIRST + 1)
 
+/* R5900 secondary multiply/divide registers (Pipeline 1).  */
+#define R5900_MD_REG_FIRST 188
+#define R5900_MD_REG_LAST  189
+#define R5900_MD_REG_NUM   (R5900_MD_REG_LAST - R5900_MD_REG_FIRST + 1)
+
 #define AT_REGNUM	(GP_REG_FIRST + 1)
 #define HI_REGNUM	(TARGET_BIG_ENDIAN ? MD_REG_FIRST : MD_REG_FIRST + 1)
 #define LO_REGNUM	(TARGET_BIG_ENDIAN ? MD_REG_FIRST + 1 : MD_REG_FIRST)
+
+/* R5900 HI1/LO1 registers (Pipeline 1 accumulators).  */
+#define R5900_HI_REGNUM	(TARGET_BIG_ENDIAN ? R5900_MD_REG_FIRST : R5900_MD_REG_FIRST + 1)
+#define R5900_LO_REGNUM	(TARGET_BIG_ENDIAN ? R5900_MD_REG_FIRST + 1 : R5900_MD_REG_FIRST)
 
 /* A few bitfield locations for the coprocessor registers.  */
 /* Request Interrupt Priority Level is from bit 10 to bit 15 of
@@ -1996,9 +2010,12 @@ FP_ASM_SPEC "\
 /* Test if REGNO is one of the 6 new DSP accumulators.  */
 #define DSP_ACC_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - DSP_ACC_REG_FIRST) < DSP_ACC_REG_NUM)
+/* Test if REGNO is one of the 2 R5900 Pipeline 1 accumulators (hi1/lo1).  */
+#define R5900_MD_REG_P(REGNO) \
+  ((unsigned int) ((int) (REGNO) - R5900_MD_REG_FIRST) < R5900_MD_REG_NUM)
 /* Test if REGNO is hi, lo, or one of the 6 new DSP accumulators.  */
 #define ACC_REG_P(REGNO) \
-  (MD_REG_P (REGNO) || DSP_ACC_REG_P (REGNO))
+  (MD_REG_P (REGNO) || DSP_ACC_REG_P (REGNO) || R5900_MD_REG_P (REGNO))
 #define MSA_REG_P(REGNO) \
   ((unsigned int) ((int) (REGNO) - MSA_REG_FIRST) < MSA_REG_NUM)
 
@@ -2145,6 +2162,9 @@ enum reg_class
   ST_REGS,			/* status registers (fp status) */
   DSP_ACC_REGS,			/* DSP accumulator registers */
   ACC_REGS,			/* Hi/Lo and DSP accumulator registers */
+  R5900_MD0_REG,		/* R5900 first Pipeline 1 register (lo1) */
+  R5900_MD1_REG,		/* R5900 second Pipeline 1 register (hi1) */
+  R5900_MD_REGS,		/* R5900 Pipeline 1 registers (hi1/lo1) */
   FRAME_REGS,			/* $arg and $frame */
   GR_AND_MD0_REGS,		/* union classes */
   GR_AND_MD1_REGS,
@@ -2167,7 +2187,7 @@ enum reg_class
   "NO_REGS",								\
   "M16_STORE_REGS",							\
   "M16_REGS",								\
-  "M16_SP_REGS",								\
+  "M16_SP_REGS",							\
   "T_REG",								\
   "M16_T_REGS",								\
   "PIC_FN_ADDR_REG",							\
@@ -2186,6 +2206,10 @@ enum reg_class
   "ST_REGS",								\
   "DSP_ACC_REGS",							\
   "ACC_REGS",								\
+  /* R5900 Pipeline 1 registers */					\
+  "R5900_MD0_REG",							\
+  "R5900_MD1_REG",							\
+  "R5900_MD_REGS",							\
   "FRAME_REGS",								\
   "GR_AND_MD0_REGS",							\
   "GR_AND_MD1_REGS",							\
@@ -2210,7 +2234,7 @@ enum reg_class
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* NO_REGS */		\
   { 0x000200fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_STORE_REGS */	\
   { 0x000300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_REGS */		\
-  { 0x200300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_SP_REGS */		\
+  { 0x200300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_SP_REGS */	\
   { 0x01000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* T_REG */		\
   { 0x010300fc, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* M16_T_REGS */	\
   { 0x02000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000 },	/* PIC_FN_ADDR_REG */	\
@@ -2227,13 +2251,16 @@ enum reg_class
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xffff0000, 0x0000ffff },   /* COP3_REGS */		\
   { 0x00000000, 0x00000000, 0x000007f8, 0x00000000, 0x00000000, 0x00000000 },	/* ST_REGS */		\
   { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x003f0000 },	/* DSP_ACC_REGS */	\
-  { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x003f0000 },	/* ACC_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x3c3f0000 },	/* ACC_REGS */		\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x10000000 },	/* R5900_MD0_REG */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x20000000 },	/* R5900_MD1_REG */	\
+  { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x30000000 },	/* R5900_MD_REGS */	\
   { 0x00000000, 0x00000000, 0x00006000, 0x00000000, 0x00000000, 0x00000000 },	/* FRAME_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000001, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD0_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000002, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD1_REGS */	\
   { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x00000000 },	/* GR_AND_MD_REGS */	\
-  { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x003f0000 },	/* GR_AND_ACC_REGS */	\
-  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0x0fffffff }	/* ALL_REGS */		\
+  { 0xffffffff, 0x00000000, 0x00000003, 0x00000000, 0x00000000, 0x3c3f0000 },	/* GR_AND_ACC_REGS */	\
+  { 0xffffffff, 0xffffffff, 0xffff67ff, 0xffffffff, 0xffffffff, 0x3fffffff }	/* ALL_REGS */		\
 }
 
 
@@ -2301,7 +2328,9 @@ enum reg_class
   128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,	\
   144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,	\
   160,161,162,163,164,165,166,167,168,169,170,171,172,173,174,175,	\
-  182,183,184,185,186,187						\
+  182,183,184,185,186,187,						\
+  /* R5900 Pipeline 1 accumulators.  */					\
+  188, 189								\
 }
 
 /* True if VALUE is an unsigned 6-bit number.  */
@@ -2807,7 +2836,8 @@ typedef struct mips_args {
   "$c3r16","$c3r17","$c3r18","$c3r19","$c3r20","$c3r21","$c3r22","$c3r23", \
   "$c3r24","$c3r25","$c3r26","$c3r27","$c3r28","$c3r29","$c3r30","$c3r31", \
   "$ac1hi","$ac1lo","$ac2hi","$ac2lo","$ac3hi","$ac3lo","$dsp_po","$dsp_sc", \
-  "$dsp_ca","$dsp_ou","$dsp_cc","$dsp_ef" }
+  "$dsp_ca","$dsp_ou","$dsp_cc","$dsp_ef",				   \
+  "hi1",  "lo1" }
 
 /* List the "software" names for each register.  Also list the numerical
    names for $fp and $sp.  */

@@ -78,6 +78,15 @@
 (define_register_constraint "a" "ACC_REGS"
   "@internal")
 
+;; R5900 Pipeline 1 accumulator registers (hi1/lo1).
+(define_register_constraint "Yl" "TARGET_MIPS5900 ? (TARGET_BIG_ENDIAN ? R5900_MD1_REG : R5900_MD0_REG) : NO_REGS"
+  "The @code{lo1} register for R5900.  Use this register to store values that are
+   no bigger than a word.")
+
+(define_register_constraint "Ym" "TARGET_MIPS5900 ? R5900_MD_REGS : NO_REGS"
+  "The concatenated @code{hi1} and @code{lo1} registers for R5900.  Use this register
+   to store doubleword values.")
+
 (define_register_constraint "B" "COP0_REGS"
   "@internal")
 
