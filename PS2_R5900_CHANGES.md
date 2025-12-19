@@ -345,16 +345,33 @@ Added in `gcc/config/mips/constraints.md`:
 ### Instruction Patterns
 
 Added in `gcc/config/mips/5900.md`:
+
+**2-operand forms** (result in HI1:LO1 only):
 - `mult1` / `multu1` - Signed/unsigned multiply using Pipeline 1
 - `div1` / `divu1` - Signed/unsigned divide using Pipeline 1
 - `madd1` / `maddu1` - Multiply-add using Pipeline 1
 - `mfhi1` / `mflo1` - Move from HI1/LO1
 - `mthi1` / `mtlo1` - Move to HI1/LO1
 
+**3-operand forms** (result in GPR and HI1:LO1):
+- `mult1 rd,rs,rt` / `multu1 rd,rs,rt` - Result goes to GPR rd (low 32 bits) and HI1:LO1
+- `madd1 rd,rs,rt` / `maddu1 rd,rs,rt` - Multiply-add with result in GPR rd and HI1:LO1
+
+The 3-operand forms are more efficient for the scheduler as GPR results are easier to schedule than accumulator (HI1/LO1) results.
+
+### Dual Pipeline Scheduling
+
+The R5900 has two independent MAC units that can execute in parallel:
+- **MAC0** (r5900_mac0): Uses HI/LO, standard MIPS multiply/divide
+- **MAC1** (r5900_mac1): Uses HI1/LO1, R5900-specific Pipeline 1
+
+The instruction scheduler models both pipelines as separate resources, allowing parallel execution of multiply/divide operations when using different pipelines.
+
 ### Built-in Functions
 
 Available in `gcc/config/mips/mips.cc`:
 
+**2-operand forms** (result in HI1:LO1):
 ```c
 // Pipeline 1 multiply operations
 long long __builtin_mips_mult1(int, int);
@@ -372,16 +389,31 @@ unsigned long long __builtin_mips_maddu1(unsigned long long, unsigned int, unsig
 int __builtin_mips_mfhi1(long long);
 int __builtin_mips_mflo1(long long);
 long long __builtin_mips_mtlo1(int);
-void __builtin_mips_mthi1(int, long long);
+```
+
+**3-operand forms** (result in GPR):
+```c
+// Pipeline 1 multiply - returns low 32 bits, also sets HI1:LO1
+int __builtin_mips_mult1_3op(int, int);
+unsigned int __builtin_mips_multu1_3op(unsigned int, unsigned int);
+
+// Pipeline 1 multiply-add - returns low 32 bits, also sets HI1:LO1
+int __builtin_mips_madd1_3op(long long, int, int);
+unsigned int __builtin_mips_maddu1_3op(unsigned long long, unsigned int, unsigned int);
 ```
 
 ### Test Coverage
 
+**2-operand forms:**
 - `r5900-mult1.c` - Tests mult1/multu1 builtins
 - `r5900-div1.c` - Tests div1/divu1 builtins
 - `r5900-madd1.c` - Tests madd1/maddu1 builtins
 - `r5900-mfhilo1.c` - Tests mfhi1/mflo1 builtins
 - `r5900-mtlo1.c` - Tests mtlo1 builtin
+
+**3-operand forms:**
+- `r5900-mult1-3op.c` - Tests mult1/multu1 3-operand builtins
+- `r5900-madd1-3op.c` - Tests madd1/maddu1 3-operand builtins
 
 ---
 

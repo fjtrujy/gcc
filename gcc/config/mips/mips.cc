@@ -15981,10 +15981,14 @@ AVAIL_NON_MIPS16 (r6, mips_isa_rev >= 6)
 /* R5900 Pipeline 1 instruction code mappings.  */
 #define CODE_FOR_mips_mult1 CODE_FOR_r5900_mult1
 #define CODE_FOR_mips_multu1 CODE_FOR_r5900_multu1
+#define CODE_FOR_mips_mult1_3op CODE_FOR_r5900_mult1_3op
+#define CODE_FOR_mips_multu1_3op CODE_FOR_r5900_multu1_3op
 #define CODE_FOR_mips_div1 CODE_FOR_r5900_div1
 #define CODE_FOR_mips_divu1 CODE_FOR_r5900_divu1
 #define CODE_FOR_mips_madd1 CODE_FOR_r5900_madd1
 #define CODE_FOR_mips_maddu1 CODE_FOR_r5900_maddu1
+#define CODE_FOR_mips_madd1_3op CODE_FOR_r5900_madd1_3op
+#define CODE_FOR_mips_maddu1_3op CODE_FOR_r5900_maddu1_3op
 #define CODE_FOR_mips_mfhi1 CODE_FOR_r5900_mfhi1
 #define CODE_FOR_mips_mflo1 CODE_FOR_r5900_mflo1
 #define CODE_FOR_mips_mthi1 CODE_FOR_r5900_mthi1
@@ -17056,12 +17060,19 @@ static const struct mips_builtin_description mips_builtins[] = {
   MIPSR6_BUILTIN_PURE (class_d, MIPS_DF_FTYPE_DF),
 
   /* Built-in functions for R5900 Pipeline 1 (MAC1).  */
+  /* 2-operand forms - result in HI1:LO1 */
   DIRECT_BUILTIN_PURE (mult1, MIPS_DI_FTYPE_SI_SI, r5900),
   DIRECT_BUILTIN_PURE (multu1, MIPS_DI_FTYPE_USI_USI, r5900),
   DIRECT_BUILTIN_PURE (div1, MIPS_DI_FTYPE_SI_SI, r5900),
   DIRECT_BUILTIN_PURE (divu1, MIPS_DI_FTYPE_USI_USI, r5900),
   DIRECT_BUILTIN_PURE (madd1, MIPS_DI_FTYPE_DI_SI_SI, r5900),
   DIRECT_BUILTIN_PURE (maddu1, MIPS_DI_FTYPE_DI_USI_USI, r5900),
+  /* 3-operand forms - result in GPR (low 32-bits) and HI1:LO1 */
+  DIRECT_BUILTIN_PURE (mult1_3op, MIPS_SI_FTYPE_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (multu1_3op, MIPS_USI_FTYPE_USI_USI, r5900),
+  DIRECT_BUILTIN_PURE (madd1_3op, MIPS_SI_FTYPE_DI_SI_SI, r5900),
+  DIRECT_BUILTIN_PURE (maddu1_3op, MIPS_USI_FTYPE_UDI_USI_USI, r5900),
+  /* HI1/LO1 move operations */
   DIRECT_BUILTIN_PURE (mfhi1, MIPS_SI_FTYPE_DI, r5900),
   DIRECT_BUILTIN_PURE (mflo1, MIPS_SI_FTYPE_DI, r5900),
   DIRECT_NO_TARGET_BUILTIN (mthi1, MIPS_VOID_FTYPE_SI_DI, r5900),
