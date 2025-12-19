@@ -1672,20 +1672,39 @@
   [(set_attr "type" "imul3nc")
    (set_attr "mode" "<MODE>")])
 
+;; Three-operand multiply with automatic pipeline selection for R5900.
+;; Alternative 0: Pipeline 0, result in GPR, clobbers LO
+;; Alternative 1: Pipeline 0, result in LO
+;; Alternative 2: Pipeline 1 (R5900 only), result in GPR, clobbers HI1:LO1
+;; Alternative 3: Pipeline 1 (R5900 only), result in LO1
 (define_insn "mul<mode>3_mul3"
-  [(set (match_operand:GPR 0 "register_operand" "=d,l")
-	(mult:GPR (match_operand:GPR 1 "register_operand" "d,d")
-		  (match_operand:GPR 2 "register_operand" "d,d")))
-   (clobber (match_scratch:GPR 3 "=l,X"))]
+  [(set (match_operand:GPR 0 "register_operand" "=d,l,d,Yl")
+	(mult:GPR (match_operand:GPR 1 "register_operand" "d,d,d,d")
+		  (match_operand:GPR 2 "register_operand" "d,d,d,d")))
+   (clobber (match_scratch:GPR 3 "=l,X,Ym,X"))]
   "ISA_HAS_<D>MUL3"
 {
-  if (which_alternative == 1)
-    return "<d>mult\t%1,%2";
-  if (<MODE>mode == SImode && (TARGET_MIPS3900 || TARGET_MIPS5900))
-    return "mult\t%0,%1,%2";
-  return "<d>mul\t%0,%1,%2";
+  switch (which_alternative)
+    {
+    case 1:
+      /* Pipeline 0: result in LO */
+      return "<d>mult\t%1,%2";
+    case 2:
+      /* Pipeline 1: result in GPR, clobbers HI1:LO1 */
+      gcc_assert (<MODE>mode == SImode && TARGET_MIPS5900);
+      return "mult1\t%0,%1,%2";
+    case 3:
+      /* Pipeline 1: result in LO1 */
+      gcc_assert (<MODE>mode == SImode && TARGET_MIPS5900);
+      return "mult1\t%1,%2";
+    default:
+      /* Pipeline 0: result in GPR */
+      if (<MODE>mode == SImode && (TARGET_MIPS3900 || TARGET_MIPS5900))
+	return "mult\t%0,%1,%2";
+      return "<d>mul\t%0,%1,%2";
+    }
 }
-  [(set_attr "type" "imul3,imul")
+  [(set_attr "type" "imul3,imul,imul1,imul1")
    (set_attr "mode" "<MODE>")])
 
 ;; If a register gets allocated to LO, and we spill to memory, the reload

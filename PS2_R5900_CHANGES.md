@@ -367,6 +367,39 @@ The R5900 has two independent MAC units that can execute in parallel:
 
 The instruction scheduler models both pipelines as separate resources, allowing parallel execution of multiply/divide operations when using different pipelines.
 
+### Automatic Pipeline Selection
+
+GCC can **automatically** choose between Pipeline 0 (`mult`) and Pipeline 1 (`mult1`) for multiply operations. The `mul<mode>3_mul3` pattern in `mips.md` has four alternatives:
+
+| Alt | Pipeline | Dest | Clobber | Instruction |
+|-----|----------|------|---------|-------------|
+| 0 | Pipeline 0 | GPR | HI:LO | `mult rd,rs,rt` |
+| 1 | Pipeline 0 | LO | - | `mult rs,rt` |
+| 2 | Pipeline 1 | GPR | HI1:LO1 | `mult1 rd,rs,rt` |
+| 3 | Pipeline 1 | LO1 | - | `mult1 rs,rt` |
+
+Alternatives 2 and 3 are only available on R5900 (guarded by `Ym` and `Yl` constraints).
+
+The register allocator selects the best alternative based on:
+- Register pressure and availability
+- Whether HI:LO or HI1:LO1 is already in use
+- Scheduling constraints
+
+Example - GCC automatically selecting Pipeline 1:
+```c
+int multiply(int a, int b) {
+  return a * b;
+}
+```
+
+Generated assembly (may vary):
+```asm
+mult1   $2,$4,$5    ; Automatic Pipeline 1 selection
+jr      $31
+```
+
+For accumulator patterns (mult + madd), Pipeline 0 is typically used since the multiply-accumulate optimization requires HI:LO.
+
 ### Built-in Functions
 
 Available in `gcc/config/mips/mips.cc`:
@@ -414,6 +447,10 @@ unsigned int __builtin_mips_maddu1_3op(unsigned long long, unsigned int, unsigne
 **3-operand forms:**
 - `r5900-mult1-3op.c` - Tests mult1/multu1 3-operand builtins
 - `r5900-madd1-3op.c` - Tests madd1/maddu1 3-operand builtins
+
+**Automatic pipeline selection:**
+- `r5900-auto-pipeline.c` - Verifies GCC automatic pipeline selection
+- `r5900-dual-pipeline.c` - Demonstrates explicit dual-pipeline usage
 
 ---
 
